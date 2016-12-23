@@ -1,8 +1,13 @@
+#!/usr/bin/python
+
 import pygame
 import os
 from time import sleep
 import RPi.GPIO as GPIO
- 
+from rtl_fm_python_thread import *
+
+make_rtl_fm_thread(block=False)
+
 #Note #21 changed to #27 for rev2 Pi
 button_map = {23:(255,0,0), 22:(0,255,0), 27:(0,0,255), 17:(0,0,0)}
  
@@ -42,9 +47,11 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
 		if event.key == pygame.K_x:
-			freq[freq_idx] = (freq[freq_idx] + 1) % 10
+			freq[freq_idx] = (freq[freq_idx] + 1) % 10            
+            		set_frequency(int(''.join(str(x) for x in freq) + "000"))
 		elif event.key == pygame.K_z:
 			freq[freq_idx] = (freq[freq_idx] - 1) % 10
+            		set_frequency(int(''.join(str(x) for x in freq) + "000"))            
 		elif event.key == pygame.K_m:
 			wasdown = 1;
 		elif event.key == pygame.K_n:
@@ -85,6 +92,7 @@ while True:
                         sql_str.append('f')
 		elif event.key == pygame.K_RETURN:
 			sql = int("".join(sql_str), 0)
+            		set_squelch(sql)
 			sql_str = list("0x")
 
 		lcd.fill((0,0,0))
@@ -103,7 +111,7 @@ while True:
 		#sql_surface = font_big.render('%d'%sql, True, WHITE)
 		#rect = text_surface.get_rect(center=(160,140))
 		#lcd.blit(sql_surface, rect)
-            	pygame.display.update()
+	    	pygame.display.update()
 
     # Scan the buttons
 #    for (k,v) in button_map.items():
@@ -114,4 +122,3 @@ while True:
 #            lcd.blit(text_surface, rect)
 #            pygame.display.update()
 #    sleep(0.1)
-
