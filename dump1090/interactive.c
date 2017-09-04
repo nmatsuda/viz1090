@@ -441,7 +441,7 @@ void interactiveShowData(void) {
         printf (
 // original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
 // pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
-    "\x1B[30;47m\e[1mFlight   Alt    Spd   Dist    Dir", progress);
+    "\x1B[30;47m\e[1mFlight   Alt(m) m/s  Dst(km)  H ", progress);
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -450,7 +450,7 @@ void interactiveShowData(void) {
 //"---------------------------------------");
 	printf("\x1B[37;40m");
     int numNoDir = 0;
-    while(a && (count < Modes.interactive_rows)) {
+    while(a && (count < 10)) {
         if ((now - a->seen) < Modes.interactive_display_ttl)
             {
             int msgs  = a->messages;
@@ -527,7 +527,7 @@ void interactiveShowData(void) {
                     if(fabsf(dLon) < .01 && fabsf(dLat) > fabsf(dLon)) {
                         cLon = ' ';
                     } else {
-                        if(a->lon < 0) {
+                        if(dLon < 0) {
                             cLon = 'W';
                         } else {
                             cLon = 'E';
@@ -538,7 +538,7 @@ void interactiveShowData(void) {
                     if(fabsf(dLat) < .01 && fabsf(dLon) > fabsf(dLat)) {
                         cLat = ' ';
                     } else {
-                        if(a->lat < 0) {
+                        if(dLat < 0) {
                             cLat = 'S';
                         } else {
                             cLat = 'N';
@@ -547,7 +547,8 @@ void interactiveShowData(void) {
 
                     snprintf(strD, 8,"%7.03f", d);
 
-                    printf("\n\x1B[%d;31m%-8s \x1B[%d;32m%5s  \x1B[%d;33m%3s  \x1B[%d;34m%8s \x1B[%d;36m%c%c",
+		    //formatted for terminusBold 10x16
+                    printf("\n\x1B[%d;31m%-8s \x1B[%d;32m%5s  \x1B[%d;33m%3s \x1B[%d;34m%8s  \x1B[%d;36m%c%c",
                         count%2, a->flight, 
                         count%2, strFl, 
                         count%2, strGs,
@@ -558,25 +559,17 @@ void interactiveShowData(void) {
                 } else {
                     numNoDir++;
                 }
-
-                //printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s  %3d %5d   %2d\n",
-                //a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
-                //strLat, strLon, signalAverage, msgs, (int)(now - a->seen));
-
-    		    // printf("\n\x1B[%d;%dm%-8s %5s  %3s  %7s %8s",a->addr % 12 > 6, 31 + a->addr % 6,
-                //               a->flight, strFl, strGs,
-                //               strLat, strLon);
             }
         }
         a = a->next;
     }
 
-    while(count < 14) {
-        printf("\n");
+    while(count < 10) {
+      printf("\n");
         count++;
     }
 
-    printf("\x1B[30;47m\e[1m\n%+3d %c                            \x1B[37;40m",numNoDir,progress);    
+    printf("\x1B[30;47m\e[1m\n%+3d %c                           \x1B[37;40m",numNoDir,progress);    
     fflush(stdout);
 }
 //
