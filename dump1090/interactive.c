@@ -444,7 +444,7 @@ void interactiveShowData(void) {
         printf (
 // original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
 // pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
-    "\x1B[30;47m\e[1m Flight  Alt(m) km/h  D(km) H  S ");
+    "\x1B[30;47m\e[1m Flight  Alt(m) km/h D(km) H  S ");
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
