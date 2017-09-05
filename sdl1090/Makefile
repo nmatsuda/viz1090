@@ -10,8 +10,8 @@ SHAREDIR=$(PREFIX)/share/$(PROGNAME)
 EXTRACFLAGS=-DHTMLPATH=\"$(SHAREDIR)\"
 endif
 
-CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr`
-LIBS=`pkg-config --libs librtlsdr` -lpthread -lm `sdl-config --libs` -lSDL -lSDL_ttf -lSDL_gfx
+CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr` -std=c99
+LIBS=`pkg-config --libs librtlsdr` -lpthread -lm `sdl-config --libs` -lSDL -lSDL_ttf -lSDL_gfx -lwiringPi
 CC=gcc
 
 
