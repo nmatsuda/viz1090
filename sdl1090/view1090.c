@@ -331,6 +331,10 @@ int main(int argc, char **argv) {
 
 
     int go;
+
+#ifdef RPI
+	fprintf(stderr,"RPI\n");
+#endif
     
     /* Start up SDL */
     
