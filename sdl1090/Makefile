@@ -11,8 +11,8 @@ EXTRACFLAGS=-DHTMLPATH=\"$(SHAREDIR)\"
 endif
 
 ifdef RPI
-	CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr` -std=c99
-	LIBS=`pkg-config --libs librtlsdr` -lpthread -lm `sdl-config --libs` -lSDL -lSDL_ttf -lSDL_gfx -lwiringPi -DRPI
+	CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr` -std=c99 -DRPI -D_GNU_SOURCE
+	LIBS=`pkg-config --libs librtlsdr` -lpthread -lm `sdl-config --libs` -lSDL -lSDL_ttf -lSDL_gfx -lwiringPi 
 	CC=gcc
 else
 	CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr`
