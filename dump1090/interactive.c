@@ -444,7 +444,7 @@ void interactiveShowData(void) {
         printf (
 // original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
 // pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
-    "\x1B[30;47m\e[1m Flight  Zm    m/s  D(km) H  S  ");
+    "\x1B[30;47m\e[1m Flight  Alt(m) km/h  D(km) H  S ");
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -566,12 +566,12 @@ void interactiveShowData(void) {
         		    //formatted for terminusBold 10x20, no unicode
 
                     if(d<5) {
-                        printf("%ls",L"\n┌─────────────────────────────┐\n│");
+                        printf("%ls",L"\n\x1B[1;37m┌───────────────────────────────┐\n│");
                     } else {
                         printf("\n ");
                     }
 
-                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%3s \x1B[1;34m%6s \x1B[1;36m%c%c \x1B[1;35m%d",
+                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%6s  \x1B[1;36m%c%c \x1B[1;35m%d",
                         a->flight, 
                         strFl, 
                         strGs,
@@ -581,7 +581,7 @@ void interactiveShowData(void) {
 
 
                     if(d<5) {
-                     printf("%ls",L"│\n└─────────────────────────────┘");
+                     printf("%ls",L"\x1B[1;37m│\n└───────────────────────────────┘");
                      count+=2;
                     }
 
