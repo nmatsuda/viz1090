@@ -566,12 +566,12 @@ void interactiveShowData(void) {
         		    //formatted for terminusBold 10x20, no unicode
 
                     if(d<5) {
-                        printf("%ls",L"\n\x1B[1;37m┌───────────────────────────────┐\n│");
+                        printf("%ls",L"\n\x1B[1;37m┌──────────────────────────────┐\n│");
                     } else {
                         printf("\n ");
                     }
 
-                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s \x1B[1;36m%c%c \x1B[1;35m%d",
+                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s  \x1B[1;36m%c%c \x1B[1;35m%d",
                         a->flight, 
                         strFl, 
                         strGs,
@@ -581,7 +581,7 @@ void interactiveShowData(void) {
 
 
                     if(d<5) {
-                     printf("%ls",L"\x1B[1;37m│\n└───────────────────────────────┘");
+                     printf("%ls",L"\x1B[1;37m│\n└──────────────────────────────┘");
                      count+=2;
                     }
 
