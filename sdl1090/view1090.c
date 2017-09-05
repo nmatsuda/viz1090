@@ -309,9 +309,12 @@ int main(int argc, char **argv) {
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     c = (struct client *) malloc(sizeof(*c));
-    if ((fd = setupConnection(c)) == ANET_ERR) {
-        fprintf(stderr, "Failed to connect to %s:%d\n", View1090.net_input_beast_ipaddr, Modes.net_input_beast_port);
-        exit(1);
+    while(1) {
+        if ((fd = setupConnection(c)) == ANET_ERR) {
+            fprintf(stderr, "Waiting on %s:%d\n", View1090.net_input_beast_ipaddr, Modes.net_input_beast_port);           
+        } else {
+            break;
+        }
     }
 
     /*
