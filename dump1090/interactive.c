@@ -30,6 +30,8 @@
 
 #include "dump1090.h"
 #include <math.h>
+#include <locale.h>
+#include <wchar.h>
 
 //
 // ============================= Utility functions ==========================
@@ -435,13 +437,14 @@ void interactiveShowData(void) {
 #else
     cls();
 #endif
+    setlocale(LC_ALL,"");
 
 //\xiB[30;47m
     if (Modes.interactive_rtl1090 == 0) {
         printf (
 // original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
 // pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
-    "\x1B[30;47m\e[1mFlight   Alt(m) m/s  Dst(km)  H ", progress);
+    "\x1B[30;47m\e[1mFlight  Zm    m/s  D(km)  %lc  S",0x25cb);
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -489,13 +492,13 @@ void interactiveShowData(void) {
                 char strLat[8]                = " ";
                 char strLon[9]                = " ";
 
-                char strD[8]                = " ";
+                char strD[6]                = " ";
                 char cLat = ' ';
                 char cLon = ' ';
 
                 unsigned char * pSig       = a->signalLevel;
                 unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
+                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 9;   //up to 4 bars
 
                 if (a->bFlags & MODES_ACFLAGS_AOG) {
                     snprintf(strFl, 6," grnd");
@@ -514,17 +517,17 @@ void interactiveShowData(void) {
 
                 if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
 
-                    float dLon = a->lon+87.6651033;
-                    float dLat = a->lat-41.9809263;
+                    double dLon = a->lon+87.6651033;
+                    double dLat = a->lat-41.9809263;
 
                     snprintf(strLat, 8,"%7.03f", dLat);
                     snprintf(strLon, 9,"%8.03f", dLon);
 
-                    float x = dLon * cos(((a->lat+41.9809263)/2.0f) * M_PI / 180.0f);
-                    float y = dLat;
-                    float d = sqrt(x*x + y*y) * 6371.0f;
+                    double x = dLon * M_PI / 180.0f * cos(((a->lat+41.9809263)/2.0f) * M_PI / 180.0f);
+                    double y = dLat * M_PI / 180.0f;
+                    double d = sqrt(x*x + y*y) * 6371.0;
 
-                    if(fabsf(dLon) < .01 && fabsf(dLat) > fabsf(dLon)) {
+                    if(fabs(dLon) < .01 && fabs(dLat) > fabs(dLon)) {
                         cLon = ' ';
                     } else {
                         if(dLon < 0) {
@@ -535,7 +538,7 @@ void interactiveShowData(void) {
                     }
                  
            
-                    if(fabsf(dLat) < .01 && fabsf(dLon) > fabsf(dLat)) {
+                    if(fabs(dLat) < .01 && fabs(dLon) > fabs(dLat)) {
                         cLat = ' ';
                     } else {
                         if(dLat < 0) {
@@ -545,16 +548,16 @@ void interactiveShowData(void) {
                         }      
                     }
 
-                    snprintf(strD, 8,"%7.03f", d);
+                    snprintf(strD, 6,"%5.01f", d);
 
 		    //formatted for terminusBold 10x16
-                    printf("\n\x1B[%d;31m%-8s \x1B[%d;32m%5s  \x1B[%d;33m%3s \x1B[%d;34m%8s  \x1B[%d;36m%c%c",
+                    printf("\n\x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%lc",
                         count%2, a->flight, 
                         count%2, strFl, 
                         count%2, strGs,
                         count%2, strD, 
-                        count%2, cLat, cLon);
-
+                        count%2, cLat, cLon,
+                        count%2, 0x2581 + (wint_t) (2*signalAverage));
                     count++;
                 } else {
                     numNoDir++;
