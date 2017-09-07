@@ -29,6 +29,8 @@
 //
 
 #include "dump1090.h"
+#include <math.h>
+
 //
 // ============================= Utility functions ==========================
 //
@@ -437,8 +439,9 @@ void interactiveShowData(void) {
 //\xiB[30;47m
     if (Modes.interactive_rtl1090 == 0) {
         printf (
-//"Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
-"\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
+// original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
+// pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
+    "\x1B[30;47m\e[1mFlight   Alt    Spd   Dist    Dir", progress);
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -446,9 +449,8 @@ void interactiveShowData(void) {
 //    printf(
 //"---------------------------------------");
 	printf("\x1B[37;40m");
-
+    int numNoDir = 0;
     while(a && (count < Modes.interactive_rows)) {
-
         if ((now - a->seen) < Modes.interactive_display_ttl)
             {
             int msgs  = a->messages;
@@ -465,10 +467,10 @@ void interactiveShowData(void) {
                 char strGs[5]     = " ";
 
                 // Convert units to metric if --metric was specified
-                if (Modes.metric) {
+                //if (Modes.metric) {
                     altitude = (int) (altitude / 3.2828);
                     speed    = (int) (speed    * 1.852);
-                }
+                //}
 
                 if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
                     snprintf(strSquawk,5,"%04x", a->modeA);}
@@ -482,54 +484,100 @@ void interactiveShowData(void) {
                 if (msgs > 99999) {
                     msgs = 99999;}
 
-                if (Modes.interactive_rtl1090) { // RTL1090 display mode
+                  // Dump1090 display mode
+                char strMode[5]               = "    ";
+                char strLat[8]                = " ";
+                char strLon[9]                = " ";
 
-                    if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-                        snprintf(strFl,6,"F%03d",(altitude/100));
-                    }
-                    printf("%06x %-8s %-4s         %-3s %-3s %4s        %-6d  %-2d\n", 
-                    a->addr, a->flight, strFl, strGs, strTt, strSquawk, msgs, (int)(now - a->seen));
+                char strD[8]                = " ";
+                char cLat = ' ';
+                char cLon = ' ';
 
-                } else {                         // Dump1090 display mode
-                    char strMode[5]               = "    ";
-                    char strLat[8]                = " ";
-                    char strLon[9]                = " ";
-                    unsigned char * pSig       = a->signalLevel;
-                    unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                                  pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
+                unsigned char * pSig       = a->signalLevel;
+                unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
 
-                    if ((flags & MODEAC_MSG_FLAG) == 0) {
-                        strMode[0] = 'S';
-                    } else if (flags & MODEAC_MSG_MODEA_ONLY) {
-                        strMode[0] = 'A';
-                    }
-                    if (flags & MODEAC_MSG_MODEA_HIT) {strMode[2] = 'a';}
-                    if (flags & MODEAC_MSG_MODEC_HIT) {strMode[3] = 'c';}
-
-                    if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
-                        snprintf(strLat, 8,"%7.03f", a->lat);
-                        snprintf(strLon, 9,"%8.03f", a->lon);
-                    }
-
-                    if (a->bFlags & MODES_ACFLAGS_AOG) {
-                        snprintf(strFl, 6," grnd");
-                    } else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-                        snprintf(strFl, 6, "%5d", altitude);
-                    }
-
-                    //printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s  %3d %5d   %2d\n",
-                    //a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
-                    //strLat, strLon, signalAverage, msgs, (int)(now - a->seen));
-
-		    printf("\n\x1B[%d;%dm%-8s %5s  %3s  %7s %8s",a->addr % 12 > 6, 31 + a->addr % 6,
-                    a->flight, strFl, strGs,
-                    strLat, strLon);
+                if (a->bFlags & MODES_ACFLAGS_AOG) {
+                    snprintf(strFl, 6," grnd");
+                } else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
+                    snprintf(strFl, 6, "%5d", altitude);
                 }
-                count++;
+
+
+                if ((flags & MODEAC_MSG_FLAG) == 0) {
+                    strMode[0] = 'S';
+                } else if (flags & MODEAC_MSG_MODEA_ONLY) {
+                    strMode[0] = 'A';
+                }
+                if (flags & MODEAC_MSG_MODEA_HIT) {strMode[2] = 'a';}
+                if (flags & MODEAC_MSG_MODEC_HIT) {strMode[3] = 'c';}
+
+                if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
+
+                    float dLon = a->lon+87.6651033;
+                    float dLat = a->lat-41.9809263;
+
+                    snprintf(strLat, 8,"%7.03f", dLat);
+                    snprintf(strLon, 9,"%8.03f", dLon);
+
+                    float x = dLon * cos(((a->lat+41.9809263)/2.0f) * M_PI / 180.0f);
+                    float y = dLat;
+                    float d = sqrt(x*x + y*y) * 6371.0f;
+
+                    if(fabsf(dLon) < .01 && fabsf(dLat) > fabsf(dLon)) {
+                        cLon = ' ';
+                    } else {
+                        if(a->lon < 0) {
+                            cLon = 'W';
+                        } else {
+                            cLon = 'E';
+                        }      
+                    }
+                 
+           
+                    if(fabsf(dLat) < .01 && fabsf(dLon) > fabsf(dLat)) {
+                        cLat = ' ';
+                    } else {
+                        if(a->lat < 0) {
+                            cLat = 'S';
+                        } else {
+                            cLat = 'N';
+                        }      
+                    }
+
+                    snprintf(strD, 8,"%7.03f", d);
+
+                    printf("\n\x1B[%d;31m%-8s \x1B[%d;32m%5s  \x1B[%d;33m%3s  \x1B[%d;34m%8s \x1B[%d;36m%c%c",
+                        count%2, a->flight, 
+                        count%2, strFl, 
+                        count%2, strGs,
+                        count%2, strD, 
+                        count%2, cLat, cLon);
+
+                    count++;
+                } else {
+                    numNoDir++;
+                }
+
+                //printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s  %3d %5d   %2d\n",
+                //a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
+                //strLat, strLon, signalAverage, msgs, (int)(now - a->seen));
+
+    		    // printf("\n\x1B[%d;%dm%-8s %5s  %3s  %7s %8s",a->addr % 12 > 6, 31 + a->addr % 6,
+                //               a->flight, strFl, strGs,
+                //               strLat, strLon);
             }
         }
         a = a->next;
     }
+
+    while(count < 14) {
+        printf("\n");
+        count++;
+    }
+
+    printf("\x1B[30;47m\e[1m\n%+3d %c                            \x1B[37;40m",numNoDir,progress);    
+    fflush(stdout);
 }
 //
 //=========================================================================
