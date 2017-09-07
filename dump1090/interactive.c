@@ -444,7 +444,7 @@ void interactiveShowData(void) {
         printf (
 // original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
 // pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
-    "\x1B[30;47m\e[1mFlight  Zm    m/s  D(km) H  S  ");
+    "\x1B[30;47m\e[1m Flight  Zm    m/s  D(km) H  S  ");
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -498,7 +498,7 @@ void interactiveShowData(void) {
 
                 unsigned char * pSig       = a->signalLevel;
                 unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 9;   //up to 4 bars
+                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3;   //up to 4 bars
 
                 if (a->bFlags & MODES_ACFLAGS_AOG) {
                     snprintf(strFl, 6," grnd");
@@ -562,13 +562,17 @@ void interactiveShowData(void) {
                     */
 
         		    //formatted for terminusBold 10x20, no unicode
-                    printf("\n\x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%d",
+
+                    if(count==3) {
+                        printf("\n%lc%lc%lc%lc",0x250C,0x2500,0x2500,0x2510);
+                    }
+                    printf("\n \x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%d",
                         count%2, a->flight, 
                         count%2, strFl, 
                         count%2, strGs,
                         count%2, strD, 
                         count%2, cLat, cLon,
-                        count%2, signalAverage);
+                        count%2, (int)(signalAverage/255));
                     count++;
                 } else {
                     numNoDir++;
@@ -583,7 +587,7 @@ void interactiveShowData(void) {
         count++;
     }
 
-    printf("\x1B[30;47m\e[1m\n%+3d %c                           \x1B[37;40m",numNoDir,progress);    
+    printf("%c%c%c%c\x1B[30;47m\e[1m\n%+3d %c                           \x1B[37;40m",192,196,191,179,numNoDir,progress);    
     fflush(stdout);
 }
 //
