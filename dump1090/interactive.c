@@ -444,7 +444,7 @@ void interactiveShowData(void) {
         printf (
 // original version "Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
 // pitft version "\x1B[30;47m\e[1mFlight   Alt    Spd  Lat      Long     \n", progress);
-    "\x1B[30;47m\e[1mFlight  Zm    m/s  D(km)  %lc  S",0x25cb);
+    "\x1B[30;47m\e[1mFlight  Zm    m/s  D(km) H  S  ");
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -550,7 +550,8 @@ void interactiveShowData(void) {
 
                     snprintf(strD, 6,"%5.01f", d);
 
-		    //formatted for terminusBold 10x16
+                    /*
+                   //formatted for Unifont 8x16, rotated 90
                     printf("\n\x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%lc",
                         count%2, a->flight, 
                         count%2, strFl, 
@@ -558,6 +559,16 @@ void interactiveShowData(void) {
                         count%2, strD, 
                         count%2, cLat, cLon,
                         count%2, 0x2581 + (wint_t) (2*signalAverage));
+                    */
+
+        		    //formatted for terminusBold 10x20, no unicode
+                    printf("\n\x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%d",
+                        count%2, a->flight, 
+                        count%2, strFl, 
+                        count%2, strGs,
+                        count%2, strD, 
+                        count%2, cLat, cLon,
+                        count%2, signalAverage);
                     count++;
                 } else {
                     numNoDir++;
