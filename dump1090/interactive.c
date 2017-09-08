@@ -566,7 +566,7 @@ void interactiveShowData(void) {
         		    //formatted for terminusBold 10x20, no unicode
 
                     if(d<5) {
-                        printf("%ls",L"\n╔═════════════════════════════╗\n║");
+                        printf("%ls",L"\n┌─────────────────────────────┐\n│");
                     } else {
                         printf("\n ");
                     }
@@ -581,7 +581,7 @@ void interactiveShowData(void) {
 
 
                     if(d<5) {
-                     printf("%ls",L"║\n╚═════════════════════════════╝");
+                     printf("%ls",L"│\n└─────────────────────────────┘");
                      count+=2;
                     }
 
