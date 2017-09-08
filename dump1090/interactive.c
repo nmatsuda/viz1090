@@ -571,13 +571,13 @@ void interactiveShowData(void) {
                         printf("\n ");
                     }
 
-                    printf("\x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%d",
-                        count%2, a->flight, 
-                        count%2, strFl, 
-                        count%2, strGs,
-                        count%2, strD, 
-                        count%2, cLat, cLon,
-                        count%2, (int)((float)signalAverage/25.0f));
+                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%3s \x1B[1;34m%6s \x1B[1;36m%c%c \x1B[1;35m%d",
+                        , a->flight, 
+                        , strFl, 
+                        , strGs,
+                        , strD, 
+                        , cLat, cLon,
+                        , (int)((float)signalAverage/25.0f));
 
 
                     if(d<5) {
