@@ -496,9 +496,11 @@ void interactiveShowData(void) {
                 char cLat = ' ';
                 char cLon = ' ';
 
+                double d;
+
                 unsigned char * pSig       = a->signalLevel;
                 unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3;   //up to 4 bars
+                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3;   
 
                 if (a->bFlags & MODES_ACFLAGS_AOG) {
                     snprintf(strFl, 6," grnd");
@@ -525,7 +527,7 @@ void interactiveShowData(void) {
 
                     double x = dLon * M_PI / 180.0f * cos(((a->lat+***REMOVED***)/2.0f) * M_PI / 180.0f);
                     double y = dLat * M_PI / 180.0f;
-                    double d = sqrt(x*x + y*y) * 6371.0;
+                    d = sqrt(x*x + y*y) * 6371.0;
 
                     if(fabs(dLon) < .01 && fabs(dLat) > fabs(dLon)) {
                         cLon = ' ';
@@ -563,16 +565,26 @@ void interactiveShowData(void) {
 
         		    //formatted for terminusBold 10x20, no unicode
 
-                    if(count==3) {
-                        printf("\n%lc%lc%lc%lc",0x250C,0x2500,0x2500,0x2510);
+                    if(d<5) {
+                        printf("%ls",L"\n╔═════════════════════════════╗\n║");
+                    } else {
+                        printf("\n ");
                     }
-                    printf("\n \x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%d",
+
+                    printf("\x1B[%d;31m%-8s\x1B[%d;32m%5s \x1B[%d;33m%3s \x1B[%d;34m%6s \x1B[%d;36m%c%c \x1B[%d;37m%d",
                         count%2, a->flight, 
                         count%2, strFl, 
                         count%2, strGs,
                         count%2, strD, 
                         count%2, cLat, cLon,
-                        count%2, (int)(signalAverage/255));
+                        count%2, (int)((float)signalAverage/25.0f));
+
+
+                    if(d<5) {
+                     printf("%ls",L"║\n╚═════════════════════════════╝");
+                     count+=2;
+                    }
+
                     count++;
                 } else {
                     numNoDir++;
@@ -587,7 +599,7 @@ void interactiveShowData(void) {
         count++;
     }
 
-    printf("%c%c%c%c\x1B[30;47m\e[1m\n%+3d %c                           \x1B[37;40m",192,196,191,179,numNoDir,progress);    
+    printf("\x1B[30;47m\e[1m\n%+3d %c                           \x1B[37;40m",numNoDir,progress);    
     fflush(stdout);
 }
 //
