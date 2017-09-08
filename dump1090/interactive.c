@@ -492,7 +492,7 @@ void interactiveShowData(void) {
                 char strLat[8]                = " ";
                 char strLon[9]                = " ";
 
-                char strD[6]                = " ";
+                char strD[5]                = " ";
                 char cLat = ' ';
                 char cLon = ' ';
 
@@ -550,7 +550,7 @@ void interactiveShowData(void) {
                         }      
                     }
 
-                    snprintf(strD, 6,"%5.01f", d);
+                    snprintf(strD, 5,"%4.01f", d);
 
                     /*
                    //formatted for Unifont 8x16, rotated 90
@@ -571,7 +571,7 @@ void interactiveShowData(void) {
                         printf("\n ");
                     }
 
-                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%6s  \x1B[1;36m%c%c \x1B[1;35m%d",
+                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s \x1B[1;36m%c%c \x1B[1;35m%d",
                         a->flight, 
                         strFl, 
                         strGs,
