@@ -572,12 +572,12 @@ void interactiveShowData(void) {
                     }
 
                     printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%3s \x1B[1;34m%6s \x1B[1;36m%c%c \x1B[1;35m%d",
-                        , a->flight, 
-                        , strFl, 
-                        , strGs,
-                        , strD, 
-                        , cLat, cLon,
-                        , (int)((float)signalAverage/25.0f));
+                        a->flight, 
+                        strFl, 
+                        strGs,
+                        strD, 
+                        cLat, cLon,
+                        (int)((float)signalAverage/25.0f));
 
 
                     if(d<5) {
