@@ -572,7 +572,6 @@ void interactiveShowData(void) {
                         printf("\n ");
                     }
 
-<<<<<<< HEAD
                     if ((now - a->seen) > 30 ) {
                         printf("\x1B[1;30m%-8s%5s %4s %5s  %c%c %d",
                             a->flight, 
@@ -590,16 +589,6 @@ void interactiveShowData(void) {
                             cLat, cLon,
                             (int)((float)signalAverage/25.0f));
                     }
-=======
-                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s  \x1B[1;36m%c%c \x1B[1;35m%d",
-                        a->flight, 
-                        strFl, 
-                        strGs,
-                        strD, 
-                        cLat, cLon,
-                        (int)((float)signalAverage/25.0f));
-
->>>>>>> 474b6b928fbf41ebad522ee55fae952c481aabf5
 
                     if(d<5) {
                      printf("%ls",L"\x1B[1;37m│\n└──────────────────────────────┘");
