@@ -453,7 +453,8 @@ void interactiveShowData(void) {
 //"---------------------------------------");
 	printf("\x1B[37;40m");
     int numNoDir = 0;
-    while(a && (count < 10)) {
+    // while(a && (count < 10)) {
+    while(a && (count < Modes.interactive_rows)) {
         if ((now - a->seen) < Modes.interactive_display_ttl)
             {
             int msgs  = a->messages;
@@ -566,22 +567,31 @@ void interactiveShowData(void) {
         		    //formatted for terminusBold 10x20, no unicode
 
                     if(d<5) {
-                        printf("%ls",L"\n\x1B[1;37m┌───────────────────────────────┐\n│");
+                        printf("%ls",L"\n\x1B[1;37m┌──────────────────────────────┐\n│");
                     } else {
                         printf("\n ");
                     }
 
-                    printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s \x1B[1;36m%c%c \x1B[1;35m%d",
-                        a->flight, 
-                        strFl, 
-                        strGs,
-                        strD, 
-                        cLat, cLon,
-                        (int)((float)signalAverage/25.0f));
-
+                    if ((now - a->seen) > 30 ) {
+                        printf("\x1B[1;30m%-8s%5s %4s %5s  %c%c %d",
+                            a->flight, 
+                            strFl, 
+                            strGs,
+                            strD, 
+                            cLat, cLon,
+                            (int)((float)signalAverage/25.0f));
+                    } else {
+                        printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s  \x1B[1;36m%c%c \x1B[1;35m%d",
+                            a->flight, 
+                            strFl, 
+                            strGs,
+                            strD, 
+                            cLat, cLon,
+                            (int)((float)signalAverage/25.0f));
+                    }
 
                     if(d<5) {
-                     printf("%ls",L"\x1B[1;37m│\n└───────────────────────────────┘");
+                     printf("%ls",L"\x1B[1;37m│\n└──────────────────────────────┘");
                      count+=2;
                     }
 
