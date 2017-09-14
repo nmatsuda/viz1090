@@ -32,8 +32,9 @@
 #include "structs.h"
 
 Game game;
-extern void drawPlaneHeading(int , int , double, int, char *);
-extern void drawPlane(int , int, int);
+extern void drawPlaneHeading(double , double , double, int, char *);
+extern void drawPlane(double , double, int);
+extern void drawTrail(double *, double *, int);
 extern void drawGrid();
 
 
@@ -145,6 +146,11 @@ struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
     // Now initialise things that should not be 0/NULL to their defaults
     a->addr = mm->addr;
     a->lat  = a->lon = 0.0;
+
+    a->oldIdx = 0;
+    memset(a->oldDx, 0, sizeof(a->oldDx));
+    memset(a->oldDy, 0, sizeof(a->oldDy));    
+
     memset(a->signalLevel, mm->signalLevel, 8); // First time, initialise everything
                                                 // to the first signal strength
 
@@ -380,6 +386,17 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
             mm->bFlags |= MODES_ACFLAGS_LATLON_VALID;
             mm->fLat    = a->lat;
             mm->fLon    = a->lon;
+
+            double dLon = a->lon+87.6651033;
+            double dLat = a->lat-41.9809263;
+
+            a->dx = 6371.0 * dLon * M_PI / 180.0f * cos(((a->lat+41.9809263)/2.0f) * M_PI / 180.0f);
+            a->dy = 6371.0 * dLat * M_PI / 180.0f;
+
+            a->oldDx[a->oldIdx] = a->dx;
+            a->oldDy[a->oldIdx] = a->dy;
+
+            a->oldIdx = (a->oldIdx+1) % 32;
         }
     }
 
@@ -515,29 +532,18 @@ void interactiveShowData(void) {
                     if (flags & MODEAC_MSG_MODEC_HIT) {strMode[3] = 'c';}
 
                     if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
-                        double dLon = a->lon+87.6651033;
-                        double dLat = a->lat-41.9809263;
+                        
+                        snprintf(strLat, 8,"%7.03f", a->dx);
+                        snprintf(strLon, 9,"%8.03f", a->dy);
 
-                        double x = 6371.0 * dLon * M_PI / 180.0f * cos(((a->lat+41.9809263)/2.0f) * M_PI / 180.0f);
-                        double y = 6371.0 * dLat * M_PI / 180.0f;
-                        // d = sqrt(x*x + y*y) * 6371.0;
-
-                        snprintf(strLat, 8,"%7.03f", x);
-                        snprintf(strLon, 9,"%8.03f", y);
-
-                        int px = round(320.0 * (0.5 + (x / 64.0)));
-                        int py = round(240.0 * (0.5 + (y / 48.0)));
-
-                        if(px >= 0 && px < 320 && py >= 0 && py < 240 ) {
-
-
-                            if(MODES_ACFLAGS_HEADING_VALID) {
-                                drawPlaneHeading(px, py,a->track, signalAverage, a->flight);
-                            } else {
-                                drawPlane(px, py, signalAverage);
-                            }
+                
+                        if(MODES_ACFLAGS_HEADING_VALID) {
+                            drawPlaneHeading(a->dx, a->dy,a->track, signalAverage, a->flight);
+                        } else {
+                            drawPlane(a->dx, a->dy, signalAverage);
                         }
-
+                        
+                        drawTrail(a->oldDx, a->oldDy, a->oldIdx);
                     }
 
                     if (a->bFlags & MODES_ACFLAGS_AOG) {

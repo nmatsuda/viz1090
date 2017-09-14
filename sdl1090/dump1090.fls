@@ -1,0 +1,8 @@
+PWD /Users/nmatsuda/Git/spidr/sdl1090
+INPUT /usr/local/texlive/2015/texmf.cnf
+INPUT /usr/local/texlive/2015/texmf-dist/web2c/texmf.cnf
+INPUT /usr/local/texlive/2015/texmf-var/web2c/pdftex/pdflatex.fmt
+INPUT /Users/nmatsuda/Git/spidr/sdl1090/dump1090.h
+OUTPUT /Users/nmatsuda/Git/spidr/sdl1090/dump1090.log
+OUTPUT /Users/nmatsuda/Git/spidr/sdl1090/dump1090.pdf
+INPUT /usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map

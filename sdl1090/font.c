@@ -28,7 +28,6 @@ void closeFont(TTF_Font *font)
 
 void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 {
-	SDL_Rect dest;
 	SDL_Surface *surface;
 	
 	// surface = TTF_RenderUTF8_Shaded(font, text, foregroundColor, backgroundColor);
