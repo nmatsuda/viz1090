@@ -1,3 +1,4 @@
+#include "dump1090.h"
 #include "draw.h"
 #include "parula.h"
 
@@ -32,7 +33,11 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
 		signal = 127;
 	}
 
-    SDL_SetRenderDrawColor(game.renderer, parula[signal][0], parula[signal][1], parula[signal][2], SDL_ALPHA_OPAQUE);
+ 	if(signal < 0) {
+	    SDL_SetRenderDrawColor(game.renderer, 96, 96, 96, SDL_ALPHA_OPAQUE);    	
+    } else {
+	    SDL_SetRenderDrawColor(game.renderer, parula[signal][0], parula[signal][1], parula[signal][2], SDL_ALPHA_OPAQUE);    	
+	}
 
 	double body = 8.0;
 	double wing = 6.0;
@@ -78,9 +83,10 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
 
     SDL_RenderDrawLine(game.renderer, x1, y1, x2, y2);
 
-    SDL_Color color = { parula[signal][0], parula[signal][1], parula[signal][2], 255};
-
-    drawString(flight, center.x + 10, center.y + 10, game.font, color);
+    if(flight) {
+		SDL_Color color = { 200, 200, 200 , 255};    	
+	    drawString(flight, center.x + 10, center.y + 10, game.font, color);
+	}
 }
 
 void drawPlane(double dx, double dy, int signal)
@@ -96,7 +102,11 @@ void drawPlane(double dx, double dy, int signal)
 		signal = 127;
 	}
 
-    SDL_SetRenderDrawColor(game.renderer, parula[signal][0], parula[signal][1], parula[signal][2], SDL_ALPHA_OPAQUE);
+ 	if(signal < 0) {
+	    SDL_SetRenderDrawColor(game.renderer, 96, 96, 96, SDL_ALPHA_OPAQUE);    	
+    } else {
+	    SDL_SetRenderDrawColor(game.renderer, parula[signal][0], parula[signal][1], parula[signal][2], SDL_ALPHA_OPAQUE);    	
+	}
 
 	int length = 3.0;
 
@@ -104,21 +114,26 @@ void drawPlane(double dx, double dy, int signal)
     SDL_RenderDrawLine(game.renderer, center.x 		, center.y-length	, center.x 		, center.y+length 	);
 }
 
-void drawTrail(double *oldDx, double *oldDy, int idx) {
-	 int currentIdx, prevIdx;
+void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
+	int currentIdx, prevIdx;
 
-	 SDL_Point current, prev;
+	SDL_Point current, prev;
 
-	for(int i=1; i < 32; i++) {
-		currentIdx = (idx - (i - 1)) % 32;
-		prevIdx = (idx - (i - 2)) % 32;
+    time_t now = time(NULL);
 
-		if(oldDx[currentIdx] == 0 && oldDy[currentIdx] == 0) {
+	for(int i=0; i < (MODES_INTERACTIVE_TRAIL_LENGTH - 1); i++) {
+		currentIdx = (idx - i) % MODES_INTERACTIVE_TRAIL_LENGTH;
+		currentIdx = currentIdx < 0 ? currentIdx + MODES_INTERACTIVE_TRAIL_LENGTH : currentIdx;		
+		prevIdx = (idx - (i + 1)) % MODES_INTERACTIVE_TRAIL_LENGTH;
+		prevIdx = prevIdx < 0 ? prevIdx + MODES_INTERACTIVE_TRAIL_LENGTH : prevIdx;		  	
+
+		if(oldDx[currentIdx] == 0 || oldDy[currentIdx] == 0) {
 			continue;
 		}
 
-	    //SDL_SetRenderDrawColor(game.renderer, (i<<3)-1, (i<<3)-1, (i<<3)-1, SDL_ALPHA_OPAQUE);
-	    SDL_SetRenderDrawColor(game.renderer, 0,60,60, SDL_ALPHA_OPAQUE);
+		if(oldDx[prevIdx] == 0 || oldDy[prevIdx] == 0) {
+			continue;
+		}
 
 	    current = screenCoords(oldDx[currentIdx], oldDy[currentIdx]);
 	    prev = screenCoords(oldDx[prevIdx], oldDy[prevIdx]);
@@ -131,12 +146,23 @@ void drawTrail(double *oldDx, double *oldDy, int idx) {
     		continue;
    		 }
 
+
+		double age = 1.0 - (double)(now - oldSeen[currentIdx]) / MODES_INTERACTIVE_TRAIL_TTL;
+
+		if(age < 0) {
+			age = 0;
+		}
+
+		uint8_t colorVal = (uint8_t)floor(127.0 * age);
+
+	    SDL_SetRenderDrawColor(game.renderer, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);	    
+
 	    SDL_RenderDrawLine(game.renderer, prev.x, prev.y, current.x, current.y);
 
-	    SDL_SetRenderDrawColor(game.renderer, 255,0,0, SDL_ALPHA_OPAQUE);
+	 //    SDL_SetRenderDrawColor(game.renderer, 255,0,0, SDL_ALPHA_OPAQUE);
 
-		SDL_Rect spot = {.x = current.x-1, .y = current.y-1, .w = 2, .h = 2};
-	    SDL_RenderFillRect(game.renderer, &spot);
+		// SDL_Rect spot = {.x = current.x-1, .y = current.y-1, .w = 2, .h = 2};
+	 //    SDL_RenderFillRect(game.renderer, &spot);
 	}
 }
 
