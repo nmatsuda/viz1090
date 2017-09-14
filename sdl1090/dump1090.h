@@ -164,6 +164,10 @@
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DELETE_TTL   300      // Delete from the list after 300 seconds
 #define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
+#define MODES_INTERACTIVE_DISPLAY_ACTIVE   30      // Gray out after 30 seconds
+#define MODES_INTERACTIVE_TRAIL_LENGTH   120      // entries to keep in trail
+#define MODES_INTERACTIVE_TRAIL_TTL_STEP   2      // minimum time between entries
+#define MODES_INTERACTIVE_TRAIL_TTL   240.0      // # seconds to fade out
 
 #define MODES_NET_HEARTBEAT_RATE       900      // Each block is approx 65mS - default is > 1 min
 
@@ -224,7 +228,8 @@ struct aircraft {
     uint64_t      even_cprtime;
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     double        dx, dy; // distance in km    
-    double        oldDx[32], oldDy[32]; // position history
+    double        oldDx[MODES_INTERACTIVE_TRAIL_LENGTH], oldDy[MODES_INTERACTIVE_TRAIL_LENGTH]; // position history
+    time_t        oldSeen[MODES_INTERACTIVE_TRAIL_LENGTH];// position time    
     uint8_t           oldIdx; // index for ring buffer
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list

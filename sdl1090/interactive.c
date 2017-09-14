@@ -32,11 +32,11 @@
 #include "structs.h"
 
 Game game;
+
 extern void drawPlaneHeading(double , double , double, int, char *);
 extern void drawPlane(double , double, int);
-extern void drawTrail(double *, double *, int);
+extern void drawTrail(double *, double *, time_t *, int);
 extern void drawGrid();
-
 
 //
 // ============================= Utility functions ==========================
@@ -393,10 +393,14 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
             a->dx = 6371.0 * dLon * M_PI / 180.0f * cos(((a->lat+***REMOVED***)/2.0f) * M_PI / 180.0f);
             a->dy = 6371.0 * dLat * M_PI / 180.0f;
 
-            a->oldDx[a->oldIdx] = a->dx;
-            a->oldDy[a->oldIdx] = a->dy;
+            if(time(NULL) - a->oldSeen[a->oldIdx] > MODES_INTERACTIVE_TRAIL_TTL_STEP) {
+                a->oldIdx = (a->oldIdx+1) % 32;
 
-            a->oldIdx = (a->oldIdx+1) % 32;
+                a->oldDx[a->oldIdx] = a->dx;
+                a->oldDy[a->oldIdx] = a->dy;
+
+                a->oldSeen[a->oldIdx] = a->seen;
+            }
         }
     }
 
@@ -536,14 +540,21 @@ void interactiveShowData(void) {
                         snprintf(strLat, 8,"%7.03f", a->dx);
                         snprintf(strLon, 9,"%8.03f", a->dy);
 
-                
-                        if(MODES_ACFLAGS_HEADING_VALID) {
-                            drawPlaneHeading(a->dx, a->dy,a->track, signalAverage, a->flight);
+                        drawTrail(a->oldDx, a->oldDy, a->oldSeen, a->oldIdx);
+
+                        int colorIdx;
+                        if((int)(now - a->seen) > MODES_INTERACTIVE_DISPLAY_ACTIVE) {
+                            colorIdx = -1;
                         } else {
-                            drawPlane(a->dx, a->dy, signalAverage);
+                            colorIdx = signalAverage;
+                        }
+
+                        if(MODES_ACFLAGS_HEADING_VALID) {
+                            drawPlaneHeading(a->dx, a->dy,a->track, colorIdx, a->flight);
+                        } else {
+                            drawPlane(a->dx, a->dy, colorIdx);
                         }
                         
-                        drawTrail(a->oldDx, a->oldDy, a->oldIdx);
                     }
 
                     if (a->bFlags & MODES_ACFLAGS_AOG) {
