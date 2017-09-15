@@ -1,6 +1,7 @@
 #include "dump1090.h"
 #include "draw.h"
 #include "parula.h"
+#include "SDL/SDL_gfxPrimitives.h"
 
 extern void drawString(char *, int, int, TTF_Font *, SDL_Color);
 
@@ -11,18 +12,19 @@ void CROSSVP(double *v, double *u, double *w)
     v[2] = u[0]*w[1] - u[1]*(w)[0];                             
 }
 
-
+/*
 SDL_Point screenCoords(double dx, double dy) {
 	SDL_Point out;
     out.x = round(320.0 * (0.5 + (dx / 64.0)));
     out.y = round(240.0 * (0.5 + (dy / 48.0)));
 
-    return out;
+    return out;  
 }
+*/
 
 void drawPlaneHeading(double dx, double dy, double heading, int signal, char *flight)
 {
-
+	/*
 	SDL_Point center = screenCoords(dx,dy);
 
     if(center.x < 0 || center.x >= 320 || center.y < 0 || center.y >= 240 ) {
@@ -87,11 +89,12 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
 		SDL_Color color = { 200, 200, 200 , 255};    	
 	    drawString(flight, center.x + 10, center.y + 10, game.font, color);
 	}
+	*/
 }
 
 void drawPlane(double dx, double dy, int signal)
 {
-
+/*
 	SDL_Point center = screenCoords(dx,dy);
 
     if(center.x < 0 || center.x >= 320 || center.y < 0 || center.y >= 240 ) {
@@ -112,9 +115,12 @@ void drawPlane(double dx, double dy, int signal)
 
     SDL_RenderDrawLine(game.renderer, center.x-length	, center.y 		, center.x+length 	, center.y 		);
     SDL_RenderDrawLine(game.renderer, center.x 		, center.y-length	, center.x 		, center.y+length 	);
+    */
 }
 
 void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
+
+	/*
 	int currentIdx, prevIdx;
 
 	SDL_Point current, prev;
@@ -163,16 +169,14 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
 
 		// SDL_Rect spot = {.x = current.x-1, .y = current.y-1, .w = 2, .h = 2};
 	 //    SDL_RenderFillRect(game.renderer, &spot);
-	}
+	}*/
 }
 
 
 void drawGrid()
 {
-    SDL_SetRenderDrawColor(game.renderer, 40, 40, 40, SDL_ALPHA_OPAQUE);
-
-    SDL_RenderDrawLine(game.renderer, 0, 120, 320, 120);
-    SDL_RenderDrawLine(game.renderer, 160, 0, 160, 240);
+	hlineRGBA (game.screen, 0, 320, 120, 40, 40, 40, SDL_ALPHA_OPAQUE);
+	vlineRGBA (game.screen, 160, 0, 240, 40, 40, 40, SDL_ALPHA_OPAQUE);
 }
 
 

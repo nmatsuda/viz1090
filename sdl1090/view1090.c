@@ -238,15 +238,6 @@ void showCopyright(void) {
 //
 
 
-int SDLCALL watch(void *userdata, SDL_Event* event) {
-
-    if (event->type == SDL_APP_WILLENTERBACKGROUND) {
-        go = 0;
-    }
-
-    return 1;
-}
-
 
 
 int main(int argc, char **argv) {
@@ -345,7 +336,7 @@ int main(int argc, char **argv) {
     
     /* Start up SDL */
     
-    init("Parallel Realities Tutorial 7");
+    init("sdl1090");
     
     /* Call the cleanup function when the program exits */
     
@@ -358,10 +349,6 @@ int main(int argc, char **argv) {
     
     game.font = loadFont("Arial.ttf", 10);
         
-    /* Loop indefinitely for messages */
-
-
-    SDL_AddEventWatch(watch, NULL);
 
     
     while (go == 1)
