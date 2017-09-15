@@ -7,7 +7,7 @@ void init(char *title)
 {
 	/* Initialise SDL */
 	
-	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		printf("Could not initialize SDL: %s\n", SDL_GetError());
 		
@@ -24,16 +24,18 @@ void init(char *title)
 	}
 	
 
-    if (SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, &(game.window), &(game.renderer)) < 0) 
-    {
-		printf("Couldn't initialize Renderer: %s\n", SDL_GetError());
+ 	game.screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 0, SDL_HWPALETTE|SDL_DOUBLEBUF);
+	
+	if (game.screen == NULL)
+	{
+		printf("Couldn't set screen mode to %d x %d: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
 
 		exit(1);
 	}
 		
 	/* Set the screen title */
 	
-	SDL_SetWindowTitle(game.window,title);
+	SDL_WM_SetCaption(title, NULL);
 }
 
 void cleanup()
@@ -46,10 +48,6 @@ void cleanup()
 	
 	TTF_Quit();
 	
-
-    SDL_DestroyWindow(game.window);
-
-
 	/* Shut down SDL */
 	
 	SDL_Quit();

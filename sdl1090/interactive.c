@@ -472,8 +472,8 @@ void interactiveShowData(void) {
     }
     printf(
 "-------------------------------------------------------------------------------\n");
-    SDL_SetRenderDrawColor(game.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(game.renderer);
+    SDL_FillRect(game.screen, NULL, 0);
+
     drawGrid();
 
     while(a && (count < Modes.interactive_rows)) {
@@ -573,8 +573,7 @@ void interactiveShowData(void) {
         a = a->next;
     }
 
-    SDL_RenderPresent(game.renderer);
-
+    SDL_Flip(game.screen);
 }
 //
 //=========================================================================

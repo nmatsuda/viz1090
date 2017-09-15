@@ -2,7 +2,6 @@
 
 typedef struct Game
 {
-	SDL_Window *window;
-	SDL_Renderer *renderer;
+	SDL_Surface *screen;	
 	TTF_Font *font;
 } Game;
