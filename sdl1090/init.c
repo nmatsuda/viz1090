@@ -1,22 +1,21 @@
 #include "init.h"
 #include "SDL/SDL_getenv.h"
-#include <wiringPi.h>
-
-extern void closeFont(TTF_Font *);
-
 
 void init(char *title)
 {
 
-	wiringPiSetupGpio() ;
+	#ifdef RPI
+		wiringPiSetupGpio() ;
 
-	pinMode(23, INPUT);
-	pullUpDnControl (23, PUD_UP);
-	pinMode(22, INPUT);
-	pullUpDnControl (22, PUD_UP);	
+		pinMode(23, INPUT);
+		pullUpDnControl (23, PUD_UP);
+		pinMode(22, INPUT);
+		pullUpDnControl (22, PUD_UP);	
 
-	putenv((char*)"FRAMEBUFFER=/dev/fb1");
-        putenv((char*)"SDL_FBDEV=/dev/fb1");
+		putenv((char*)"FRAMEBUFFER=/dev/fb1");
+	    putenv((char*)"SDL_FBDEV=/dev/fb1");
+    #endif
+
 	/* Initialise SDL */
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -45,7 +44,11 @@ void init(char *title)
 
 		exit(1);
 	}
-		
+
+    /* Load the font */
+    
+    game.font = loadFont("ArialBold.ttf", 12);
+        
 	/* Set the screen title */
 	
 	SDL_WM_SetCaption(title, NULL);

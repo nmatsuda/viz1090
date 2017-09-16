@@ -29,14 +29,6 @@
 //
 
 #include "dump1090.h"
-#include "structs.h"
-
-Game game;
-
-extern void drawPlaneHeading(double , double , double, int, char *);
-extern void drawPlane(double , double, int);
-extern void drawTrail(double *, double *, time_t *, int);
-extern void drawGrid();
 
 //
 // ============================= Utility functions ==========================
@@ -472,9 +464,6 @@ void interactiveShowData(void) {
     }
     printf(
 "-------------------------------------------------------------------------------\n");
-    SDL_FillRect(game.screen, NULL, 0);
-
-    drawGrid();
 
     while(a && (count < Modes.interactive_rows)) {
 
@@ -539,21 +528,6 @@ void interactiveShowData(void) {
                         
                         snprintf(strLat, 8,"%7.03f", a->dx);
                         snprintf(strLon, 9,"%8.03f", a->dy);
-
-                        drawTrail(a->oldDx, a->oldDy, a->oldSeen, a->oldIdx);
-
-                        int colorIdx;
-                        if((int)(now - a->seen) > MODES_INTERACTIVE_DISPLAY_ACTIVE) {
-                            colorIdx = -1;
-                        } else {
-                            colorIdx = signalAverage;
-                        }
-
-                        if(MODES_ACFLAGS_HEADING_VALID) {
-                            drawPlaneHeading(a->dx, a->dy,a->track, colorIdx, a->flight);
-                        } else {
-                            drawPlane(a->dx, a->dy, colorIdx);
-                        }
                         
                     }
 
@@ -572,8 +546,6 @@ void interactiveShowData(void) {
         }
         a = a->next;
     }
-
-    SDL_Flip(game.screen);
 }
 //
 //=========================================================================
