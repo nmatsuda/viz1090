@@ -33,15 +33,6 @@
 
 Game game;
 
-#define SDL_MAIN_HANDLED
-
-extern void init(char *);
-extern void cleanup(void);
-extern void getInput(void);
-extern void draw(void);
-extern TTF_Font *loadFont(char *, int);
-extern void delay(unsigned int);
-
 int go = 1;
 
 //
@@ -91,7 +82,10 @@ void view1090InitConfig(void) {
     Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
     Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
 
-    Modes.interactive             = 1;
+    Modes.interactive             = 0;
+    Modes.quiet                   = 1;
+    Modes.map                     = 1;
+    Modes.mapLogDist              = 1;
 }
 //
 //=========================================================================
@@ -311,7 +305,8 @@ int main(int argc, char **argv) {
     c = (struct client *) malloc(sizeof(*c));
     while(1) {
         if ((fd = setupConnection(c)) == ANET_ERR) {
-            fprintf(stderr, "Waiting on %s:%d\n", View1090.net_input_beast_ipaddr, Modes.net_input_beast_port);           
+            fprintf(stderr, "Waiting on %s:%d\n", View1090.net_input_beast_ipaddr, Modes.net_input_beast_port);     
+            sleep(1);      
         } else {
             break;
         }
@@ -346,13 +341,7 @@ int main(int argc, char **argv) {
     atexit(cleanup);
     
     go = 1;
-    
-    
-    /* Load the font */
-    
-    game.font = loadFont("Arial.ttf", 10);
         
-
     
     while (go == 1)
     {
@@ -360,7 +349,15 @@ int main(int argc, char **argv) {
 
     
         interactiveRemoveStaleAircrafts();
-        interactiveShowData();
+
+        if (Modes.interactive) {
+            interactiveShowData();
+        }
+
+        if (Modes.map) {
+            drawMap();
+        }
+
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
             free(c);
             usleep(1000000);
@@ -369,20 +366,8 @@ int main(int argc, char **argv) {
             continue;
         }
         modesReadFromClient(c,"",decodeBinMessage);
-        usleep(50000);
-
-        // draw();
-        
-        /* Sleep briefly to stop sucking up all the CPU time */
-        
-        // delay(frameLimit);
-        
-        // frameLimit = SDL_GetTicks() + 16;
     }
     
-
-
-
     // The user has stopped us, so close any socket we opened
     if (fd != ANET_ERR) 
       {close(fd);}

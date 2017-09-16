@@ -3,11 +3,10 @@
 #include "parula.h"
 #include "SDL/SDL_gfxPrimitives.h"
 
-extern void drawString(char *, int, int, TTF_Font *, SDL_Color);
+#define LOGMAXDIST 1000.0
+#define MAXDIST 50.0
 
-#define LOGPROJECTION 1
-
-#define MAXDIST 1000.0
+#define AA 0
 
 void CROSSVP(double *v, double *u, double *w) 
 {                                                                       
@@ -25,16 +24,16 @@ SDL_Color setColor(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 int screenDist(double d) {
-	if(LOGPROJECTION) {
-		return round((double)SCREEN_WIDTH * 0.5 * log(1.0+d) / log(1.0+MAXDIST));    
+	if(Modes.mapLogDist) {
+		return round((double)SCREEN_WIDTH * 0.5 * log(1.0+fabs(d)) / log(1.0+LOGMAXDIST));    
 	} else {
-		return round((double)SCREEN_WIDTH * 0.5 * d / MAXDIST);    
+		return round((double)SCREEN_WIDTH * 0.5 * fabs(d) / MAXDIST);    
 	}
 }
 
 void screenCoords(int *outX, int *outY, double dx, double dy) {
-	*outX = (SCREEN_WIDTH>>1) + screenDist(dx);    
-	*outY = (SCREEN_HEIGHT>>1) + screenDist(dy);    	
+	*outX = (SCREEN_WIDTH>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
+	*outY = (SCREEN_HEIGHT>>1) + ((dy>0) ? 1 : -1) * screenDist(dy);    	
 }
 
 int outOfBounds(int x, int y) {
@@ -45,10 +44,8 @@ int outOfBounds(int x, int y) {
     }
 }
 
-
 void drawPlaneHeading(double dx, double dy, double heading, int signal, char *flight)
 {
-	//int planeWidth = 2;
 	int x, y;
 	screenCoords(&x, &y, dx, dy);
 
@@ -92,8 +89,15 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
     x2 = x + round(body*vec[0]);
     y2 = y + round(body*vec[1]);
 
-    //thickLineRGBA(game.screen,x1,y1,x2,y2,planeWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    if(AA) {
+    	aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    } else {
+ 	    thickLineRGBA(game.screen,x,y,x2,y2,2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    	//lineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);    	
+    	filledTrigonRGBA (game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);    	
+    	//filledTrigonRGBA (game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x2, y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);    	    	
+		filledCircleRGBA (game.screen, x2,y2,1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    }
 
     //wing
 
@@ -103,17 +107,26 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
     y2 = y + round(wing*out[1]);
 
     //thickLineRGBA(game.screen,x1,y1,x2,y2,planeWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);    
-
+    if(AA) {
+    	aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    } else {
+    	filledTrigonRGBA (game.screen, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    	//lineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);    	
+    }
     //tail
 
-	x1 = x + round(-body*vec[0]) + round(-tail*out[0]);
-    y1 = y + round(-body*vec[1]) + round(-tail*out[1]);
-	x2 = x + round(-body*vec[0]) + round(tail*out[0]);
-    y2 = y + round(-body*vec[1]) + round(tail*out[1]);
+	x1 = x + round(-body*.75*vec[0]) + round(-tail*out[0]);
+    y1 = y + round(-body*.75*vec[1]) + round(-tail*out[1]);
+	x2 = x + round(-body*.75*vec[0]) + round(tail*out[0]);
+    y2 = y + round(-body*.75*vec[1]) + round(tail*out[1]);
 
     //thickLineRGBA(game.screen,x1,y1,x2,y2,planeWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    if(AA) {
+    	aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    } else {
+    	//lineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);    	
+    	filledTrigonRGBA (game.screen, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    }
 
     if(strlen(flight)) {	
 	    drawString(flight, x + 10, y + 10, game.font, planeColor);
@@ -189,8 +202,13 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
 		}
 
 		uint8_t colorVal = (uint8_t)floor(127.0 * age);
-
-	    aalineRGBA(game.screen, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);	    
+  
+        if(AA) {
+		   aalineRGBA(game.screen, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);	    
+	    } else {
+    		//lineRGBA(game.screen, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);	    
+			thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 1, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);	        		
+	    }	
 	}
 }
 
