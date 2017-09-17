@@ -11,6 +11,8 @@ void init(char *title)
 		pullUpDnControl (23, PUD_UP);
 		pinMode(22, INPUT);
 		pullUpDnControl (22, PUD_UP);	
+		pinMode(27, INPUT);
+		pullUpDnControl (27, PUD_UP);	
 
 		putenv((char*)"FRAMEBUFFER=/dev/fb1");
 	    putenv((char*)"SDL_FBDEV=/dev/fb1");
