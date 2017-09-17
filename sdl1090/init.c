@@ -69,6 +69,7 @@ void cleanup()
 	/* Close SDL_TTF */
 	
 	TTF_Quit();
+
 	
 	/* Shut down SDL */
 	

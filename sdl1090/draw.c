@@ -218,17 +218,17 @@ void drawGrid()
 
 	if(AA) {
 		aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p1km, 249,38,114, SDL_ALPHA_OPAQUE);	
-		aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p10km, 249,38,114, 196);
-		aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p100km, 249,38,114, 127);		
+		aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
+		aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p100km, 125,19,57, SDL_ALPHA_OPAQUE);		
 	} else {
 		circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p1km, 249,38,114, SDL_ALPHA_OPAQUE);	
-		circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p10km, 249,38,114, 196);
-		circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p100km, 249,38,114, 127);		
+		circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
+		circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p100km, 125,19,57, SDL_ALPHA_OPAQUE);		
 	}
 
-    drawString("1km", (SCREEN_WIDTH>>1) + p1km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(64,64,64));	
-    drawString("10km", (SCREEN_WIDTH>>1) + p10km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(64,64,64));	
-    drawString("100km", (SCREEN_WIDTH>>1) + p100km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(64,64,64));	        
+    drawString("1km", (SCREEN_WIDTH>>1) + p1km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(249,38,114));	
+    drawString("10km", (SCREEN_WIDTH>>1) + p10km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(187,29,86));	
+    drawString("100km", (SCREEN_WIDTH>>1) + p100km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(125,19,57));	        
 }
 
 void drawGeography() {
@@ -261,9 +261,9 @@ void drawGeography() {
 		// geoColor.g = (uint8_t) (colorDist * 29.0 + (1.0 - colorDist) * 266.0);
 		// geoColor.b = (uint8_t) (colorDist * 240.0 + (1.0 - colorDist) * 16.0);				
 
-		geoColor.r = 114;
-		geoColor.g = 129;		
-		geoColor.b = 255;
+		geoColor.r = 100;
+		geoColor.g = 0;		
+		geoColor.b = 200;
 
         if(AA) {
 			aalineRGBA(game.screen, x1, y1, x2, y2,geoColor.r,geoColor.g,geoColor.b, SDL_ALPHA_OPAQUE);
