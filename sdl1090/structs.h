@@ -4,7 +4,10 @@ typedef struct Game
 {
 	SDL_Surface *screen;	
 	TTF_Font *font;
+	TTF_Font *listFont;
 } Game;
+
+Game game;
 
 // functions
 
@@ -12,6 +15,7 @@ typedef struct Game
 TTF_Font *loadFont(char *, int);
 void closeFont(TTF_Font *);
 void drawString(char *, int, int, TTF_Font *, SDL_Color);
+void drawStringBG(char *, int, int, TTF_Font *, SDL_Color, SDL_Color);
 
 //init.c
 void init(char *);
@@ -29,3 +33,6 @@ void drawGrid();
 
 //mapdata.c
 void initMaps();
+
+//list.c
+void drawList();

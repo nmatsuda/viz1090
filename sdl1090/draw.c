@@ -135,9 +135,7 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
     	filledTrigonRGBA (game.screen, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
 
-    if(strlen(flight)) {	
-	    drawString(flight, x + 10, y + 10, game.font, planeColor);
-	}	
+    drawString(flight, x + 10, y + 10, game.font, planeColor);
 }
 
 void drawPlane(double dx, double dy, int signal)

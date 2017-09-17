@@ -28,6 +28,10 @@ void closeFont(TTF_Font *font)
 
 void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 {
+    if(!strlen(text)) {	
+    	return;
+    }
+
 	SDL_Surface *surface;
 	SDL_Rect dest;
 
@@ -52,7 +56,35 @@ void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 	/* Free the generated string image */
 
 	SDL_FreeSurface(surface);
-
 }
 
+void drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
+    if(!strlen(text)) {	
+    	return;
+    }
+    	
+	SDL_Surface *surface;
+	SDL_Rect dest;
 
+	surface = TTF_RenderUTF8_Shaded(font, text, color, bgColor);
+
+	if (surface == NULL)
+	{
+		printf("Couldn't create String %s: %s\n", text, SDL_GetError());
+
+		return;
+	}
+	
+	/* Blit the entire surface to the screen */
+
+	dest.x = x;
+	dest.y = y;
+	dest.w = surface->w;
+	dest.h = surface->h;
+
+	SDL_BlitSurface(surface, NULL, game.screen, &dest);
+	
+	/* Free the generated string image */
+
+	SDL_FreeSurface(surface);
+}

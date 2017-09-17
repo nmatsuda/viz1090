@@ -47,8 +47,10 @@ void init(char *title)
 
     /* Load the font */
     
-    game.font = loadFont("ArialBold.ttf", 12);
-        
+    game.font = loadFont("Anonymous_Pro_B.ttf", 12);
+       
+    game.listFont = loadFont("Anonymous_Pro_B.ttf", 18);
+
 	/* Set the screen title */
 	
 	SDL_WM_SetCaption(title, NULL);
