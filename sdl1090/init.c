@@ -52,6 +52,8 @@ void init(char *title)
 	/* Set the screen title */
 	
 	SDL_WM_SetCaption(title, NULL);
+
+	initMaps();
 }
 
 void cleanup()

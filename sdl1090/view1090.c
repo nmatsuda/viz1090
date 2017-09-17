@@ -164,6 +164,10 @@ int setupConnection(struct client *c) {
 		c->service =
 		Modes.bis  = fd;
 		Modes.clients = c;
+
+        // replace with gps
+        Modes.fUserLat = 41.9809263;
+        Modes.fUserLon = -87.6651033;
     }
     return fd;
 }
