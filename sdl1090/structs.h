@@ -21,3 +21,11 @@ void cleanup(void);
 void getInput(void);
 
 //draw.c
+void drawGeography();
+void drawPlaneHeading(double , double , double, int, char *);
+void drawPlane(double , double, int);
+void drawTrail(double *, double *, time_t *, int);
+void drawGrid();
+
+//mapdata.c
+void initMaps();

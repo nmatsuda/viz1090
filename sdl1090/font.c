@@ -31,7 +31,7 @@ void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 	SDL_Surface *surface;
 	SDL_Rect dest;
 
-	surface = TTF_RenderUTF8_Solid(font, text, color);
+	surface = TTF_RenderUTF8_Blended(font, text, color);
 
 	if (surface == NULL)
 	{

@@ -4,11 +4,6 @@
 
 Game game;
 
-extern void drawPlaneHeading(double , double , double, int, char *);
-extern void drawPlane(double , double, int);
-extern void drawTrail(double *, double *, time_t *, int);
-extern void drawGrid();
-
 //
 // ============================= Utility functions ==========================
 //
@@ -34,6 +29,8 @@ void drawMap(void) {
     Modes.interactive_last_update = mstime();
 
     SDL_FillRect(game.screen, NULL, 0);
+
+    drawGeography();
 
     drawGrid();
 
