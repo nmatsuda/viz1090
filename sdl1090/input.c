@@ -5,9 +5,17 @@ void getInput()
 {
 
 	#ifdef RPI
-		if(!digitalRead(23) || !digitalRead(22)) {
+		if(!digitalRead(27)) {
 			exit(0);
+		} 
+
+		if(!digitalRead(22)) {
+			Modes.mapLogDist = !Modes.mapLogDist;
 		} 	
+
+		if(!digitalRead(23)) {
+			Modes.map = !Modes.map;
+		} 		
 	#endif
 
 	SDL_Event event;
@@ -34,6 +42,10 @@ void getInput()
 					case SDLK_l:
 						Modes.mapLogDist = !Modes.mapLogDist;
 					break;
+
+					case SDLK_m:
+						Modes.map = !Modes.map;
+					break;					
 					
 					default:
 					break;

@@ -2,8 +2,6 @@
 #include "dump1090.h"
 #include "structs.h"
 
-Game game;
-
 //
 // ============================= Utility functions ==========================
 //
@@ -16,7 +14,6 @@ static uint64_t mstime(void) {
     mst += tv.tv_usec/1000;
     return mst;
 }
-
 
 void drawMap(void) {
     struct aircraft *a = Modes.aircrafts;

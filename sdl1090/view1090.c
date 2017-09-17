@@ -364,7 +364,10 @@ int main(int argc, char **argv) {
 
         if (Modes.map) {
             drawMap();
+        } else {
+            drawList();
         }
+
 
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
             free(c);
