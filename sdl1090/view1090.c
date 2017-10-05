@@ -235,9 +235,6 @@ void showCopyright(void) {
 //=========================================================================
 //
 
-
-
-
 int main(int argc, char **argv) {
     int j, fd;
     struct client *c;
@@ -362,12 +359,7 @@ int main(int argc, char **argv) {
             interactiveShowData();
         }
 
-        if (Modes.map) {
-            drawMap();
-        } else {
-            drawList();
-        }
-
+        draw();
 
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
             free(c);
