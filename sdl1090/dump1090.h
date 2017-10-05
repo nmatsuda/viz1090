@@ -327,8 +327,15 @@ struct {                             // Internal state
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
 
+    // map options
     int   map;
     int   mapLogDist;
+
+    //display options
+    int screen_upscale;
+    int screen_width;
+    int screen_height;
+    int screen_depth;
 
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location

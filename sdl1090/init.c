@@ -1,12 +1,10 @@
+#include "dump1090.h"
 #include "init.h"
 #include "SDL/SDL_getenv.h"
 
-void init(char *title)
-{
-
+void mouseSetup() {
 	#ifdef RPI
 		wiringPiSetupGpio() ;
-
 		pinMode(23, INPUT);
 		pullUpDnControl (23, PUD_UP);
 		pinMode(22, INPUT);
@@ -14,9 +12,19 @@ void init(char *title)
 		pinMode(27, INPUT);
 		pullUpDnControl (27, PUD_UP);	
 
+    #endif
+}
+
+void init(char *title)
+{
+
+	// raspberry pi compiler flag enables these options
+	#ifdef RPI
 		putenv((char*)"FRAMEBUFFER=/dev/fb1");
 	    putenv((char*)"SDL_FBDEV=/dev/fb1");
     #endif
+
+	mouseSetup();
 
 	/* Initialise SDL */
 	
@@ -38,19 +46,30 @@ void init(char *title)
 
 	SDL_ShowCursor(SDL_DISABLE);
 
-	#ifndef RPI
-	 	game.bigScreen = SDL_SetVideoMode(SCREEN_WIDTH * UPSCALE, SCREEN_HEIGHT * UPSCALE, 32, SDL_HWPALETTE|SDL_DOUBLEBUF);	
-	 	game.screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
- 	#else
- 	 	game.screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 16, SDL_HWPALETTE|SDL_DOUBLEBUF);
- 	#endif
+	#ifdef RPI
+	 	const SDL_VideoInfo* vInfo = SDL_GetVideoInfo();
+
+        if (!vInfo) {
+                fprintf(stderr,"ERROR in SDL_GetVideoInfo(): %s\n",SDL_GetError());
+                exit(1);
+        }
+
+        Modes.screen_width = vInfo->current_w;
+        Modes.screen_height = vInfo->current_h;
+        Modes.screen_depth = vInfo->vfmt->BitsPerPixel;
+    #endif
 
 
-
+    if(Modes.screen_upscale > 1) {
+	 	game.bigScreen = SDL_SetVideoMode(Modes.screen_width * Modes.screen_upscale, Modes.screen_height * Modes.screen_upscale, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);	
+	 	game.screen = SDL_CreateRGBSurface(0, Modes.screen_width, Modes.screen_height, Modes.screen_depth, 0, 0, 0, 0);
+	} else {
+		game.screen = SDL_SetVideoMode(Modes.screen_width, Modes.screen_width, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);		
+	}
 	
 	if (game.screen == NULL)
 	{
-		printf("Couldn't set screen mode to %d x %d: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
+		printf("Couldn't set screen mode to %d x %d: %s\n", Modes.screen_width, Modes.screen_height, SDL_GetError());
 
 		exit(1);
 	}
