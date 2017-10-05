@@ -84,8 +84,16 @@ void view1090InitConfig(void) {
 
     Modes.interactive             = 0;
     Modes.quiet                   = 1;
+
+    // Map options
     Modes.map                     = 1;
     Modes.mapLogDist              = 1;
+
+    // Display options
+    Modes.screen_upscale          = UPSCALE;
+    Modes.screen_width            = SCREEN_WIDTH;
+    Modes.screen_height           = SCREEN_HEIGHT;    
+    Modes.screen_depth            = 32;
 }
 //
 //=========================================================================
@@ -194,6 +202,10 @@ void showHelp(void) {
   "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
   "--metric                 Use metric units (meters, km/h, ...)\n"
   "--help                   Show this help\n"
+  "\n-----------------------------------------------------------------------------\n"
+  "|                        SDL DISPLAY OPTIONS                                |\n"
+  "-----------------------------------------------------------------------------\n"
+  "--upscale <factor>       Pixel upscaling\n"  
     );
 }
 
@@ -278,6 +290,8 @@ int main(int argc, char **argv) {
             Modes.nfix_crc = 0;
         } else if (!strcmp(argv[j],"--aggressive")) {
             Modes.nfix_crc = MODES_MAX_BITERRORS;
+        } else if (!strcmp(argv[j],"--upscale") && more) {
+            Modes.screen_upscale = atoi(argv[++j]);          
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
