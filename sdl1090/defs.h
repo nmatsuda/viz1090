@@ -11,4 +11,6 @@
 #endif
 
 #define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
+#define SCREEN_HEIGHT 480
+
+#define UPSCALE 3

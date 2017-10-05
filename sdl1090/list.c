@@ -3,16 +3,6 @@
 #include "parula.h"
 #include "SDL/SDL_gfxPrimitives.h"
 
-static uint64_t mstime(void) {
-    struct timeval tv;
-    uint64_t mst;
-
-    gettimeofday(&tv, NULL);
-    mst = ((uint64_t)tv.tv_sec)*1000;
-    mst += tv.tv_usec/1000;
-    return mst;
-}
-
 SDL_Color pink = {249,38,114,255};
 SDL_Color blue = {102,217,239,255};
 SDL_Color green = {166,226,46,255};
@@ -24,24 +14,16 @@ SDL_Color darkGrey = {64,64,64,255};
 SDL_Color black = {0,0,0,255};
 SDL_Color white = {255,255,255,255};
 
-void drawList() {
+void drawList(int rows, int top) {
 	struct aircraft *a = Modes.aircrafts;
     time_t now = time(NULL);
     int count = 0;
     char progress;
     char spinner[4] = "|/-\\";
 
-    // Refresh screen every (MODES_INTERACTIVE_REFRESH_TIME) miliseconde
-    if ((mstime() - Modes.interactive_last_update) < MODES_INTERACTIVE_REFRESH_TIME)
-       {return;}
-
-    Modes.interactive_last_update = mstime();
-
     progress = spinner[time(NULL)%4];
 
-    SDL_FillRect(game.screen, NULL, 0);
-
-	drawStringBG(" Flight  Alt(m) km/h D(km) H  S ", 0, 0, game.listFont, black, white);
+	drawStringBG(" Flight  Alt(m) km/h D(km) H  S ", 0, top, game.listFont, black, white);
 
 	// int xstride = 10;
 	// for(int i = 0; i < 320 / xstride; i++) {
@@ -54,7 +36,7 @@ void drawList() {
 	// }
 
     int numNoDir = 0;
-    while(a && (count < 10)) {
+    while(a && (count < rows)) {
         if ((now - a->seen) < Modes.interactive_display_ttl)
             {
             int msgs  = a->messages;
@@ -151,7 +133,7 @@ void drawList() {
 
                     if ((now - a->seen) > 30 ) {
 
-                		drawString(a->flight, 0, (count + 1) * 20, game.listFont, (SDL_Color){96,96,96,255});
+                		drawString(a->flight, 0, top + (count + 1) * 20, game.listFont, (SDL_Color){96,96,96,255});
 
                         // printf("\x1B[1;30m%-8s%5s %4s %5s  %c%c %d",
                         //     a->flight, 
@@ -161,15 +143,15 @@ void drawList() {
                         //     cLat, cLon,
                         //     (int)((float)signalAverage/25.0f));
                     } else {
-                		drawString(a->flight, 10, (count + 1) * 20, game.listFont, pink);
+                		drawString(a->flight, 10, top + (count + 1) * 20, game.listFont, pink);
 
-                		drawString(strFl, 90, (count + 1) * 20, game.listFont, orange);
+                		drawString(strFl, 90, top + (count + 1) * 20, game.listFont, orange);
 
-                		drawString(strGs, 160, (count + 1) * 20, game.listFont, green);
+                		drawString(strGs, 160, top + (count + 1) * 20, game.listFont, green);
 
-                		drawString(strD, 210, (count + 1) * 20, game.listFont, blue);
+                		drawString(strD, 210, top + (count + 1) * 20, game.listFont, blue);
 
-                		drawString(strDir, 270, (count + 1) * 20, game.listFont, yellow);
+                		drawString(strDir, 270, top + (count + 1) * 20, game.listFont, yellow);
 
                 		// drawString(strS, 290, (count + 1) * 20, game.listFont, (SDL_Color){255,9,96,255});                		
 
@@ -189,7 +171,4 @@ void drawList() {
         }
         a = a->next;
     }
-
-    SDL_Flip(game.screen);
-
 }

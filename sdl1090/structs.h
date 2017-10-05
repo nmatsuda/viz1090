@@ -3,6 +3,7 @@
 typedef struct Game
 {
 	SDL_Surface *screen;	
+	SDL_Surface *bigScreen;		
 	TTF_Font *font;
 	TTF_Font *listFont;
 } Game;
@@ -24,15 +25,11 @@ void cleanup(void);
 //input.c
 void getInput(void);
 
-//draw.c
-void drawGeography();
-void drawPlaneHeading(double , double , double, int, char *);
-void drawPlane(double , double, int);
-void drawTrail(double *, double *, time_t *, int);
-void drawGrid();
-
 //mapdata.c
 void initMaps();
 
 //list.c
-void drawList();
+void drawList(int rows, int top);
+
+//draw.c
+void draw();

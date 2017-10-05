@@ -38,7 +38,15 @@ void init(char *title)
 
 	SDL_ShowCursor(SDL_DISABLE);
 
- 	game.screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 16, SDL_HWPALETTE|SDL_DOUBLEBUF);
+	#ifndef RPI
+	 	game.bigScreen = SDL_SetVideoMode(SCREEN_WIDTH * UPSCALE, SCREEN_HEIGHT * UPSCALE, 32, SDL_HWPALETTE|SDL_DOUBLEBUF);	
+	 	game.screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
+ 	#else
+ 	 	game.screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 16, SDL_HWPALETTE|SDL_DOUBLEBUF);
+ 	#endif
+
+
+
 	
 	if (game.screen == NULL)
 	{
@@ -49,9 +57,9 @@ void init(char *title)
 
     /* Load the font */
     
-    game.font = loadFont("Anonymous_Pro_B.ttf", 12);
+    game.font = loadFont("TerminusTTF-Bold-4.46.0.ttf", 12);
        
-    game.listFont = loadFont("Anonymous_Pro_B.ttf", 18);
+    game.listFont = loadFont("TerminusTTF-Bold-4.46.0.ttf", 18);
 
 	/* Set the screen title */
 	
