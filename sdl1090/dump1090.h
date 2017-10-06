@@ -209,10 +209,12 @@ struct aircraft {
     int           track;          // Angle of flight
     int           vert_rate;      // Vertical rate.
     time_t        seen;           // Time at which the last packet was received
+    time_t        prev_seen;
     time_t        seenLatLon;     // Time at which the last lat long was calculated
     uint64_t      timestamp;      // Timestamp at which the last packet was received
     uint64_t      timestampLatLon;// Timestamp at which the last lat long was calculated
     long          messages;       // Number of Mode S messages received
+    double        messageRate[8];       // Number of Mode S messages received    
     int           modeA;          // Squawk
     int           modeC;          // Altitude
     long          modeAcount;     // Mode A Squawk hit Count
@@ -234,6 +236,15 @@ struct aircraft {
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
 };
+
+struct {
+    double msgRate;
+    double avgSig;
+    int numPlanes;
+    int numVisiblePlanes;
+    double maxDist;
+    struct aircraft *closeCall;
+} Status;
 
 struct stDF {
     struct stDF     *pNext;                      // Pointer to next item in the linked list

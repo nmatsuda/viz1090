@@ -64,9 +64,9 @@ void init(char *title)
 	 	game.bigScreen = SDL_SetVideoMode(Modes.screen_width * Modes.screen_upscale, Modes.screen_height * Modes.screen_upscale, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);	
 	 	game.screen = SDL_CreateRGBSurface(0, Modes.screen_width, Modes.screen_height, Modes.screen_depth, 0, 0, 0, 0);
 	} else {
-		game.screen = SDL_SetVideoMode(Modes.screen_width, Modes.screen_width, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);		
+		game.screen = SDL_SetVideoMode(Modes.screen_width, Modes.screen_height, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);		
 	}
-	
+
 	if (game.screen == NULL)
 	{
 		printf("Couldn't set screen mode to %d x %d: %s\n", Modes.screen_width, Modes.screen_height, SDL_GetError());
@@ -76,9 +76,12 @@ void init(char *title)
 
     /* Load the font */
     
-    game.font = loadFont("TerminusTTF-Bold-4.46.0.ttf", 12);
+    game.font = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12);
        
-    game.listFont = loadFont("TerminusTTF-Bold-4.46.0.ttf", 18);
+    game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18);
+
+    game.fontWidth = 10;
+    game.fontHeight = 20;    
 
 	/* Set the screen title */
 	

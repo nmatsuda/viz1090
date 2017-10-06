@@ -1,18 +1,8 @@
 #include "dump1090.h"
 #include "structs.h"
 #include "parula.h"
+#include "monokai.h"
 #include "SDL/SDL_gfxPrimitives.h"
-
-SDL_Color pink = {249,38,114,255};
-SDL_Color blue = {102,217,239,255};
-SDL_Color green = {166,226,46,255};
-SDL_Color yellow = {253,250,31,255};
-SDL_Color orange = {253,151,31,255};
-SDL_Color lightGrey = {196,196,196,255};
-SDL_Color grey = {127,127,127,255};
-SDL_Color darkGrey = {64,64,64,255};
-SDL_Color black = {0,0,0,255};
-SDL_Color white = {255,255,255,255};
 
 void drawList(int rows, int top) {
 	struct aircraft *a = Modes.aircrafts;
