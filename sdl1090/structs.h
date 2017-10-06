@@ -1,11 +1,17 @@
+#ifndef STRUCTS
+#define STRUCTS
+
 #include "defs.h"
 
 typedef struct Game
 {
 	SDL_Surface *screen;	
 	SDL_Surface *bigScreen;		
+
 	TTF_Font *font;
-	TTF_Font *listFont;
+	TTF_Font *listFont;	
+	int fontWidth;
+	int fontHeight;	
 } Game;
 
 Game game;
@@ -33,3 +39,9 @@ void drawList(int rows, int top);
 
 //draw.c
 void draw();
+
+//status.c
+void updateStatus();
+void drawStatus();
+
+#endif

@@ -3,14 +3,8 @@
 #include "structs.h"
 #include "parula.h"
 #include "magma.h"
+#include "monokai.h"
 #include "SDL/SDL_gfxPrimitives.h"
-
-#define LOGMAXDIST 1000.0
-#define MAXDIST 50.0
-
-#define AA 0
-
-#define MAGMA 0
 
 void CROSSVP(double *v, double *u, double *w) 
 {                                                                       
@@ -49,22 +43,22 @@ SDL_Color signalToColor(int signal) {
 
 int screenDist(double d) {
 
-    double scale_factor = (SCREEN_WIDTH > SCREEN_HEIGHT) ? SCREEN_WIDTH : SCREEN_HEIGHT;
+    double scale_factor = (Modes.screen_width > Modes.screen_height) ? Modes.screen_width : Modes.screen_height;
 
     if(Modes.mapLogDist) {
-        return round(scale_factor* 0.5 * log(1.0+fabs(d)) / log(1.0+LOGMAXDIST));    
+        return round(0.95 * scale_factor * 0.5 * log(1.0+fabs(d)) / log(1.0+LOGMAXDIST));    
     } else {
-        return round(scale_factor * 0.5 * fabs(d) / MAXDIST);    
+        return round(0.95 * scale_factor * 0.5 * fabs(d) / MAXDIST);    
     }
 }
 
 void screenCoords(int *outX, int *outY, double dx, double dy) {
-    *outX = (SCREEN_WIDTH>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
-    *outY = (SCREEN_HEIGHT>>1) + ((dy>0) ? 1 : -1) * screenDist(dy);        
+    *outX = (Modes.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
+    *outY = (Modes.screen_height * 0.4) + ((dy>0) ? 1 : -1) * screenDist(dy);        
 }
 
 int outOfBounds(int x, int y) {
-    if(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT ) {
+    if(x < 0 || x >= Modes.screen_width || y < 0 || y >= Modes.screen_height ) {
         return 1;
     } else {
         return 0;
@@ -218,22 +212,22 @@ void drawGrid()
     int p10km = screenDist(10.0);
     int p100km = screenDist(100.0);
 
-    hlineRGBA (game.screen, 0, SCREEN_WIDTH, SCREEN_HEIGHT>>1, 127, 127, 127, SDL_ALPHA_OPAQUE);
-    vlineRGBA (game.screen, SCREEN_WIDTH>>1, 0, SCREEN_HEIGHT, 127, 127, 127, SDL_ALPHA_OPAQUE);
+    hlineRGBA (game.screen, 0, Modes.screen_width, Modes.screen_height*0.4, 127, 127, 127, SDL_ALPHA_OPAQUE);
+    vlineRGBA (game.screen, Modes.screen_width>>1, 0, Modes.screen_height, 127, 127, 127, SDL_ALPHA_OPAQUE);
 
     if(AA) {
-        aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p1km, 249,38,114, SDL_ALPHA_OPAQUE);  
-        aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
-        aacircleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p100km, 125,19,57, SDL_ALPHA_OPAQUE);     
+        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p1km, 249,38,114, SDL_ALPHA_OPAQUE);  
+        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
+        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p100km, 125,19,57, SDL_ALPHA_OPAQUE);     
     } else {
-        circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p1km, 249,38,114, SDL_ALPHA_OPAQUE);    
-        circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
-        circleRGBA (game.screen, SCREEN_WIDTH>>1, SCREEN_HEIGHT>>1, p100km, 125,19,57, SDL_ALPHA_OPAQUE);       
+        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height*0.4, p1km, 249,38,114, SDL_ALPHA_OPAQUE);    
+        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height*0.4, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
+        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height*0.4, p100km, 125,19,57, SDL_ALPHA_OPAQUE);       
     }
 
-    drawString("1km", (SCREEN_WIDTH>>1) + p1km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(249,38,114));   
-    drawString("10km", (SCREEN_WIDTH>>1) + p10km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(187,29,86));  
-    drawString("100km", (SCREEN_WIDTH>>1) + p100km + 5, (SCREEN_HEIGHT>>1) + 5, game.font, setColor(125,19,57));            
+    drawString("1km", (Modes.screen_width>>1) + p1km + 5, (Modes.screen_height*0.4) + 5, game.font, setColor(249,38,114));   
+    drawString("10km", (Modes.screen_width>>1) + p10km + 5, (Modes.screen_height*0.4) + 5, game.font, setColor(187,29,86));  
+    drawString("100km", (Modes.screen_width>>1) + p100km + 5, (Modes.screen_height*0.4) + 5, game.font, setColor(125,19,57));            
 }
 
 void drawGeography() {
@@ -251,29 +245,10 @@ void drawGeography() {
             continue;
         }
 
-
-        SDL_Color geoColor;
-
-        // double x1d = (double) abs(x1 - (SCREEN_WIDTH>>1));
-        // double y1d = (double) abs(y1 - (SCREEN_HEIGHT>>1));      
-
-        // double colorDist = sqrt(x1d * x1d + y1d * y1d)   / (double) SCREEN_HEIGHT;
-
-        // colorDist = (colorDist < 0.0) ? 0.0 : colorDist;
-        // colorDist = (colorDist > 1.0) ? 1.0 : colorDist;
-
-        // geoColor.r = (uint8_t) (colorDist * 114.0 + (1.0 - colorDist) * 166.0);
-        // geoColor.g = (uint8_t) (colorDist * 29.0 + (1.0 - colorDist) * 266.0);
-        // geoColor.b = (uint8_t) (colorDist * 240.0 + (1.0 - colorDist) * 16.0);               
-
-        geoColor.r = 100;
-        geoColor.g = 0;     
-        geoColor.b = 200;
-
         if(AA) {
-            aalineRGBA(game.screen, x1, y1, x2, y2,geoColor.r,geoColor.g,geoColor.b, SDL_ALPHA_OPAQUE);
+            aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, SDL_ALPHA_OPAQUE);
         } else {
-            lineRGBA(game.screen, x1, y1, x2, y2,geoColor.r,geoColor.g,geoColor.b, SDL_ALPHA_OPAQUE);
+            lineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, SDL_ALPHA_OPAQUE);
         }
     }
 }

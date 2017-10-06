@@ -94,6 +94,13 @@ void view1090InitConfig(void) {
     Modes.screen_width            = SCREEN_WIDTH;
     Modes.screen_height           = SCREEN_HEIGHT;    
     Modes.screen_depth            = 32;
+
+    // Initialize status
+    Status.msgRate                = 0;
+    Status.avgSig                 = 0;
+    Status.numPlanes              = 0;
+    Status.numVisiblePlanes     = 0;
+    Status.maxDist                = 0;
 }
 //
 //=========================================================================
@@ -369,10 +376,6 @@ int main(int argc, char **argv) {
     
         interactiveRemoveStaleAircrafts();
 
-        if (Modes.interactive) {
-            interactiveShowData();
-        }
-
         draw();
 
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
@@ -383,6 +386,8 @@ int main(int argc, char **argv) {
             continue;
         }
         modesReadFromClient(c,"",decodeBinMessage);
+
+        usleep(100000);
     }
     
     // The user has stopped us, so close any socket we opened

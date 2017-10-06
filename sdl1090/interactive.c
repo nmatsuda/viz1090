@@ -146,6 +146,8 @@ struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
     memset(a->signalLevel, mm->signalLevel, 8); // First time, initialise everything
                                                 // to the first signal strength
 
+    memset(a->messageRate, 0, sizeof(a->messageRate));
+
     // mm->msgtype 32 is used to represent Mode A/C. These values can never change, so 
     // set them once here during initialisation, and don't bother to set them every 
     // time this ModeA/C is received again in the future
@@ -273,7 +275,8 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
     a = interactiveFindAircraft(mm->addr);
     if (!a) {                              // If it's a currently unknown aircraft....
         a = interactiveCreateAircraft(mm); // ., create a new record for it,
-        a->next = Modes.aircrafts;         // .. and put it at the head of the list
+        a->prev_seen = time(NULL);
+        a->next = Modes.aircrafts;         // .. and put it at the head of the list        
         Modes.aircrafts = a;
     } else {
         /* If it is an already known aircraft, move it on head
@@ -292,11 +295,18 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
             a->next = Modes.aircrafts;
             Modes.aircrafts = a;
         }
+
+        a->prev_seen = a->seen;
     }
 
     a->signalLevel[a->messages & 7] = mm->signalLevel;// replace the 8th oldest signal strength
     a->seen      = time(NULL);
     a->timestamp = mm->timestampMsg;
+
+    if((a->seen - a->prev_seen) > 0) {
+        a->messageRate[a->messages & 7] = 1.0 / (double)(a->seen - a->prev_seen);
+    }
+
     a->messages++;
 
     // If a (new) CALLSIGN has been received, copy it to the aircraft structure

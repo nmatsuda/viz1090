@@ -19,27 +19,32 @@ void draw() {
 
     Modes.interactive_last_update = mstime();
 
+    updateStatus();
+
     SDL_FillRect(game.screen, NULL, 0);
 
     if (Modes.map) {
         drawMap();
-        //drawList(3,320);            
+        drawStatus();            
     } else {
         drawList(10,0);
     }
 
 	if(Modes.screen_upscale > 1) {
-        SDL_Rect clip;
-        SDL_Surface *temp = SDL_DisplayFormat(zoomSurface(game.screen, Modes.screen_upscale, Modes.screen_upscale, 0));
-
+        SDL_Surface *temp = zoomSurface(game.screen, Modes.screen_upscale, Modes.screen_upscale, 0);
+        SDL_Surface *temp2 =  SDL_DisplayFormat(temp);
+	    SDL_Rect clip;
         clip.x = 0;
         clip.y = 0;
-        clip.w = temp->w;
-        clip.h = temp->h;
+        clip.w = temp2->w;
+        clip.h = temp2->h;
 
-        SDL_BlitSurface(temp, &clip, game.bigScreen, 0);
+        SDL_BlitSurface(temp2, 0, game.bigScreen, 0);
 
         SDL_Flip(game.bigScreen);
+
+        SDL_FreeSurface(temp);
+        SDL_FreeSurface(temp2);
     } else {
         SDL_Flip(game.screen);    
     }	
