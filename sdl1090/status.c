@@ -68,8 +68,11 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 	int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * game.labelFontHeight;
 	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * game.messageFontWidth;
 
+	//newline if no message or label
 	if(strlen(label) == 0 && strlen(message) == 0 ) {
-		boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
+		boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight,0, 0, 0, 0);
+		*left = PAD;
+		*top = *top - game.messageFontHeight - PAD;		
 		return;
 	}	
 
@@ -133,6 +136,11 @@ void drawStatus() {
 	drawStatusBox(&left, &top, "||||", "MENU", grey);
 
 	if(Status.closeCall != NULL) {
+		// if no flight id, "near" box goes on first line
+		if(!strlen(Status.closeCall->flight)) {
+			drawStatusBox(&left, &top, "near", "", red);				
+		}			
+
 	    char strSpeed[8] = " ";
 	    snprintf(strSpeed, 8, "%.0fkm/h", Status.closeCall->speed * 1.852);
 		drawStatusBox(&left, &top, "vel", strSpeed, white);					
@@ -141,14 +149,11 @@ void drawStatus() {
 	    snprintf(strAlt, 8, "%.0fm", Status.closeCall->altitude / 3.2828);
 		drawStatusBox(&left, &top, "alt", strAlt, white);			
 
+		drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline	
+
 		if(strlen(Status.closeCall->flight)) {
+			drawStatusBox(&left, &top, "near", "", red);				
 			drawStatusBox(&left, &top, "id", Status.closeCall->flight, white);		
 		}
-
-		drawStatusBox(&left, &top, "near", "", red);		
 	}
-
-
-
-	//drawStatusBox(&left, &top, "", "", black);	
 }

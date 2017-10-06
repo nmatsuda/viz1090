@@ -12,6 +12,7 @@ void mouseSetup() {
 		pinMode(27, INPUT);
 		pullUpDnControl (27, PUD_UP);	
 
+		SDL_ShowCursor(SDL_DISABLE);
     #endif
 }
 
@@ -43,8 +44,6 @@ void init(char *title)
 
 		exit(1);
 	}
-
-	SDL_ShowCursor(SDL_DISABLE);
 
 	#ifdef RPI
 	 	const SDL_VideoInfo* vInfo = SDL_GetVideoInfo();
