@@ -57,6 +57,8 @@ void init(char *title)
         Modes.screen_width = vInfo->current_w;
         Modes.screen_height = vInfo->current_h;
         Modes.screen_depth = vInfo->vfmt->BitsPerPixel;
+
+        Modes.screen_upscale = 1;
     #endif
 
 
