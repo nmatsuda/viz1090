@@ -6,6 +6,8 @@
 #include "monokai.h"
 #include "SDL/SDL_gfxPrimitives.h"
 
+#define CENTEROFFSET .375
+
 void CROSSVP(double *v, double *u, double *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
@@ -54,7 +56,7 @@ int screenDist(double d) {
 
 void screenCoords(int *outX, int *outY, double dx, double dy) {
     *outX = (Modes.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
-    *outY = (Modes.screen_height * 0.4) + ((dy>0) ? 1 : -1) * screenDist(dy);        
+    *outY = (Modes.screen_height * CENTEROFFSET) + ((dy>0) ? 1 : -1) * screenDist(dy);        
 }
 
 int outOfBounds(int x, int y) {
@@ -212,22 +214,22 @@ void drawGrid()
     int p10km = screenDist(10.0);
     int p100km = screenDist(100.0);
 
-    hlineRGBA (game.screen, 0, Modes.screen_width, Modes.screen_height*0.4, 127, 127, 127, SDL_ALPHA_OPAQUE);
-    vlineRGBA (game.screen, Modes.screen_width>>1, 0, Modes.screen_height, 127, 127, 127, SDL_ALPHA_OPAQUE);
+    hlineRGBA (game.screen, (Modes.screen_width>>1) - p100km, (Modes.screen_width>>1) + p100km, Modes.screen_height * CENTEROFFSET, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+    vlineRGBA (game.screen, Modes.screen_width>>1, (Modes.screen_height * CENTEROFFSET) - p100km, (Modes.screen_height * CENTEROFFSET) + p100km, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 
     if(AA) {
-        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p1km, 249,38,114, SDL_ALPHA_OPAQUE);  
-        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
-        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p100km, 125,19,57, SDL_ALPHA_OPAQUE);     
+        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p1km, pink.r, pink.g, pink.b, 255);
+        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p10km, pink.r, pink.g, pink.b, 195);
+        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p100km, pink.r, pink.g, pink.b, 127);
     } else {
-        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height*0.4, p1km, 249,38,114, SDL_ALPHA_OPAQUE);    
-        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height*0.4, p10km, 187,29,86, SDL_ALPHA_OPAQUE);
-        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height*0.4, p100km, 125,19,57, SDL_ALPHA_OPAQUE);       
+        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p1km, pink.r, pink.g, pink.b, 255);
+        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p10km, pink.r, pink.g, pink.b, 195);
+        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
     }
 
-    drawString("1km", (Modes.screen_width>>1) + p1km + 5, (Modes.screen_height*0.4) + 5, game.font, setColor(249,38,114));   
-    drawString("10km", (Modes.screen_width>>1) + p10km + 5, (Modes.screen_height*0.4) + 5, game.font, setColor(187,29,86));  
-    drawString("100km", (Modes.screen_width>>1) + p100km + 5, (Modes.screen_height*0.4) + 5, game.font, setColor(125,19,57));            
+    drawString("1km", (Modes.screen_width>>1) + (0.707 * p1km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, game.font, pink);   
+    drawString("10km", (Modes.screen_width>>1) + (0.707 * p10km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p10km) + 5, game.font, pink);  
+    drawString("100km", (Modes.screen_width>>1) + (0.707 * p100km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, game.font, pink);            
 }
 
 void drawGeography() {
@@ -245,10 +247,15 @@ void drawGeography() {
             continue;
         }
 
+        double d1 = sqrt(mapPoints_relative[(i - 1) * 2] * mapPoints_relative[(i - 1) * 2] + mapPoints_relative[(i - 1) * 2 + 1] * mapPoints_relative[(i - 1) * 2 + 1]);
+        double d2 = sqrt(mapPoints_relative[i * 2]* mapPoints_relative[i * 2] + mapPoints_relative[i * 2 + 1] * mapPoints_relative[i * 2 + 1]);
+
+        double alpha = 255.0 - 255.0 * (d1+d2) / (2 * 250);
+
         if(AA) {
-            aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, SDL_ALPHA_OPAQUE);
+            aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         } else {
-            lineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, SDL_ALPHA_OPAQUE);
+            lineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         }
     }
 }

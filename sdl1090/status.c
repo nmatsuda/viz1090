@@ -74,9 +74,9 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 	}	
 
 	if(*left + labelWidth + messageWidth + PAD > Modes.screen_width) {
-		if(*left + PAD < Modes.screen_width) {
-			boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
-		}
+		// if(*left + PAD < Modes.screen_width) {
+		// 	boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
+		// }
 		*left = PAD;
 		*top = *top - game.messageFontHeight - PAD;
 	}
@@ -110,8 +110,6 @@ void drawStatus() {
 	int left = PAD;	
 	int	top = Modes.screen_height - game.messageFontHeight - PAD;
 
-//	drawStatusBox(&left, &top, "", "MENU", white);
-
 	char strLoc[20] = " ";
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
 	drawStatusBox(&left, &top, "GPS", strLoc, pink);	
@@ -132,6 +130,8 @@ void drawStatus() {
     snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
   	drawStatusBox(&left, &top, "sAvg", strSig, green);
 
+	drawStatusBox(&left, &top, "||||", "MENU", grey);
+
 	if(Status.closeCall != NULL) {
 	    char strSpeed[8] = " ";
 	    snprintf(strSpeed, 8, "%.0fkm/h", Status.closeCall->speed * 1.852);
@@ -141,12 +141,14 @@ void drawStatus() {
 	    snprintf(strAlt, 8, "%.0fm", Status.closeCall->altitude / 3.2828);
 		drawStatusBox(&left, &top, "alt", strAlt, white);			
 
-		drawStatusBox(&left, &top, "near", "", red);		
-
 		if(strlen(Status.closeCall->flight)) {
 			drawStatusBox(&left, &top, "id", Status.closeCall->flight, white);		
 		}
+
+		drawStatusBox(&left, &top, "near", "", red);		
 	}
 
-	drawStatusBox(&left, &top, "", "", black);	
+
+
+	//drawStatusBox(&left, &top, "", "", black);	
 }
