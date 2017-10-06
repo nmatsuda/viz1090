@@ -82,8 +82,15 @@ void init(char *title)
        
     game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18);
 
-    game.fontWidth = 10;
-    game.fontHeight = 20;    
+    game.messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 34);
+    game.labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 16);
+
+
+    game.messageFontWidth = 17;
+    game.messageFontHeight = 34; 
+
+    game.labelFontWidth = 5;
+    game.labelFontHeight = 10; 
 
 	/* Set the screen title */
 	

@@ -65,32 +65,42 @@ void updateStatus() {
 }
 
 void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color) {
-	int labelWidth = (strlen(label) + 2) * game.fontWidth;
-	int messageWidth = (strlen(message) + ((strlen(message) > 0) ? 2 : 0)) * game.fontWidth;
+	int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * game.labelFontHeight;
+	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * game.messageFontWidth;
 
-	if(strlen(label) == 0 && strlen(message) == 0) {
-		boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.fontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
+	if(strlen(label) == 0 && strlen(message) == 0 ) {
+		boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
 		return;
 	}	
 
 	if(*left + labelWidth + messageWidth + PAD > Modes.screen_width) {
-		boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.fontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
+		if(*left + PAD < Modes.screen_width) {
+			boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
+		}
 		*left = PAD;
-		*top = *top - game.fontHeight - PAD;
+		*top = *top - game.messageFontHeight - PAD;
 	}
 
+	// filled black background
 	if(messageWidth) {
-		boxRGBA(game.screen, *left, *top, *left + labelWidth + messageWidth, *top + game.fontHeight, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
+		boxRGBA(game.screen, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
 	}
 
-	boxRGBA(game.screen, *left, *top, *left + labelWidth, *top + game.fontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+	// filled label box
+	if(labelWidth) {
+		boxRGBA(game.screen, *left, *top, *left + labelWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+	}
 
+	// outline message box
 	if(messageWidth) {
-		rectangleRGBA(game.screen, *left, *top, *left + labelWidth + messageWidth, *top + game.fontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		rectangleRGBA(game.screen, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
-	drawString(label, *left +  game.fontWidth, *top, game.listFont, black);
-	drawString(message, *left + labelWidth +  game.fontWidth, *top, game.listFont, color);
+	// label
+	drawString90(label, *left, *top + game.labelFontWidth/2, game.labelFont, black);
+
+	//message
+	drawString(message, *left + labelWidth + game.messageFontWidth/2, *top, game.messageFont, color);
 
 	*left = *left + labelWidth + messageWidth + PAD;
 }
@@ -98,30 +108,29 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 void drawStatus() {
 
 	int left = PAD;	
-	int	top = Modes.screen_height - game.fontHeight - PAD;
+	int	top = Modes.screen_height - game.messageFontHeight - PAD;
+
+//	drawStatusBox(&left, &top, "", "MENU", white);
+
+	char strLoc[20] = " ";
+    snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
+	drawStatusBox(&left, &top, "GPS", strLoc, pink);	
 
     char strPlaneCount[10] = " ";
     snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
 	drawStatusBox(&left, &top, "disp", strPlaneCount, yellow);
 
-    char strDMax[18] = " ";
-    snprintf(strDMax, 18, "%.1fkm", Status.maxDist);
-	drawStatusBox(&left, &top, "maxDist", strDMax, blue);
+    char strDMax[5] = " ";
+    snprintf(strDMax, 5, "%.0fkm", Status.maxDist);
+	drawStatusBox(&left, &top, "mDst", strDMax, blue);
 
     char strMsgRate[18] = " ";
-    snprintf(strMsgRate, 18,"%.0f msg/s", Status.msgRate);
-  	drawStatusBox(&left, &top, "rate", strMsgRate, pink);
+    snprintf(strMsgRate, 18,"%.0f/s", Status.msgRate);
+  	drawStatusBox(&left, &top, "rate", strMsgRate, orange);
 
     char strSig[18] = " ";
     snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
-  	drawStatusBox(&left, &top, "sigAvg", strSig, green);
-
- 	drawStatusBox(&left, &top, "GPS", "", purple);
-	
-	char strLoc[20] = " ";
-    snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
-
-	drawStatusBox(&left, &top, "pos", strLoc, orange);	
+  	drawStatusBox(&left, &top, "sAvg", strSig, green);
 
 	if(Status.closeCall != NULL) {
 	    char strSpeed[8] = " ";
@@ -132,7 +141,7 @@ void drawStatus() {
 	    snprintf(strAlt, 8, "%.0fm", Status.closeCall->altitude / 3.2828);
 		drawStatusBox(&left, &top, "alt", strAlt, white);			
 
-		drawStatusBox(&left, &top, "nearby", "", red);		
+		drawStatusBox(&left, &top, "near", "", red);		
 
 		if(strlen(Status.closeCall->flight)) {
 			drawStatusBox(&left, &top, "id", Status.closeCall->flight, white);		

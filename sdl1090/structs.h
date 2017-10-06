@@ -10,8 +10,14 @@ typedef struct Game
 
 	TTF_Font *font;
 	TTF_Font *listFont;	
-	int fontWidth;
-	int fontHeight;	
+
+	TTF_Font *messageFont;	
+	TTF_Font *labelFont;		
+
+	int labelFontWidth;
+	int labelFontHeight;	
+	int messageFontWidth;
+	int messageFontHeight;		
 } Game;
 
 Game game;
@@ -22,6 +28,7 @@ Game game;
 TTF_Font *loadFont(char *, int);
 void closeFont(TTF_Font *);
 void drawString(char *, int, int, TTF_Font *, SDL_Color);
+void drawString90(char *, int, int, TTF_Font *, SDL_Color);
 void drawStringBG(char *, int, int, TTF_Font *, SDL_Color, SDL_Color);
 
 //init.c
