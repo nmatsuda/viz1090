@@ -1,7 +1,7 @@
 #include "monokai.h"
 
 SDL_Color pink 		= {249,38,114,255};
-SDL_Color purple 	= {100,0,200,255};
+SDL_Color purple 	= {160,0,255,255};
 SDL_Color blue 		= {102,217,239,255};
 SDL_Color green 	= {166,226,46,255};
 SDL_Color yellow	= {253,250,31,255};
