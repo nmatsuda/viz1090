@@ -40,7 +40,7 @@ void updateStatus() {
 	                	maxDist = d;
 	                }
 
-	                if(d < 100.0) {
+	                if(d < 4.0) {
 	                	Status.closeCall = a;
 	                }
 
