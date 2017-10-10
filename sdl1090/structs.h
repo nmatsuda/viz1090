@@ -8,12 +8,15 @@ typedef struct Game
 	SDL_Surface *screen;	
 	SDL_Surface *bigScreen;		
 
-	TTF_Font *font;
+	TTF_Font *mapFont;
+	TTF_Font *mapBoldFont;	
 	TTF_Font *listFont;	
 
 	TTF_Font *messageFont;	
 	TTF_Font *labelFont;		
 
+	int mapFontWidth;
+	int mapFontHeight;
 	int labelFontWidth;
 	int labelFontHeight;	
 	int messageFontWidth;

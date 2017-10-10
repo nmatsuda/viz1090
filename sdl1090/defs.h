@@ -14,6 +14,7 @@
 #define SCREEN_HEIGHT 480
 
 #define UPSCALE 1
+#define SCALE 1
 
 #define LOGMAXDIST 1000.0
 #define MAXDIST 50.0

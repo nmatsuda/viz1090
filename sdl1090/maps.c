@@ -67,20 +67,16 @@ int outOfBounds(int x, int y) {
     }
 }
 
-void drawPlaneHeading(double dx, double dy, double heading, int signal, char *flight)
+void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
 {
-    int x, y;
-    screenCoords(&x, &y, dx, dy);
-
     if(outOfBounds(x,y)) {
         return;
     }
 
-    SDL_Color planeColor = signalToColor(signal);
-
-    double body = 8.0;
-    double wing = 6.0;
-    double tail = 3.0;
+    double body = 8.0 * SCALE;
+    double wing = 6.0 * SCALE;
+    double tail = 3.0 * SCALE;
+    double bodyWidth = 2.0 * SCALE;
 
     double vec[3];
     vec[0] = sin(heading * M_PI / 180);
@@ -106,9 +102,9 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
         aatrigonRGBA(game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
         aacircleRGBA(game.screen, x2,y2,1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     } else {
-        thickLineRGBA(game.screen,x,y,x2,y2,2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        thickLineRGBA(game.screen,x,y,x2,y2,bodyWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
         filledTrigonRGBA(game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
-        filledCircleRGBA(game.screen, x2,y2,1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        filledCircleRGBA(game.screen, x2,y2,SCALE,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
 
     //wing
@@ -134,21 +130,13 @@ void drawPlaneHeading(double dx, double dy, double heading, int signal, char *fl
     } else {
         filledTrigonRGBA (game.screen, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
-
-    drawString(flight, x + 10, y + 10, game.font, planeColor);
 }
 
-void drawPlane(double dx, double dy, int signal)
+void drawPlane(int x, int y, SDL_Color planeColor)
 {
-
-    int x, y;
-    screenCoords(&x, &y, dx, dy);
-
     if(outOfBounds(x,y)) {
         return;
     }
-
-    SDL_Color planeColor = signalToColor(signal);
 
     int length = 3.0;
 
@@ -202,7 +190,7 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
             aalineRGBA(game.screen, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);       
         } else {
             //thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                  
-            thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
+            thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2 * SCALE, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
         }   
     }
 }
@@ -227,9 +215,9 @@ void drawGrid()
         circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
     }
 
-    drawString("1km", (Modes.screen_width>>1) + (0.707 * p1km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, game.font, pink);   
-    drawString("10km", (Modes.screen_width>>1) + (0.707 * p10km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p10km) + 5, game.font, pink);  
-    drawString("100km", (Modes.screen_width>>1) + (0.707 * p100km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, game.font, pink);            
+    drawString("1km", (Modes.screen_width>>1) + (0.707 * p1km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, game.mapFont, pink);   
+    drawString("10km", (Modes.screen_width>>1) + (0.707 * p10km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p10km) + 5, game.mapFont, pink);  
+    drawString("100km", (Modes.screen_width>>1) + (0.707 * p100km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, game.mapFont, pink);            
 }
 
 void drawGeography() {
@@ -255,7 +243,7 @@ void drawGeography() {
         if(AA) {
             aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         } else {
-            lineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
+            thickLineRGBA(game.screen, x1, y1, x2, y2, SCALE, purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         }
     }
 }
@@ -285,10 +273,29 @@ void drawMap(void) {
                     colorIdx = signalAverage;
                 }
 
+                SDL_Color planeColor = signalToColor(colorIdx);
+                int x, y;
+                screenCoords(&x, &y, a->dx, a->dy);
+
                 if(MODES_ACFLAGS_HEADING_VALID) {
-                    drawPlaneHeading(a->dx, a->dy,a->track, colorIdx, a->flight);
+                    drawPlaneHeading(x, y,a->track, planeColor);
+
+                    //char flight[11] = " ";
+                    //snprintf(flight,11," %s ", a->flight);
+                    //drawStringBG(flight, x, y + game.mapFontHeight, game.mapBoldFont, black, planeColor);
+                    drawStringBG(a->flight, x + 5, y + game.mapFontHeight, game.mapBoldFont, white, black);                    
+
+                    char alt[10] = " ";
+                    snprintf(alt,10,"%dm", a->altitude);
+                    drawStringBG(alt, x + 5, y + 2*game.mapFontHeight, game.mapFont, grey, black);                    
+
+                    char speed[10] = " ";
+                    snprintf(speed,10,"%dkm/h", a->speed);
+                    drawStringBG(speed, x + 5, y + 3*game.mapFontHeight, game.mapFont, grey, black);                    
+
+                    lineRGBA(game.screen, x, y, x, y + 4*game.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
                 } else {
-                    drawPlane(a->dx, a->dy, colorIdx);
+                    drawPlane(x, y, planeColor);
                 }                
             }
         }

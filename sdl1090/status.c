@@ -108,6 +108,28 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 	*left = *left + labelWidth + messageWidth + PAD;
 }
 
+
+void drawBattery(int *left, int *top, double level) {
+	int lineWidth = 1;
+
+	int pointCount = 9;
+	float xList[9] = {0.0, 0.25, 0.25, 0.75, 0.75, 1.0, 1.0, 0.0, 0.0};
+	float yList[9] = {0.2, 0.2, 0.0, 0.0, 0.2, 0.2, 1.0, 1.0, 0.2};	
+
+	for(int k = 0; k < pointCount - 1; k++) {
+	    thickLineRGBA(game.screen, 
+	    	*left + game.messageFontWidth * xList[k], 
+	    	*top + game.messageFontHeight * yList[k], 
+	    	*left + game.messageFontWidth * xList[k+1], 
+	    	*top + game.messageFontHeight * yList[k+1], 
+	    	lineWidth, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+	}
+
+	boxRGBA(game.screen, *left, *top + (0.2 + 0.8  * (1.0 - level)) * game.messageFontHeight, *left + game.messageFontWidth, *top + game.messageFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+
+	*left = *left + game.messageFontWidth;
+}
+
 void drawStatus() {
 
 	int left = PAD;	
@@ -116,6 +138,8 @@ void drawStatus() {
 	char strLoc[20] = " ";
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
 	drawStatusBox(&left, &top, "GPS", strLoc, pink);	
+
+	drawBattery(&left, &top, 0.85);
 
     char strPlaneCount[10] = " ";
     snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
@@ -136,24 +160,11 @@ void drawStatus() {
 	drawStatusBox(&left, &top, "||||", "MENU", grey);
 
 	if(Status.closeCall != NULL) {
-		// if no flight id, "near" box goes on first line
-		if(!strlen(Status.closeCall->flight)) {
-			drawStatusBox(&left, &top, "near", "", red);				
-		}			
-
-	    char strSpeed[8] = " ";
-	    snprintf(strSpeed, 8, "%.0fkm/h", Status.closeCall->speed * 1.852);
-		drawStatusBox(&left, &top, "vel", strSpeed, white);					
-
-	    char strAlt[8] = " ";
-	    snprintf(strAlt, 8, "%.0fm", Status.closeCall->altitude / 3.2828);
-		drawStatusBox(&left, &top, "alt", strAlt, white);			
-
-		drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline	
-
-		if(strlen(Status.closeCall->flight)) {
-			drawStatusBox(&left, &top, "near", "", red);				
-			drawStatusBox(&left, &top, "id", Status.closeCall->flight, white);		
+		drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline						
+		if(strlen(Status.closeCall->flight)) {	
+			drawStatusBox(&left, &top, "near", Status.closeCall->flight, white);		
+		} else {
+			drawStatusBox(&left, &top, "near", "", white);				
 		}
 	}
 }
