@@ -299,6 +299,11 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
         a->prev_seen = a->seen;
     }
 
+    //strip trailing spaces
+    for(int i = 0; i<8; i++) {
+        a->flight[i] = (a->flight[i] == 32) ? 0 : a->flight[i];
+    }
+
     a->signalLevel[a->messages & 7] = mm->signalLevel;// replace the 8th oldest signal strength
     a->seen      = time(NULL);
     a->timestamp = mm->timestampMsg;

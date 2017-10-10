@@ -25,7 +25,6 @@ void init(char *title)
 	    putenv((char*)"SDL_FBDEV=/dev/fb1");
     #endif
 
-	mouseSetup();
 
 	/* Initialise SDL */
 	
@@ -75,21 +74,26 @@ void init(char *title)
 		exit(1);
 	}
 
+	mouseSetup();	
+
     /* Load the font */
     
-    game.font = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12);
+    game.mapFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * SCALE);
+    game.mapBoldFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * SCALE);    
        
-    game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18);
+    game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18 * SCALE);
 
-    game.messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 34);
-    game.labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 16);
+    game.messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 34 * SCALE);
+    game.labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 16 * SCALE);
 
+    game.mapFontWidth = 5 * SCALE;
+    game.mapFontHeight = 12 * SCALE; 
 
-    game.messageFontWidth = 17;
-    game.messageFontHeight = 34; 
+    game.messageFontWidth = 17 * SCALE;
+    game.messageFontHeight = 34 * SCALE; 
 
-    game.labelFontWidth = 5;
-    game.labelFontHeight = 10; 
+    game.labelFontWidth = 5 * SCALE;
+    game.labelFontHeight = 10 * SCALE; 
 
 	/* Set the screen title */
 	
@@ -102,8 +106,12 @@ void cleanup()
 {
 	/* Close the font */
 	
-	closeFont(game.font);
-	
+	closeFont(game.mapFont);
+	closeFont(game.mapBoldFont);
+	closeFont(game.messageFont);
+	closeFont(game.labelFont);
+	closeFont(game.listFont);
+
 	/* Close SDL_TTF */
 	
 	TTF_Quit();
