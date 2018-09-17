@@ -181,8 +181,8 @@ int setupConnection(struct client *c) {
 		Modes.clients = c;
 
         // replace with gps
-        Modes.fUserLat = 41.9809263;
-        Modes.fUserLon = -87.6651033;
+        Modes.fUserLat = 47.6611754;
+        Modes.fUserLon = -122.3562983;
     }
     return fd;
 }
