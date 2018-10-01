@@ -139,6 +139,8 @@ struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
     a->addr = mm->addr;
     a->lat  = a->lon = 0.0;
 
+    a->created = 0;
+
     a->oldIdx = 0;
     memset(a->oldDx, 0, sizeof(a->oldDx));
     memset(a->oldDy, 0, sizeof(a->oldDy));    

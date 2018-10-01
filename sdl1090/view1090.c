@@ -91,9 +91,11 @@ void view1090InitConfig(void) {
 
     // Display options
     Modes.screen_upscale          = UPSCALE;
+    Modes.screen_uiscale          = UISCALE;
     Modes.screen_width            = SCREEN_WIDTH;
     Modes.screen_height           = SCREEN_HEIGHT;    
     Modes.screen_depth            = 32;
+    Modes.fullscreen              = 0;
 
     // Initialize status
     Status.msgRate                = 0;
@@ -212,7 +214,10 @@ void showHelp(void) {
   "\n-----------------------------------------------------------------------------\n"
   "|                        SDL DISPLAY OPTIONS                                |\n"
   "-----------------------------------------------------------------------------\n"
-  "--upscale <factor>       Pixel upscaling\n"  
+  "--upscale <factor>       Buffer upscaling\n"  
+  "--uiscale <factor>       UI global scaling\n"  
+  "--screensize <width> <height>\n"
+  "--fullscreen             Start fullscreen\n"
     );
 }
 
@@ -297,8 +302,15 @@ int main(int argc, char **argv) {
             Modes.nfix_crc = 0;
         } else if (!strcmp(argv[j],"--aggressive")) {
             Modes.nfix_crc = MODES_MAX_BITERRORS;
+        } else if (!strcmp(argv[j],"--fullscreen")) {
+            Modes.fullscreen = 1;
         } else if (!strcmp(argv[j],"--upscale") && more) {
             Modes.screen_upscale = atoi(argv[++j]);          
+        } else if (!strcmp(argv[j],"--uiscale") && more) {
+            Modes.screen_uiscale = atoi(argv[++j]);   
+         } else if (!strcmp(argv[j],"--screensize") && more) {
+            Modes.screen_width = atoi(argv[++j]);        
+            Modes.screen_height = atoi(argv[++j]);        
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
@@ -372,7 +384,6 @@ int main(int argc, char **argv) {
     while (go == 1)
     {
         getInput();
-
     
         interactiveRemoveStaleAircrafts();
 
@@ -387,7 +398,7 @@ int main(int argc, char **argv) {
         }
         modesReadFromClient(c,"",decodeBinMessage);
 
-        usleep(100000);
+        usleep(10000);
     }
     
     // The user has stopped us, so close any socket we opened
