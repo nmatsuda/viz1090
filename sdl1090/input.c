@@ -45,8 +45,8 @@ void getInput()
 
 					case SDLK_m:
 						Modes.map = !Modes.map;
-					break;					
-					
+					break;		
+
 					default:
 					break;
 				}

@@ -160,7 +160,7 @@
 // at least greater than a given level for us to dump the signal.
 #define MODES_DEBUG_NOPREAMBLE_LEVEL 25
 
-#define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
+#define MODES_INTERACTIVE_REFRESH_TIME 33      // Milliseconds
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DELETE_TTL   300      // Delete from the list after 300 seconds
 #define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
@@ -233,6 +233,7 @@ struct aircraft {
     double        oldDx[MODES_INTERACTIVE_TRAIL_LENGTH], oldDy[MODES_INTERACTIVE_TRAIL_LENGTH]; // position history
     time_t        oldSeen[MODES_INTERACTIVE_TRAIL_LENGTH];// position time    
     uint8_t           oldIdx; // index for ring buffer
+    uint64_t      created;
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
 };
@@ -344,9 +345,11 @@ struct {                             // Internal state
 
     //display options
     int screen_upscale;
+    int screen_uiscale;
     int screen_width;
     int screen_height;
     int screen_depth;
+    int fullscreen;
 
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location

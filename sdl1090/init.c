@@ -59,12 +59,17 @@ void init(char *title)
         Modes.screen_upscale = 1;
     #endif
 
+    Uint32 flags = SDL_HWPALETTE|SDL_DOUBLEBUF;
+
+    if(Modes.fullscreen) {
+    	flags = flags | SDL_FULLSCREEN;
+    }
 
     if(Modes.screen_upscale > 1) {
-	 	game.bigScreen = SDL_SetVideoMode(Modes.screen_width * Modes.screen_upscale, Modes.screen_height * Modes.screen_upscale, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);	
+	 	game.bigScreen = SDL_SetVideoMode(Modes.screen_width * Modes.screen_upscale, Modes.screen_height * Modes.screen_upscale, Modes.screen_depth, flags);	
 	 	game.screen = SDL_CreateRGBSurface(0, Modes.screen_width, Modes.screen_height, Modes.screen_depth, 0, 0, 0, 0);
 	} else {
-		game.screen = SDL_SetVideoMode(Modes.screen_width, Modes.screen_height, Modes.screen_depth, SDL_HWPALETTE|SDL_DOUBLEBUF);		
+		game.screen = SDL_SetVideoMode(Modes.screen_width, Modes.screen_height, Modes.screen_depth, flags);		
 	}
 
 	if (game.screen == NULL)
@@ -78,22 +83,22 @@ void init(char *title)
 
     /* Load the font */
     
-    game.mapFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * SCALE);
-    game.mapBoldFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * SCALE);    
+    game.mapFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * Modes.screen_uiscale);
+    game.mapBoldFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * Modes.screen_uiscale);    
        
-    game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18 * SCALE);
+    game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18 * Modes.screen_uiscale);
 
-    game.messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 34 * SCALE);
-    game.labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 16 * SCALE);
+    game.messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 34 * Modes.screen_uiscale);
+    game.labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 16 * Modes.screen_uiscale);
 
-    game.mapFontWidth = 5 * SCALE;
-    game.mapFontHeight = 12 * SCALE; 
+    game.mapFontWidth = 5 * Modes.screen_uiscale;
+    game.mapFontHeight = 12 * Modes.screen_uiscale; 
 
-    game.messageFontWidth = 17 * SCALE;
-    game.messageFontHeight = 34 * SCALE; 
+    game.messageFontWidth = 17 * Modes.screen_uiscale;
+    game.messageFontHeight = 34 * Modes.screen_uiscale; 
 
-    game.labelFontWidth = 5 * SCALE;
-    game.labelFontHeight = 10 * SCALE; 
+    game.labelFontWidth = 5 * Modes.screen_uiscale;
+    game.labelFontHeight = 10 * Modes.screen_uiscale; 
 
 	/* Set the screen title */
 	

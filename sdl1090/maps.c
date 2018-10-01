@@ -8,6 +8,16 @@
 
 #define CENTEROFFSET .375
 
+static uint64_t mstime(void) {
+    struct timeval tv;
+    uint64_t mst;
+
+    gettimeofday(&tv, NULL);
+    mst = ((uint64_t)tv.tv_sec)*1000;
+    mst += tv.tv_usec/1000;
+    return mst;
+}
+
 void CROSSVP(double *v, double *u, double *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
@@ -73,10 +83,10 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
         return;
     }
 
-    double body = 8.0 * SCALE;
-    double wing = 6.0 * SCALE;
-    double tail = 3.0 * SCALE;
-    double bodyWidth = 2.0 * SCALE;
+    double body = 8.0 * Modes.screen_uiscale;
+    double wing = 6.0 * Modes.screen_uiscale;
+    double tail = 3.0 * Modes.screen_uiscale;
+    double bodyWidth = 2.0 * Modes.screen_uiscale;
 
     double vec[3];
     vec[0] = sin(heading * M_PI / 180);
@@ -104,7 +114,7 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
     } else {
         thickLineRGBA(game.screen,x,y,x2,y2,bodyWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
         filledTrigonRGBA(game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
-        filledCircleRGBA(game.screen, x2,y2,SCALE,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        filledCircleRGBA(game.screen, x2,y2,Modes.screen_uiscale,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
 
     //wing
@@ -190,7 +200,7 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
             aalineRGBA(game.screen, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);       
         } else {
             //thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                  
-            thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2 * SCALE, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
+            thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2 * Modes.screen_uiscale, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
         }   
     }
 }
@@ -243,7 +253,7 @@ void drawGeography() {
         if(AA) {
             aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         } else {
-            thickLineRGBA(game.screen, x1, y1, x2, y2, SCALE, purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
+            thickLineRGBA(game.screen, x1, y1, x2, y2, Modes.screen_uiscale, purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         }
     }
 }
@@ -276,6 +286,15 @@ void drawMap(void) {
                 SDL_Color planeColor = signalToColor(colorIdx);
                 int x, y;
                 screenCoords(&x, &y, a->dx, a->dy);
+
+                if(a->created == 0) {
+                    a->created = mstime();
+                }
+
+                double age_ms = (double)(mstime() - a->created);
+                if(age_ms < 500) {
+                    circleRGBA(game.screen, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
+                }
 
                 if(MODES_ACFLAGS_HEADING_VALID) {
                     drawPlaneHeading(x, y,a->track, planeColor);
