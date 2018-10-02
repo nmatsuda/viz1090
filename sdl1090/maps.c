@@ -145,6 +145,9 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
 void drawPlane(int x, int y, SDL_Color planeColor)
 {
     if(outOfBounds(x,y)) {
+        //
+        // Draw oob arrow here
+        //
         return;
     }
 
@@ -248,7 +251,12 @@ void drawGeography() {
         double d1 = sqrt(mapPoints_relative[(i - 1) * 2] * mapPoints_relative[(i - 1) * 2] + mapPoints_relative[(i - 1) * 2 + 1] * mapPoints_relative[(i - 1) * 2 + 1]);
         double d2 = sqrt(mapPoints_relative[i * 2]* mapPoints_relative[i * 2] + mapPoints_relative[i * 2 + 1] * mapPoints_relative[i * 2 + 1]);
 
-        double alpha = 255.0 - 255.0 * (d1+d2) / (2 * 250);
+        double alpha = 255.0 * (d1+d2) / 2;
+        if(Modes.mapLogDist) {
+            alpha = 255.0 - alpha / 125.0; 
+        } else {
+            alpha =  255.0 - alpha / 25.0;
+        }
 
         if(AA) {
             aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
@@ -256,6 +264,13 @@ void drawGeography() {
             thickLineRGBA(game.screen, x1, y1, x2, y2, Modes.screen_uiscale, purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         }
     }
+    
+    // int *screen_x = (int *) malloc(mapPoints_count * sizeof(int));
+    // int *screen_y = (int *) malloc(mapPoints_count * sizeof(int));
+
+    // initializeMap(screen_x, screen_y);
+
+    // filledPolygonRGBA(game.screen,screen_x, screen_y, mapPoints_count, 100, 100, 100, 255);
 }
 
 void drawMap(void) {
@@ -294,7 +309,8 @@ void drawMap(void) {
                 double age_ms = (double)(mstime() - a->created);
                 if(age_ms < 500) {
                     circleRGBA(game.screen, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
-                }
+                    break;
+                } 
 
                 if(MODES_ACFLAGS_HEADING_VALID) {
                     drawPlaneHeading(x, y,a->track, planeColor);
@@ -321,3 +337,30 @@ void drawMap(void) {
         a = a->next;
     }
 }
+
+// void initializeMap(short *screen_x, short *screen_y) {
+//     int out_x, out_y;
+//     for(int i=0; i<mapPoints_count; i++) {
+//         screenCoords(&out_x, &out_y, (double) mapPoints_x[i], (double) -mapPoints_y[i]); 
+
+//         // if(out_x < 0) {
+//         //     out_x = 0;
+//         // }     
+
+//         // if(out_y < 0) {
+//         //     out_y = 0;
+//         // }
+
+
+//         // if(out_x >= Modes.screen_width) {
+//         //     out_x = Modes.screen_width;
+//         // }     
+
+//         // if(out_y >= Modes.screen_height) {
+//         //     out_y = Modes.screen_height;
+//         // }
+
+//         screen_x[i] = out_x;
+//         screen_y[i] = out_y;
+//     }
+// }
