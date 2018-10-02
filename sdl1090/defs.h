@@ -17,7 +17,7 @@
 #define UISCALE 1
 
 #define LOGMAXDIST 1000.0
-#define MAXDIST 50.0
+#define MAXDIST 25.0
 
 #define AA 0
 

@@ -379,8 +379,7 @@ int main(int argc, char **argv) {
     atexit(cleanup);
     
     go = 1;
-        
-    
+          
     while (go == 1)
     {
         getInput();
