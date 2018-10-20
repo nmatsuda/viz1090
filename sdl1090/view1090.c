@@ -87,7 +87,7 @@ void view1090InitConfig(void) {
 
     // Map options
     Modes.map                     = 1;
-    Modes.mapLogDist              = 1;
+    Modes.mapLogDist              = 0;
 
     // Display options
     Modes.screen_upscale          = UPSCALE;

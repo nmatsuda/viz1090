@@ -139,7 +139,7 @@ void drawStatus() {
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
 	drawStatusBox(&left, &top, "GPS", strLoc, pink);	
 
-	drawBattery(&left, &top, 0.85);
+	// drawBattery(&left, &top, 0.85);
 
     char strPlaneCount[10] = " ";
     snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
@@ -157,7 +157,7 @@ void drawStatus() {
     snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
   	drawStatusBox(&left, &top, "sAvg", strSig, green);
 
-	drawStatusBox(&left, &top, "||||", "MENU", grey);
+	// drawStatusBox(&left, &top, "||||", "MENU", grey);
 
 	if(Status.closeCall != NULL) {
 		drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline						
