@@ -16,7 +16,7 @@ ifdef RPI
 	CC=gcc
 else
 	CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr`
-	LIBS=`pkg-config --libs librtlsdr` -lpthread -lm `sdl-config --libs` -lSDL -lSDL_ttf -lSDL_gfx 
+	LIBS=`pkg-config --libs librtlsdr` -lpthread -lm -lSDL2 -lSDL2_ttf -lSDL2_gfx 
 	CC=gcc
 endif
 

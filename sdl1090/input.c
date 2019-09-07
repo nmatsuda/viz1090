@@ -50,7 +50,13 @@ void getInput()
 					default:
 					break;
 				}
+
 			break;
+
+			case SDL_MOUSEWHEEL:
+
+				Modes.maxDist *= 1.0 + event.wheel.y / 10.0;
+				break;
 		}
 	}
 }

@@ -2,8 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "SDL/SDL.h"
-#include "SDL/SDL_ttf.h"
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_ttf.h"
 #include "mapdata.h"
 
 #ifdef RPI
@@ -15,9 +15,6 @@
 
 #define UPSCALE 1
 #define UISCALE 1
-
-#define LOGMAXDIST 1000.0
-#define MAXDIST 25.0
 
 #define AA 0
 

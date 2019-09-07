@@ -27,7 +27,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#include "coaa.h"
+
 #include "view1090.h"
 #include "structs.h"
 
@@ -88,6 +88,7 @@ void view1090InitConfig(void) {
     // Map options
     Modes.map                     = 1;
     Modes.mapLogDist              = 0;
+    Modes.maxDist                 = 25.0;
 
     // Display options
     Modes.screen_upscale          = UPSCALE;
@@ -377,7 +378,7 @@ int main(int argc, char **argv) {
     /* Call the cleanup function when the program exits */
     
     atexit(cleanup);
-    
+        
     go = 1;
           
     while (go == 1)
@@ -385,6 +386,7 @@ int main(int argc, char **argv) {
         getInput();
     
         interactiveRemoveStaleAircrafts();
+        // interactiveShowData();
 
         draw();
 

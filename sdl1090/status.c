@@ -2,7 +2,7 @@
 #include "structs.h"
 #include "parula.h"
 #include "monokai.h"
-#include "SDL/SDL_gfxPrimitives.h"
+#include "SDL2/SDL2_gfxPrimitives.h"
 
 #define PAD 5
 
@@ -35,7 +35,7 @@ void updateStatus() {
             if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
                 double d = sqrt(a->dx * a->dx + a->dy * a->dy);
 
-                if(d < LOGMAXDIST) {
+                if(d < Modes.maxDist) {
 	                if(d > maxDist) {
 	                	maxDist = d;
 	                }
@@ -65,12 +65,13 @@ void updateStatus() {
 }
 
 void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color) {
-	int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * game.labelFontHeight;
+	//int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * game.labelFont;
+	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * game.labelFontWidth;
 	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * game.messageFontWidth;
 
 	//newline if no message or label
 	if(strlen(label) == 0 && strlen(message) == 0 ) {
-		boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight,0, 0, 0, 0);
+		boxRGBA(game.renderer, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight,0, 0, 0, 0);
 		*left = PAD;
 		*top = *top - game.messageFontHeight - PAD;		
 		return;
@@ -86,21 +87,23 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 
 	// filled black background
 	if(messageWidth) {
-		boxRGBA(game.screen, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
+		boxRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// filled label box
 	if(labelWidth) {
-		boxRGBA(game.screen, *left, *top, *left + labelWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		boxRGBA(game.renderer, *left, *top, *left + labelWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// outline message box
 	if(messageWidth) {
-		rectangleRGBA(game.screen, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		rectangleRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// label
-	drawString90(label, *left, *top + game.labelFontWidth/2, game.labelFont, black);
+	//drawString90(label, *left, *top + game.labelFontWidth/2, game.labelFont, black);
+	
+	drawString(label, *left + game.labelFontWidth/2, *top, game.labelFont, black);
 
 	//message
 	drawString(message, *left + labelWidth + game.messageFontWidth/2, *top, game.messageFont, color);
@@ -117,7 +120,7 @@ void drawBattery(int *left, int *top, double level) {
 	float yList[9] = {0.2, 0.2, 0.0, 0.0, 0.2, 0.2, 1.0, 1.0, 0.2};	
 
 	for(int k = 0; k < pointCount - 1; k++) {
-	    thickLineRGBA(game.screen, 
+	    thickLineRGBA(game.renderer, 
 	    	*left + game.messageFontWidth * xList[k], 
 	    	*top + game.messageFontHeight * yList[k], 
 	    	*left + game.messageFontWidth * xList[k+1], 
@@ -125,7 +128,7 @@ void drawBattery(int *left, int *top, double level) {
 	    	lineWidth, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 	}
 
-	boxRGBA(game.screen, *left, *top + (0.2 + 0.8  * (1.0 - level)) * game.messageFontHeight, *left + game.messageFontWidth, *top + game.messageFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+	boxRGBA(game.renderer, *left, *top + (0.2 + 0.8  * (1.0 - level)) * game.messageFontHeight, *left + game.messageFontWidth, *top + game.messageFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 
 	*left = *left + game.messageFontWidth;
 }
@@ -137,7 +140,7 @@ void drawStatus() {
 
 	char strLoc[20] = " ";
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
-	drawStatusBox(&left, &top, "GPS", strLoc, pink);	
+	drawStatusBox(&left, &top, "loc", strLoc, pink);	
 
 	// drawBattery(&left, &top, 0.85);
 
