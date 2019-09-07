@@ -1,6 +1,6 @@
 #include "dump1090.h"
 #include "structs.h"
-#include "SDL/SDL_rotozoom.h"
+#include "SDL2/SDL2_rotozoom.h"
 
 static uint64_t mstime(void) {
     struct timeval tv;
@@ -13,6 +13,7 @@ static uint64_t mstime(void) {
 }
 
 void draw() {
+
     if ((mstime() - Modes.interactive_last_update) < MODES_INTERACTIVE_REFRESH_TIME) {
     	return;
     }
@@ -21,31 +22,17 @@ void draw() {
 
     updateStatus();
 
-    SDL_FillRect(game.screen, NULL, 0);
+    SDL_SetRenderDrawColor( game.renderer, 0, 0, 0, 0);
+
+    SDL_RenderClear(game.renderer);
 
     if (Modes.map) {
+        drawStatus();
+        // SDL_RenderCopy(game.renderer,game.texture,NULL,NULL);          
         drawMap();
-        drawStatus();            
     } else {
         drawList(10,0);
     }
 
-	if(Modes.screen_upscale > 1) {
-        SDL_Surface *temp = zoomSurface(game.screen, Modes.screen_upscale, Modes.screen_upscale, 0);
-        SDL_Surface *temp2 =  SDL_DisplayFormat(temp);
-	    SDL_Rect clip;
-        clip.x = 0;
-        clip.y = 0;
-        clip.w = temp2->w;
-        clip.h = temp2->h;
-
-        SDL_BlitSurface(temp2, 0, game.bigScreen, 0);
-
-        SDL_Flip(game.bigScreen);
-
-        SDL_FreeSurface(temp);
-        SDL_FreeSurface(temp2);
-    } else {
-        SDL_Flip(game.screen);    
-    }	
+    SDL_RenderPresent(game.renderer);	
 }

@@ -1,6 +1,0 @@
-PWD /Users/nmatsuda/Git/spidr/sdl1090
-INPUT /usr/local/texlive/2015/texmf.cnf
-INPUT /usr/local/texlive/2015/texmf-dist/web2c/texmf.cnf
-INPUT /usr/local/texlive/2015/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/nmatsuda/Git/spidr/sdl1090/draw.c
-OUTPUT /Users/nmatsuda/Git/spidr/sdl1090/draw.log

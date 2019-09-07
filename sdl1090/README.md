@@ -64,7 +64,7 @@ http://www.ebay.com/itm/3-7-volts-6400-mAh-1S2P-18650-Li-Ion-Battery-Pack-PCB-pr
 
 2. Install SDL and RTL-SDR libararies
 ```
-sudo apt-get install libsdl1.2-dev libsdl-ttf2.0-dev libsdl-gfx1.2-dev wiringpi
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev wiringpi
 ```
 3. Download spidr
 ```

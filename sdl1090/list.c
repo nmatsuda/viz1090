@@ -2,7 +2,7 @@
 #include "structs.h"
 #include "parula.h"
 #include "monokai.h"
-#include "SDL/SDL_gfxPrimitives.h"
+#include "SDL2/SDL2_gfxPrimitives.h"
 
 void drawList(int rows, int top) {
 	struct aircraft *a = Modes.aircrafts;

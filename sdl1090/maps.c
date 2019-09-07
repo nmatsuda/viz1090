@@ -4,7 +4,7 @@
 #include "parula.h"
 #include "magma.h"
 #include "monokai.h"
-#include "SDL/SDL_gfxPrimitives.h"
+#include "SDL2/SDL2_gfxPrimitives.h"
 
 #define CENTEROFFSET .375
 
@@ -58,9 +58,9 @@ int screenDist(double d) {
     double scale_factor = (Modes.screen_width > Modes.screen_height) ? Modes.screen_width : Modes.screen_height;
 
     if(Modes.mapLogDist) {
-        return round(0.95 * scale_factor * 0.5 * log(1.0+fabs(d)) / log(1.0+LOGMAXDIST));    
+        return round(0.95 * scale_factor * 0.5 * log(1.0+fabs(d)) / log(1.0+Modes.maxDist));    
     } else {
-        return round(0.95 * scale_factor * 0.5 * fabs(d) / MAXDIST);    
+        return round(0.95 * scale_factor * 0.5 * fabs(d) / Modes.maxDist);    
     }
 }
 
@@ -96,8 +96,8 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
         outx = (outy) * inx / (iny);
     }
 
-    // circleRGBA (game.screen,(Modes.screen_width>>1) + outx, Modes.screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    // thickLineRGBA(game.screen,Modes.screen_width>>1,Modes.screen_height * CENTEROFFSET, (Modes.screen_width>>1) + outx, Modes.screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    // circleRGBA (game.renderer,(Modes.screen_width>>1) + outx, Modes.screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    // thickLineRGBA(game.renderer,Modes.screen_width>>1,Modes.screen_height * CENTEROFFSET, (Modes.screen_width>>1) + outx, Modes.screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     double inmag = sqrt(inx *inx + iny*iny);
     double vec[3];
@@ -120,7 +120,7 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
     y2 = (Modes.screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
     x3 = (Modes.screen_width>>1) +  outx - arrowWidth * vec[0];
     y3 = (Modes.screen_height * CENTEROFFSET) + outy - arrowWidth * vec[1];
-    filledTrigonRGBA(game.screen, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(game.renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     // arrow 2
     x1 = (Modes.screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
@@ -129,7 +129,7 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
     y2 = (Modes.screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
     x3 = (Modes.screen_width>>1) +  outx - 2.0 * arrowWidth * vec[0];
     y3 = (Modes.screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1];
-    filledTrigonRGBA(game.screen, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(game.renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     *returnx = x3;
     *returny = y3;
@@ -158,7 +158,7 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
 
     // tempCenter
 
-    // circleRGBA(game.screen, x, y, 10, 255, 0, 0, 255);   
+    // circleRGBA(game.renderer, x, y, 10, 255, 0, 0, 255);   
 
     //body
     x1 = x + round(-body*vec[0]);
@@ -167,13 +167,13 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
     y2 = y + round(body*vec[1]);
 
     if(AA) {
-        aalineRGBA(game.screen,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-        aatrigonRGBA(game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
-        aacircleRGBA(game.screen, x2,y2,1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        aalineRGBA(game.renderer,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        aatrigonRGBA(game.renderer, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
+        aacircleRGBA(game.renderer, x2,y2,1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     } else {
-        thickLineRGBA(game.screen,x,y,x2,y2,bodyWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-        filledTrigonRGBA(game.screen, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
-        filledCircleRGBA(game.screen, x2,y2,Modes.screen_uiscale,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        thickLineRGBA(game.renderer,x,y,x2,y2,bodyWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        filledTrigonRGBA(game.renderer, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
+        filledCircleRGBA(game.renderer, x2,y2,Modes.screen_uiscale,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
 
     //wing
@@ -183,9 +183,9 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
     y2 = y + round(wing*out[1]);
 
     if(AA) {
-        aatrigonRGBA(game.screen, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        aatrigonRGBA(game.renderer, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     } else {
-        filledTrigonRGBA(game.screen, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        filledTrigonRGBA(game.renderer, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
 
     //tail
@@ -195,9 +195,9 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
     y2 = y + round(-body*.75*vec[1]) + round(tail*out[1]);
 
     if(AA) {
-        aatrigonRGBA (game.screen, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        aatrigonRGBA (game.renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     } else {
-        filledTrigonRGBA (game.screen, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+        filledTrigonRGBA (game.renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     }
 }
 
@@ -205,7 +205,7 @@ void drawPlane(int x, int y, SDL_Color planeColor)
 {
     int length = 3.0;
 
-    rectangleRGBA (game.screen, x - length, y - length, x+length, y + length, planeColor.r, planeColor.g, planeColor.b, SDL_ALPHA_OPAQUE);   
+    rectangleRGBA (game.renderer, x - length, y - length, x+length, y + length, planeColor.r, planeColor.g, planeColor.b, SDL_ALPHA_OPAQUE);   
 }
 
 
@@ -253,10 +253,10 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
         uint8_t colorVal = (uint8_t)floor(255.0 * age);
   
         if(AA) {
-            aalineRGBA(game.screen, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);       
+            aalineRGBA(game.renderer, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);       
         } else {
-            //thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                  
-            thickLineRGBA(game.screen, prevX, prevY, currentX, currentY, 2 * Modes.screen_uiscale, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
+            //thickLineRGBA(game.renderer, prevX, prevY, currentX, currentY, 2, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                  
+            thickLineRGBA(game.renderer, prevX, prevY, currentX, currentY, 2 * Modes.screen_uiscale, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
         }   
     }
 }
@@ -267,17 +267,17 @@ void drawGrid()
     int p10km = screenDist(10.0);
     int p100km = screenDist(100.0);
 
-    hlineRGBA (game.screen, (Modes.screen_width>>1) - p100km, (Modes.screen_width>>1) + p100km, Modes.screen_height * CENTEROFFSET, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
-    vlineRGBA (game.screen, Modes.screen_width>>1, (Modes.screen_height * CENTEROFFSET) - p100km, (Modes.screen_height * CENTEROFFSET) + p100km, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+    hlineRGBA (game.renderer, (Modes.screen_width>>1) - p100km, (Modes.screen_width>>1) + p100km, Modes.screen_height * CENTEROFFSET, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+    vlineRGBA (game.renderer, Modes.screen_width>>1, (Modes.screen_height * CENTEROFFSET) - p100km, (Modes.screen_height * CENTEROFFSET) + p100km, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 
     if(AA) {
-        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p1km, pink.r, pink.g, pink.b, 255);
-        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p10km, pink.r, pink.g, pink.b, 195);
-        aacircleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height>>1, p100km, pink.r, pink.g, pink.b, 127);
+        aacircleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height>>1, p1km, pink.r, pink.g, pink.b, 255);
+        aacircleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height>>1, p10km, pink.r, pink.g, pink.b, 195);
+        aacircleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height>>1, p100km, pink.r, pink.g, pink.b, 127);
     } else {
-        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p1km, pink.r, pink.g, pink.b, 255);
-        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p10km, pink.r, pink.g, pink.b, 195);
-        circleRGBA (game.screen, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
+        circleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p1km, pink.r, pink.g, pink.b, 255);
+        circleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p10km, pink.r, pink.g, pink.b, 195);
+        circleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
     }
 
     drawString("1km", (Modes.screen_width>>1) + (0.707 * p1km) + 5, (Modes.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, game.mapFont, pink);   
@@ -303,17 +303,18 @@ void drawGeography() {
         double d1 = sqrt(mapPoints_relative[(i - 1) * 2] * mapPoints_relative[(i - 1) * 2] + mapPoints_relative[(i - 1) * 2 + 1] * mapPoints_relative[(i - 1) * 2 + 1]);
         double d2 = sqrt(mapPoints_relative[i * 2]* mapPoints_relative[i * 2] + mapPoints_relative[i * 2 + 1] * mapPoints_relative[i * 2 + 1]);
 
-        double alpha = 255.0 * (d1+d2) / 2;
-        if(Modes.mapLogDist) {
-            alpha = 255.0 - alpha / 125.0; 
-        } else {
-            alpha =  255.0 - alpha / 25.0;
-        }
+        //double alpha = 255.0 * (d1+d2) / 2;
+        //alpha =  255.0 - alpha / Modes.maxDist;    
+        double alpha = 1.0 - (d1+d2) / (2 * Modes.maxDist);
+
+        alpha = (alpha < 0) ? 0 : alpha;
 
         if(AA) {
-            aalineRGBA(game.screen, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
+            aalineRGBA(game.renderer, x1, y1, x2, y2,purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
         } else {
-            thickLineRGBA(game.screen, x1, y1, x2, y2, Modes.screen_uiscale, purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
+            //thickLineRGBA(game.renderer, x1, y1, x2, y2, Modes.screen_uiscale, purple.r,purple.g,purple.b, (alpha < 0) ? 0 : (uint8_t) alpha);
+            //thickLineRGBA(game.renderer, x1, y1, x2, y2, Modes.screen_uiscale, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
+            lineRGBA(game.renderer, x1, y1, x2, y2, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
         }
     }
     
@@ -322,7 +323,7 @@ void drawGeography() {
 
     // initializeMap(screen_x, screen_y);
 
-    // filledPolygonRGBA(game.screen,screen_x, screen_y, mapPoints_count, 100, 100, 100, 255);
+    // filledPolygonRGBA(game.renderer,screen_x, screen_y, mapPoints_count, 100, 100, 100, 255);
 }
 
 void drawMap(void) {
@@ -331,7 +332,7 @@ void drawMap(void) {
 
     drawGeography();
 
-    drawGrid();     
+    drawGrid(); 
 
     while(a) {
         if ((now - a->seen) < Modes.interactive_display_ttl) {
@@ -369,7 +370,7 @@ void drawMap(void) {
                     snprintf(speed,10,"%dkm/h", a->speed);
                     drawStringBG(speed, outx + 5, outy + 3*game.mapFontHeight, game.mapFont, grey, black);                    
        
-                    continue;
+                    // continue;
                 }
 
 
@@ -379,7 +380,7 @@ void drawMap(void) {
 
                 double age_ms = (double)(mstime() - a->created);
                 if(age_ms < 500) {
-                    circleRGBA(game.screen, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
+                    circleRGBA(game.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
                 } else {
                     if(MODES_ACFLAGS_HEADING_VALID) {
                         drawPlaneHeading(x, y,a->track, planeColor);
@@ -397,7 +398,7 @@ void drawMap(void) {
                         snprintf(speed,10,"%dkm/h", a->speed);
                         drawStringBG(speed, x + 5, y + 3*game.mapFontHeight, game.mapFont, grey, black);                    
 
-                        lineRGBA(game.screen, x, y, x, y + 4*game.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+                        lineRGBA(game.renderer, x, y, x, y + 4*game.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
                     } else {
                         drawPlane(x, y, planeColor);
                     }  

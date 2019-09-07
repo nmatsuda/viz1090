@@ -160,7 +160,7 @@
 // at least greater than a given level for us to dump the signal.
 #define MODES_DEBUG_NOPREAMBLE_LEVEL 25
 
-#define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
+#define MODES_INTERACTIVE_REFRESH_TIME 33      // Milliseconds
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DELETE_TTL   300      // Delete from the list after 300 seconds
 #define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
@@ -342,6 +342,7 @@ struct {                             // Internal state
     // map options
     int   map;
     int   mapLogDist;
+    float maxDist;
 
     //display options
     int screen_upscale;

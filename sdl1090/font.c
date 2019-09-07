@@ -1,10 +1,9 @@
 #include "font.h"
-#include "SDL/SDL_rotozoom.h"
+#include "SDL2/SDL2_rotozoom.h"
 
 TTF_Font *loadFont(char *name, int size)
 {
 	/* Use SDL_TTF to load the font at the specified size */
-	
 	TTF_Font *font = TTF_OpenFont(name, size);
 
 	if (font == NULL)
@@ -13,7 +12,7 @@ TTF_Font *loadFont(char *name, int size)
 
 		exit(1);
 	}
-	
+
 	return font;
 }
 
@@ -36,7 +35,7 @@ void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 	SDL_Surface *surface;
 	SDL_Rect dest;
 
-	surface = TTF_RenderUTF8_Blended(font, text, color);
+	surface = TTF_RenderUTF8_Solid(font, text, color);
 
 	if (surface == NULL)
 	{
@@ -52,46 +51,10 @@ void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 	dest.w = surface->w;
 	dest.h = surface->h;
 
-	SDL_BlitSurface(surface, NULL, game.screen, &dest);
-	
-	/* Free the generated string image */
-
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(game.renderer, surface);
+	SDL_RenderCopy(game.renderer, texture, NULL, &dest);
+	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
-}
-
-void drawString90(char * text, int x, int y, TTF_Font *font, SDL_Color color)
-{
-    if(!strlen(text)) {	
-    	return;
-    }
-
-	SDL_Surface *surface;
-	SDL_Rect dest;
-
-	surface = TTF_RenderUTF8_Blended(font, text, color);
-
-	if (surface == NULL)
-	{
-		printf("Couldn't create String %s: %s\n", text, SDL_GetError());
-
-		return;
-	}
-	
-	/* Blit the entire surface to the screen */
-
-	dest.x = x;
-	dest.y = y;
-	dest.w = surface->w;
-	dest.h = surface->h;
-
-	SDL_Surface *temp = rotateSurface90Degrees(surface,1);
-
-	SDL_BlitSurface(temp, NULL, game.screen, &dest);
-	
-	/* Free the generated string image */
-
-	SDL_FreeSurface(surface);
-	SDL_FreeSurface(temp);
 }
 
 void drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
@@ -118,9 +81,8 @@ void drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SD
 	dest.w = surface->w;
 	dest.h = surface->h;
 
-	SDL_BlitSurface(surface, NULL, game.screen, &dest);
-	
-	/* Free the generated string image */
-
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(game.renderer, surface);
+	SDL_RenderCopy(game.renderer, texture, NULL, &dest);
+	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
 }
