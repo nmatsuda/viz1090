@@ -87,17 +87,17 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 
 	// filled black background
 	if(messageWidth) {
-		boxRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
+		roundedBoxRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, ROUND_RADIUS, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// filled label box
 	if(labelWidth) {
-		boxRGBA(game.renderer, *left, *top, *left + labelWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		roundedBoxRGBA(game.renderer, *left, *top, *left + labelWidth, *top + game.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// outline message box
 	if(messageWidth) {
-		rectangleRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		roundedRectangleRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// label
@@ -110,6 +110,39 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 
 	*left = *left + labelWidth + messageWidth + PAD;
 }
+
+
+
+void drawButtonBox(int *left, int *top, char *label, SDL_Color color) {
+	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * game.labelFontWidth;
+
+	//newline if no message or label
+	if(strlen(label) == 0) {
+		boxRGBA(game.renderer, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight,0, 0, 0, 0);
+		*left = PAD;
+		*top = *top - game.messageFontHeight - PAD;		
+		return;
+	}	
+
+	if(*left + labelWidth + PAD > Modes.screen_width) {
+		*left = PAD;
+		*top = *top - game.messageFontHeight - PAD;
+	}
+
+	// outline message box
+	if(labelWidth) {
+
+		roundedRectangleRGBA(game.renderer, *left, *top , *left + labelWidth - 1, *top + game.messageFontHeight - 1, ROUND_RADIUS, 255, 255, 255, SDL_ALPHA_OPAQUE);
+		roundedRectangleRGBA(game.renderer, *left + 1, *top + 1, *left + labelWidth , *top + game.messageFontHeight, ROUND_RADIUS, 20, 20, 20, SDL_ALPHA_OPAQUE);
+		roundedBoxRGBA(game.renderer, *left + 1, *top + 1, *left + labelWidth - 1, *top + game.messageFontHeight - 1, ROUND_RADIUS, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+
+	}
+
+	drawString(label, *left + game.labelFontWidth/2, *top, game.labelFont, black);
+
+	*left = *left + labelWidth + PAD;
+}
+
 
 
 void drawBattery(int *left, int *top, double level) {
@@ -135,8 +168,8 @@ void drawBattery(int *left, int *top, double level) {
 
 void drawStatus() {
 
-	int left = PAD;	
-	int	top = Modes.screen_height - game.messageFontHeight - PAD;
+	int left = PAD + 2 * game.messageFontHeight ;	
+	int	top = Modes.screen_height - 2 * game.messageFontHeight - PAD;
 
 	char strLoc[20] = " ";
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
@@ -162,12 +195,12 @@ void drawStatus() {
 
 	// drawStatusBox(&left, &top, "||||", "MENU", grey);
 
-	if(Status.closeCall != NULL) {
-		drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline						
-		if(strlen(Status.closeCall->flight)) {	
-			drawStatusBox(&left, &top, "near", Status.closeCall->flight, white);		
-		} else {
-			drawStatusBox(&left, &top, "near", "", white);				
-		}
-	}
+	// if(Status.closeCall != NULL) {
+	// 	drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline						
+	// 	if(strlen(Status.closeCall->flight)) {	
+	// 		drawStatusBox(&left, &top, "near", Status.closeCall->flight, white);		
+	// 	} else {
+	// 		drawStatusBox(&left, &top, "near", "", white);				
+	// 	}
+	// }
 }

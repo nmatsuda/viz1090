@@ -26,11 +26,10 @@ void draw() {
 
     SDL_RenderClear(game.renderer);
 
-    if (Modes.map) {
-        drawMap();
-        drawStatus();
-    } else {
-        drawList(10,0);
+    drawMap();  
+    drawStatus();
+    if(!Modes.map) {
+       drawList(0);
     }
 
     SDL_RenderPresent(game.renderer);	

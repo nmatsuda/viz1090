@@ -67,11 +67,11 @@ void getInput()
 				//
 				// need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
 				//
-
+					
 	    		double scale_factor = (Modes.screen_width > Modes.screen_height) ? Modes.screen_width : Modes.screen_height;
 
 	    		double dx = -1.0 * (0.75*(double)Modes.screen_width / (double)Modes.screen_height) * Modes.screen_width * event.tfinger.dx * Modes.maxDist / (0.95 * scale_factor * 0.5);
-	    		double dy = -1.0 * Modes.screen_height * event.tfinger.dy * Modes.maxDist / (0.95 * scale_factor * 0.5);
+	    		double dy = 1.0 * Modes.screen_height * event.tfinger.dy * Modes.maxDist / (0.95 * scale_factor * 0.5);
 
 	    		double outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 

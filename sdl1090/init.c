@@ -56,7 +56,7 @@ void init(char *title) {
     game.mapFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * Modes.screen_uiscale);
     game.mapBoldFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * Modes.screen_uiscale);    
        
-    game.listFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 18 * Modes.screen_uiscale);
+    game.listFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * Modes.screen_uiscale);
 
     game.messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * Modes.screen_uiscale);
     game.labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * Modes.screen_uiscale);
