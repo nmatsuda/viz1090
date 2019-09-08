@@ -27,9 +27,8 @@ void draw() {
     SDL_RenderClear(game.renderer);
 
     if (Modes.map) {
-        drawStatus();
-        // SDL_RenderCopy(game.renderer,game.texture,NULL,NULL);          
         drawMap();
+        drawStatus();
     } else {
         drawList(10,0);
     }

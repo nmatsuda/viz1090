@@ -396,11 +396,14 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
             mm->fLat    = a->lat;
             mm->fLon    = a->lon;
 
-            double dLon = a->lon - Modes.fUserLon;
-            double dLat = a->lat - Modes.fUserLat;
+            // double dLon = a->lon;// - Modes.fUserLon;
+            // double dLat = a->lat;// - Modes.fUserLat;
 
-            a->dx = 6371.0 * dLon * M_PI / 180.0f * cos(((a->lat + Modes.fUserLat)/2.0f) * M_PI / 180.0f);
-            a->dy = 6371.0 * dLat * M_PI / 180.0f;
+            // a->dx = 6371.0 * dLon * M_PI / 180.0f * cos(((a->lat + Modes.fUserLat)/2.0f) * M_PI / 180.0f);
+            // a->dy = 6371.0 * dLat * M_PI / 180.0f;
+
+            a->dx = a->lon;
+            a->dy = a->lat;
 
             if(time(NULL) - a->oldSeen[a->oldIdx] > MODES_INTERACTIVE_TRAIL_TTL_STEP) {
                 a->oldIdx = (a->oldIdx+1) % 32;
