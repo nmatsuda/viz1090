@@ -230,7 +230,7 @@ struct aircraft {
     uint64_t      even_cprtime;
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     double        dx, dy; // distance in km    
-    double        oldDx[MODES_INTERACTIVE_TRAIL_LENGTH], oldDy[MODES_INTERACTIVE_TRAIL_LENGTH]; // position history
+    double        oldDx[MODES_INTERACTIVE_TRAIL_LENGTH], oldDy[MODES_INTERACTIVE_TRAIL_LENGTH], oldHeading[MODES_INTERACTIVE_TRAIL_LENGTH]; // position history
     time_t        oldSeen[MODES_INTERACTIVE_TRAIL_LENGTH];// position time    
     uint8_t           oldIdx; // index for ring buffer
     uint64_t      created;

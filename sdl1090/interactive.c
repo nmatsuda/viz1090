@@ -144,6 +144,7 @@ struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
     a->oldIdx = 0;
     memset(a->oldDx, 0, sizeof(a->oldDx));
     memset(a->oldDy, 0, sizeof(a->oldDy));    
+    memset(a->oldHeading, 0, sizeof(a->oldHeading));    
 
     memset(a->signalLevel, mm->signalLevel, 8); // First time, initialise everything
                                                 // to the first signal strength
@@ -410,6 +411,8 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
 
                 a->oldDx[a->oldIdx] = a->dx;
                 a->oldDy[a->oldIdx] = a->dy;
+
+                a->oldHeading[a->oldIdx] = a->track;
 
                 a->oldSeen[a->oldIdx] = a->seen;
             }

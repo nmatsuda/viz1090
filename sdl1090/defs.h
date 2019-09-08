@@ -19,3 +19,5 @@
 #define AA 0
 
 #define MAGMA 0
+
+#define ROUND_RADIUS 3

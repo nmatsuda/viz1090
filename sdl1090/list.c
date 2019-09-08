@@ -4,7 +4,7 @@
 #include "monokai.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
 
-void drawList(int rows, int top) {
+void drawList(int top) {
 	struct aircraft *a = Modes.aircrafts;
     time_t now = time(NULL);
     int count = 0;
@@ -13,7 +13,9 @@ void drawList(int rows, int top) {
 
     progress = spinner[time(NULL)%4];
 
-	drawStringBG(" Flight  Alt(m) km/h D(km) H  S ", 0, top, game.listFont, black, white);
+	drawStringBG(" Flight  Alt(m) km/h D(km) H  S ", 0, top, game.mapBoldFont, black, (SDL_Color){255,255,255,64});
+
+    top = top + game.mapFontHeight;
 
 	// int xstride = 10;
 	// for(int i = 0; i < 320 / xstride; i++) {
@@ -26,7 +28,12 @@ void drawList(int rows, int top) {
 	// }
 
     int numNoDir = 0;
-    while(a && (count < rows)) {
+    while(a) {
+
+        if(top > Modes.screen_height) {
+            return;
+        }
+
         if ((now - a->seen) < Modes.interactive_display_ttl)
             {
             int msgs  = a->messages;
@@ -123,25 +130,18 @@ void drawList(int rows, int top) {
 
                     if ((now - a->seen) > 30 ) {
 
-                		drawString(a->flight, 0, top + (count + 1) * 20, game.listFont, (SDL_Color){96,96,96,255});
+                		drawString(a->flight, 0, top, game.listFont, (SDL_Color){96,96,96,255});
 
-                        // printf("\x1B[1;30m%-8s%5s %4s %5s  %c%c %d",
-                        //     a->flight, 
-                        //     strFl, 
-                        //     strGs,
-                        //     strD, 
-                        //     cLat, cLon,
-                        //     (int)((float)signalAverage/25.0f));
                     } else {
-                		drawString(a->flight, 10, top + (count + 1) * 20, game.listFont, pink);
+                		drawString(a->flight, 10, top, game.listFont, pink);
 
-                		drawString(strFl, 90, top + (count + 1) * 20, game.listFont, orange);
+                		drawString(strFl, 90, top, game.listFont, orange);
 
-                		drawString(strGs, 160, top + (count + 1) * 20, game.listFont, green);
+                		drawString(strGs, 160, top, game.listFont, green);
 
-                		drawString(strD, 210, top + (count + 1) * 20, game.listFont, blue);
+                		drawString(strD, 210, top, game.listFont, blue);
 
-                		drawString(strDir, 270, top + (count + 1) * 20, game.listFont, yellow);
+                		drawString(strDir, 270, top, game.listFont, yellow);
 
                 		// drawString(strS, 290, (count + 1) * 20, game.listFont, (SDL_Color){255,9,96,255});                		
 
@@ -153,6 +153,7 @@ void drawList(int rows, int top) {
                         //     cLat, cLon,
                         //     (int)((float)signalAverage/25.0f));
                     }
+                    top = top + game.mapFontHeight;
                     count++;
                 } else {
                     numNoDir++;

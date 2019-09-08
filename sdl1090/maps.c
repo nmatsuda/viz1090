@@ -78,7 +78,7 @@ void pxFromLonLat(double *dx, double *dy, double lon, double lat) {
 
 void screenCoords(int *outX, int *outY, double dx, double dy) {
     *outX = (Modes.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
-    *outY = (Modes.screen_height * CENTEROFFSET) + ((dy>0) ? 1 : -1) * screenDist(dy);        
+    *outY = (Modes.screen_height * CENTEROFFSET) + ((dy>0) ? -1 : 1) * screenDist(dy);        
 }
 
 int outOfBounds(int x, int y) {
@@ -156,7 +156,7 @@ void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
 
     double vec[3];
     vec[0] = sin(heading * M_PI / 180);
-    vec[1] = cos(heading * M_PI / 180);
+    vec[1] = -cos(heading * M_PI / 180);
     vec[2] = 0;
 
     double up[] = {0,0,1};
@@ -221,7 +221,7 @@ void drawPlane(int x, int y, SDL_Color planeColor)
 }
 
 
-void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
+void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSeen, int idx) {
 
     int currentIdx, prevIdx;
 
@@ -273,8 +273,42 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
             aalineRGBA(game.renderer, prevX, prevY, currentX, currentY,colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);       
         } else {
             //thickLineRGBA(game.renderer, prevX, prevY, currentX, currentY, 2, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                  
-            thickLineRGBA(game.renderer, prevX, prevY, currentX, currentY, 2 * Modes.screen_uiscale, colorVal, colorVal, colorVal, SDL_ALPHA_OPAQUE);                    
-        }   
+            thickLineRGBA(game.renderer, prevX, prevY, currentX, currentY, 4 * Modes.screen_uiscale, colorVal, colorVal, colorVal, 127);                    
+        }
+
+        //tick marks
+
+        double vec[3];
+        vec[0] = sin(oldHeading[currentIdx] * M_PI / 180);
+        vec[1] = -cos(oldHeading[currentIdx] * M_PI / 180);
+        vec[2] = 0;
+
+        double up[] = {0,0,1};
+
+        double out[3];
+
+        CROSSVP(out,vec,up);
+
+
+        int x1, y1, x2, y2;
+
+        int cross_size = 8 * Modes.screen_uiscale;
+
+        //forward cross
+        x1 = currentX + round(-cross_size*vec[0]);
+        y1 = currentY + round(-cross_size*vec[1]);
+        x2 = currentX + round(cross_size*vec[0]);
+        y2 = currentY + round(cross_size*vec[1]);
+
+        lineRGBA(game.renderer,x1,y1,x2,y2,colorVal,colorVal,colorVal,127);
+   
+        //side cross
+        x1 = currentX + round(-cross_size*out[0]);
+        y1 = currentY + round(-cross_size*out[1]);
+        x2 = currentX + round(cross_size*out[0]);
+        y2 = currentY + round(cross_size*out[1]);
+        
+        lineRGBA(game.renderer,x1,y1,x2,y2,colorVal,colorVal,colorVal,127);
     }
 }
 
@@ -284,8 +318,8 @@ void drawGrid()
     int p10km = screenDist(10.0);
     int p100km = screenDist(100.0);
 
-    hlineRGBA (game.renderer, (Modes.screen_width>>1) - p100km, (Modes.screen_width>>1) + p100km, Modes.screen_height * CENTEROFFSET, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
-    vlineRGBA (game.renderer, Modes.screen_width>>1, (Modes.screen_height * CENTEROFFSET) - p100km, (Modes.screen_height * CENTEROFFSET) + p100km, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+    //hlineRGBA (game.renderer, (Modes.screen_width>>1) - p100km, (Modes.screen_width>>1) + p100km, Modes.screen_height * CENTEROFFSET, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+    //vlineRGBA (game.renderer, Modes.screen_width>>1, (Modes.screen_height * CENTEROFFSET) - p100km, (Modes.screen_height * CENTEROFFSET) + p100km, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 
     if(AA) {
         aacircleRGBA (game.renderer, Modes.screen_width>>1, Modes.screen_height>>1, p1km, pink.r, pink.g, pink.b, 255);
@@ -368,7 +402,7 @@ void drawMap(void) {
 
     drawGeography();
 
-    //drawGrid(); 
+    drawGrid(); 
 
     while(a) {
         if ((now - a->seen) < Modes.interactive_display_ttl) {
@@ -378,7 +412,7 @@ void drawMap(void) {
                 unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
                                               pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
 
-                drawTrail(a->oldDx, a->oldDy, a->oldSeen, a->oldIdx);
+                drawTrail(a->oldDx, a->oldDy, a->oldHeading, a->oldSeen, a->oldIdx);
 
                 int colorIdx;
                 if((int)(now - a->seen) > MODES_INTERACTIVE_DISPLAY_ACTIVE) {

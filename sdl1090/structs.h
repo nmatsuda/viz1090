@@ -46,7 +46,7 @@ void getInput(void);
 void initMaps();
 
 //list.c
-void drawList(int rows, int top);
+void drawList(int top);
 
 //draw.c
 void draw();
