@@ -64,6 +64,18 @@ int screenDist(double d) {
     }
 }
 
+void pxFromLonLat(double *dx, double *dy, double lon, double lat) {
+    if(!lon || !lat) {
+        *dx = 0;
+        *dy = 0;
+        return;
+    }
+
+    *dx = 6371.0 * (lon - Modes.fUserLon) * M_PI / 180.0f * cos(((lat + Modes.fUserLat)/2.0f) * M_PI / 180.0f);
+    *dy = 6371.0 * (lat - Modes.fUserLat) * M_PI / 180.0f;
+}
+
+
 void screenCoords(int *outX, int *outY, double dx, double dy) {
     *outX = (Modes.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
     *outY = (Modes.screen_height * CENTEROFFSET) + ((dy>0) ? 1 : -1) * screenDist(dy);        
@@ -211,7 +223,6 @@ void drawPlane(int x, int y, SDL_Color planeColor)
 
 void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
 
-    
     int currentIdx, prevIdx;
 
     int currentX, currentY, prevX, prevY;
@@ -232,9 +243,15 @@ void drawTrail(double *oldDx, double *oldDy, time_t * oldSeen, int idx) {
             continue;
         }
 
-        screenCoords(&currentX, &currentY, oldDx[currentIdx], oldDy[currentIdx]);
+        double dx, dy;
 
-        screenCoords(&prevX, &prevY, oldDx[prevIdx], oldDy[prevIdx]);
+        pxFromLonLat(&dx, &dy, oldDx[currentIdx], oldDy[currentIdx]);
+
+        screenCoords(&currentX, &currentY, dx, dy);
+
+        pxFromLonLat(&dx, &dy, oldDx[prevIdx], oldDy[prevIdx]);
+
+        screenCoords(&prevX, &prevY, dx, dy);
 
         if(outOfBounds(currentX,currentY)) {
             return;
@@ -287,25 +304,44 @@ void drawGrid()
 
 void drawGeography() {
     int x1, y1, x2, y2;
+
     for(int i=1; i<mapPoints_count/2; i++) {
 
-        if(!mapPoints_relative[i * 2] || !mapPoints_relative[(i - 1) * 2 + 1] || !mapPoints_relative[i * 2] || !mapPoints_relative[i * 2 + 1]) {
+        double dx, dy;
+
+        pxFromLonLat(&dx, &dy, mapPoints_relative[(i - 1) * 2], mapPoints_relative[(i - 1) * 2 + 1]);   
+
+        if(!dx || !dy) {
             continue;
         }
 
-        screenCoords(&x1, &y1, mapPoints_relative[(i - 1) * 2], -mapPoints_relative[(i - 1) * 2 + 1]);      
-        screenCoords(&x2, &y2, mapPoints_relative[i * 2], -mapPoints_relative[i * 2 + 1]);
+        screenCoords(&x1, &y1, dx, dy);
 
-        if(outOfBounds(x1,y1) && outOfBounds(x2,y2)) {
+        if(outOfBounds(x1,y1)) {
             continue;
         }
 
-        double d1 = sqrt(mapPoints_relative[(i - 1) * 2] * mapPoints_relative[(i - 1) * 2] + mapPoints_relative[(i - 1) * 2 + 1] * mapPoints_relative[(i - 1) * 2 + 1]);
-        double d2 = sqrt(mapPoints_relative[i * 2]* mapPoints_relative[i * 2] + mapPoints_relative[i * 2 + 1] * mapPoints_relative[i * 2 + 1]);
+        double d1 = sqrt(dx * dx + dy * dy);
+
+        pxFromLonLat(&dx, &dy, mapPoints_relative[i * 2], mapPoints_relative[i * 2 + 1]);   
+        
+        if(!dx || !dy) {
+            continue;
+        }
+        
+        screenCoords(&x2, &y2, dx, dy);
+
+        if(outOfBounds(x2,y2)) {
+            continue;
+        }
+        
+        double d2 = sqrt(dx* dx + dy * dy);
+
 
         //double alpha = 255.0 * (d1+d2) / 2;
         //alpha =  255.0 - alpha / Modes.maxDist;    
         double alpha = 1.0 - (d1+d2) / (2 * Modes.maxDist);
+
 
         alpha = (alpha < 0) ? 0 : alpha;
 
@@ -332,7 +368,7 @@ void drawMap(void) {
 
     drawGeography();
 
-    drawGrid(); 
+    //drawGrid(); 
 
     while(a) {
         if ((now - a->seen) < Modes.interactive_display_ttl) {
@@ -353,8 +389,11 @@ void drawMap(void) {
 
                 SDL_Color planeColor = signalToColor(colorIdx);
                 int x, y;
-                screenCoords(&x, &y, a->dx, a->dy);
+                //screenCoords(&x, &y, a->dx, a->dy);
 
+                double dx, dy;
+                pxFromLonLat(&dx, &dy, a->lon, a->lat);
+                screenCoords(&x, &y, dx, dy);
 
                 if(outOfBounds(x,y)) {
                     int outx, outy;
@@ -469,3 +508,5 @@ void drawMap(void) {
 //         screen_y[i] = out_y;
 //     }
 // }
+
+
