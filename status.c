@@ -64,27 +64,27 @@ void updateStatus() {
 		                              pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
 
 		sigAccumulate += signalAverage;
-
-
-		//distance measurements got borked during refactor - need to redo here
-		/* 
+		
 		if (p->lon && p->lat) {
+
+
+			//distance measurements got borked during refactor - need to redo here
+			/*
 		    double d = sqrt(p->dx * a->dx + a->dy * a->dy);
 
 		    if(d < appData.maxDist) {
 		        if(d > maxDist) {
 		        	maxDist = d;
 		        }
-
+			*/
 		        numVisiblePlanes++;
-		    }
+		    //}
 		}
-		*/
+		
 
 		totalCount++;
 
-        msgRateAccumulate += (p->messageRate[0] + p->messageRate[1] + p->messageRate[2] + p->messageRate[3] + 
-                                           p->messageRate[4] + p->messageRate[5] + p->messageRate[6] + p->messageRate[7]);   
+        msgRateAccumulate += p->messageRate; 
 
         p = p->next;
     }

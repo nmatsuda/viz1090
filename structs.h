@@ -50,12 +50,13 @@ struct planeObj {
     uint32_t      	addr;           // ICAO address
     char          	flight[16];     // Flight number
     unsigned char 	signalLevel[8]; // Last 8 Signal Amplitudes
-    double        	messageRate[8];
+    double        	messageRate;
     int           	altitude;       // Altitude
     int           	speed;          // Velocity
     int           	track;          // Angle of flight
     int           	vert_rate;      // Vertical rate.
     time_t        	seen;           // Time at which the last packet was received
+    time_t			prev_seen;
     double        	lat, lon;       // Coordinated obtained from CPR encoded data
     
 	//history

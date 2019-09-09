@@ -350,6 +350,26 @@ void drawGeography() {
     }
 }
 
+void drawPlaneText(struct planeObj *p, int x, int y) {
+    drawStringBG(p->flight, x + 5, y + appData.mapFontHeight, appData.mapBoldFont, white, black);                    
+
+    char alt[10] = " ";
+    if (Modes.metric) {
+        snprintf(alt,10,"%dm", (int) (p->altitude / 3.2828)); 
+    } else {
+        snprintf(alt,10,"%d'", p->altitude); 
+    }
+    drawStringBG(alt, x + 5, y + 2*appData.mapFontHeight, appData.mapFont, grey, black);                    
+
+    char speed[10] = " ";
+    if (Modes.metric) {
+        snprintf(speed,10,"%dkm/h", (int) (p->speed * 1.852));
+    } else {
+        snprintf(speed,10,"%dmph", p->speed);
+    }
+    drawStringBG(speed, x + 5, y + 3*appData.mapFontHeight, appData.mapFont, grey, black);                           
+}
+
 void drawMap() {
     struct planeObj *p = planes;
     time_t now = time(NULL);
@@ -386,18 +406,7 @@ void drawMap() {
                 if(outOfBounds(x,y)) {
                     int outx, outy;
                     drawPlaneOffMap(x, y, &outx, &outy, planeColor); 
-
-                    drawStringBG(p->flight, outx + 5, outy + appData.mapFontHeight, appData.mapBoldFont, white, black);                    
-
-                    char alt[10] = " ";
-                    snprintf(alt,10,"%dm", p->altitude);
-                    drawStringBG(alt, outx + 5, outy + 2*appData.mapFontHeight, appData.mapFont, grey, black);                    
-
-                    char speed[10] = " ";
-                    snprintf(speed,10,"%dkm/h", p->speed);
-                    drawStringBG(speed, outx + 5, outy + 3*appData.mapFontHeight, appData.mapFont, grey, black);                    
-       
-                    // continue;
+                    drawPlaneText(p, outx, outy);
                 }
 
 
@@ -412,18 +421,7 @@ void drawMap() {
                     if(MODES_ACFLAGS_HEADING_VALID) {
                         drawPlaneHeading(x, y,p->track, planeColor);
 
-                        //char flight[11] = " ";
-                        //snprintf(flight,11," %s ", p->flight);
-                        //drawStringBG(flight, x, y + appData.mapFontHeight, appData.mapBoldFont, black, planeColor);
-                        drawStringBG(p->flight, x + 5, y + appData.mapFontHeight, appData.mapBoldFont, white, black);                    
-
-                        char alt[10] = " ";
-                        snprintf(alt,10,"%dm", p->altitude);
-                        drawStringBG(alt, x + 5, y + 2*appData.mapFontHeight, appData.mapFont, grey, black);                    
-
-                        char speed[10] = " ";
-                        snprintf(speed,10,"%dkm/h", p->speed);
-                        drawStringBG(speed, x + 5, y + 3*appData.mapFontHeight, appData.mapFont, grey, black);                    
+                        drawPlaneText(p, x, y); 
 
                         lineRGBA(appData.renderer, x, y, x, y + 4*appData.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
                     } else {
