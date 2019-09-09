@@ -7,7 +7,7 @@
 #define PAD 5
 
 void updateStatus() {
-	struct aircraft *a = Modes.aircrafts;
+	// struct aircraft *a = Modes.aircrafts;
 
     int numVisiblePlanes = 0;
     double maxDist = 0;
@@ -15,8 +15,7 @@ void updateStatus() {
     double sigAccumulate = 0.0;
     double msgRateAccumulate = 0.0;    
 
-    Status.closeCall = NULL;
-
+/*
     while(a) {
         int flags = a->modeACflags;
         int msgs  = a->messages;
@@ -35,7 +34,7 @@ void updateStatus() {
             if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
                 double d = sqrt(a->dx * a->dx + a->dy * a->dy);
 
-                if(d < Modes.maxDist) {
+                if(d < appData.maxDist) {
 	                if(d > maxDist) {
 	                	maxDist = d;
 	                }
@@ -56,6 +55,39 @@ void updateStatus() {
 
         a = a->next;
     }
+*/
+    struct planeObj *p = planes;
+
+    while(p) {
+		unsigned char * pSig       = p->signalLevel;
+		unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+		                              pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
+
+		sigAccumulate += signalAverage;
+
+
+		//distance measurements got borked during refactor - need to redo here
+		/* 
+		if (p->lon && p->lat) {
+		    double d = sqrt(p->dx * a->dx + a->dy * a->dy);
+
+		    if(d < appData.maxDist) {
+		        if(d > maxDist) {
+		        	maxDist = d;
+		        }
+
+		        numVisiblePlanes++;
+		    }
+		}
+		*/
+
+		totalCount++;
+
+        msgRateAccumulate += (p->messageRate[0] + p->messageRate[1] + p->messageRate[2] + p->messageRate[3] + 
+                                           p->messageRate[4] + p->messageRate[5] + p->messageRate[6] + p->messageRate[7]);   
+
+        p = p->next;
+    }
 
     Status.msgRate                = msgRateAccumulate;
     Status.avgSig                 = sigAccumulate / (double) totalCount;
@@ -65,48 +97,48 @@ void updateStatus() {
 }
 
 void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color) {
-	//int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * game.labelFont;
-	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * game.labelFontWidth;
-	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * game.messageFontWidth;
+	//int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * appData.labelFont;
+	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * appData.labelFontWidth;
+	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * appData.messageFontWidth;
 
 	//newline if no message or label
 	if(strlen(label) == 0 && strlen(message) == 0 ) {
-		boxRGBA(game.renderer, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight,0, 0, 0, 0);
+		boxRGBA(appData.renderer, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight,0, 0, 0, 0);
 		*left = PAD;
-		*top = *top - game.messageFontHeight - PAD;		
+		*top = *top - appData.messageFontHeight - PAD;		
 		return;
 	}	
 
-	if(*left + labelWidth + messageWidth + PAD > Modes.screen_width) {
-		// if(*left + PAD < Modes.screen_width) {
-		// 	boxRGBA(game.screen, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
+	if(*left + labelWidth + messageWidth + PAD > appData.screen_width) {
+		// if(*left + PAD < appData.screen_width) {
+		// 	boxRGBA(appData.screen, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
 		// }
 		*left = PAD;
-		*top = *top - game.messageFontHeight - PAD;
+		*top = *top - appData.messageFontHeight - PAD;
 	}
 
 	// filled black background
 	if(messageWidth) {
-		roundedBoxRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, ROUND_RADIUS, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
+		roundedBoxRGBA(appData.renderer, *left, *top, *left + labelWidth + messageWidth, *top + appData.messageFontHeight, ROUND_RADIUS, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// filled label box
 	if(labelWidth) {
-		roundedBoxRGBA(game.renderer, *left, *top, *left + labelWidth, *top + game.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		roundedBoxRGBA(appData.renderer, *left, *top, *left + labelWidth, *top + appData.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// outline message box
 	if(messageWidth) {
-		roundedRectangleRGBA(game.renderer, *left, *top, *left + labelWidth + messageWidth, *top + game.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		roundedRectangleRGBA(appData.renderer, *left, *top, *left + labelWidth + messageWidth, *top + appData.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
 	// label
-	//drawString90(label, *left, *top + game.labelFontWidth/2, game.labelFont, black);
+	//drawString90(label, *left, *top + appData.labelFontWidth/2, appData.labelFont, black);
 	
-	drawString(label, *left + game.labelFontWidth/2, *top, game.labelFont, black);
+	drawString(label, *left + appData.labelFontWidth/2, *top, appData.labelFont, black);
 
 	//message
-	drawString(message, *left + labelWidth + game.messageFontWidth/2, *top, game.messageFont, color);
+	drawString(message, *left + labelWidth + appData.messageFontWidth/2, *top, appData.messageFont, color);
 
 	*left = *left + labelWidth + messageWidth + PAD;
 }
@@ -114,31 +146,31 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 
 
 void drawButtonBox(int *left, int *top, char *label, SDL_Color color) {
-	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * game.labelFontWidth;
+	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * appData.labelFontWidth;
 
 	//newline if no message or label
 	if(strlen(label) == 0) {
-		boxRGBA(game.renderer, *left, *top, Modes.screen_width - PAD, *top + game.messageFontHeight,0, 0, 0, 0);
+		boxRGBA(appData.renderer, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight,0, 0, 0, 0);
 		*left = PAD;
-		*top = *top - game.messageFontHeight - PAD;		
+		*top = *top - appData.messageFontHeight - PAD;		
 		return;
 	}	
 
-	if(*left + labelWidth + PAD > Modes.screen_width) {
+	if(*left + labelWidth + PAD > appData.screen_width) {
 		*left = PAD;
-		*top = *top - game.messageFontHeight - PAD;
+		*top = *top - appData.messageFontHeight - PAD;
 	}
 
 	// outline message box
 	if(labelWidth) {
 
-		roundedRectangleRGBA(game.renderer, *left, *top , *left + labelWidth - 1, *top + game.messageFontHeight - 1, ROUND_RADIUS, 255, 255, 255, SDL_ALPHA_OPAQUE);
-		roundedRectangleRGBA(game.renderer, *left + 1, *top + 1, *left + labelWidth , *top + game.messageFontHeight, ROUND_RADIUS, 20, 20, 20, SDL_ALPHA_OPAQUE);
-		roundedBoxRGBA(game.renderer, *left + 1, *top + 1, *left + labelWidth - 1, *top + game.messageFontHeight - 1, ROUND_RADIUS, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+		roundedRectangleRGBA(appData.renderer, *left, *top , *left + labelWidth - 1, *top + appData.messageFontHeight - 1, ROUND_RADIUS, 255, 255, 255, SDL_ALPHA_OPAQUE);
+		roundedRectangleRGBA(appData.renderer, *left + 1, *top + 1, *left + labelWidth , *top + appData.messageFontHeight, ROUND_RADIUS, 20, 20, 20, SDL_ALPHA_OPAQUE);
+		roundedBoxRGBA(appData.renderer, *left + 1, *top + 1, *left + labelWidth - 1, *top + appData.messageFontHeight - 1, ROUND_RADIUS, color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 
 	}
 
-	drawString(label, *left + game.labelFontWidth/2, *top, game.labelFont, black);
+	drawString(label, *left + appData.labelFontWidth/2, *top, appData.labelFont, black);
 
 	*left = *left + labelWidth + PAD;
 }
@@ -153,26 +185,26 @@ void drawBattery(int *left, int *top, double level) {
 	float yList[9] = {0.2, 0.2, 0.0, 0.0, 0.2, 0.2, 1.0, 1.0, 0.2};	
 
 	for(int k = 0; k < pointCount - 1; k++) {
-	    thickLineRGBA(game.renderer, 
-	    	*left + game.messageFontWidth * xList[k], 
-	    	*top + game.messageFontHeight * yList[k], 
-	    	*left + game.messageFontWidth * xList[k+1], 
-	    	*top + game.messageFontHeight * yList[k+1], 
+	    thickLineRGBA(appData.renderer, 
+	    	*left + appData.messageFontWidth * xList[k], 
+	    	*top + appData.messageFontHeight * yList[k], 
+	    	*left + appData.messageFontWidth * xList[k+1], 
+	    	*top + appData.messageFontHeight * yList[k+1], 
 	    	lineWidth, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 	}
 
-	boxRGBA(game.renderer, *left, *top + (0.2 + 0.8  * (1.0 - level)) * game.messageFontHeight, *left + game.messageFontWidth, *top + game.messageFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+	boxRGBA(appData.renderer, *left, *top + (0.2 + 0.8  * (1.0 - level)) * appData.messageFontHeight, *left + appData.messageFontWidth, *top + appData.messageFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
 
-	*left = *left + game.messageFontWidth;
+	*left = *left + appData.messageFontWidth;
 }
 
 void drawStatus() {
 
-	int left = PAD + 2 * game.messageFontHeight ;	
-	int	top = Modes.screen_height - 2 * game.messageFontHeight - PAD;
+	int left = PAD + 2 * appData.messageFontHeight ;	
+	int	top = appData.screen_height - 2 * appData.messageFontHeight - PAD;
 
 	char strLoc[20] = " ";
-    snprintf(strLoc, 20, "%3.3fN %3.3f%c", Modes.fUserLat, fabs(Modes.fUserLon),(Modes.fUserLon > 0) ? 'E' : 'W');
+    snprintf(strLoc, 20, "%3.3fN %3.3f%c", appData.centerLat, fabs(appData.centerLon),(appData.centerLon > 0) ? 'E' : 'W');
 	drawStatusBox(&left, &top, "loc", strLoc, pink);	
 
 	// drawBattery(&left, &top, 0.85);
@@ -181,9 +213,11 @@ void drawStatus() {
     snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
 	drawStatusBox(&left, &top, "disp", strPlaneCount, yellow);
 
-    char strDMax[5] = " ";
-    snprintf(strDMax, 5, "%.0fkm", Status.maxDist);
-	drawStatusBox(&left, &top, "mDst", strDMax, blue);
+	//distance measurements got borked during refactor - need to redo here
+
+ //    char strDMax[5] = " ";
+ //    snprintf(strDMax, 5, "%.0fkm", Status.maxDist);
+	// drawStatusBox(&left, &top, "mDst", strDMax, blue);
 
     char strMsgRate[18] = " ";
     snprintf(strMsgRate, 18,"%.0f/s", Status.msgRate);

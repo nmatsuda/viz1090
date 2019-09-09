@@ -160,14 +160,10 @@
 // at least greater than a given level for us to dump the signal.
 #define MODES_DEBUG_NOPREAMBLE_LEVEL 25
 
-#define MODES_INTERACTIVE_REFRESH_TIME 33      // Milliseconds
+#define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DELETE_TTL   300      // Delete from the list after 300 seconds
 #define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
-#define MODES_INTERACTIVE_DISPLAY_ACTIVE   30      // Gray out after 30 seconds
-#define MODES_INTERACTIVE_TRAIL_LENGTH   120      // entries to keep in trail
-#define MODES_INTERACTIVE_TRAIL_TTL_STEP   2      // minimum time between entries
-#define MODES_INTERACTIVE_TRAIL_TTL   240.0      // # seconds to fade out
 
 #define MODES_NET_HEARTBEAT_RATE       900      // Each block is approx 65mS - default is > 1 min
 
@@ -209,12 +205,10 @@ struct aircraft {
     int           track;          // Angle of flight
     int           vert_rate;      // Vertical rate.
     time_t        seen;           // Time at which the last packet was received
-    time_t        prev_seen;
     time_t        seenLatLon;     // Time at which the last lat long was calculated
     uint64_t      timestamp;      // Timestamp at which the last packet was received
     uint64_t      timestampLatLon;// Timestamp at which the last lat long was calculated
     long          messages;       // Number of Mode S messages received
-    double        messageRate[8];       // Number of Mode S messages received    
     int           modeA;          // Squawk
     int           modeC;          // Altitude
     long          modeAcount;     // Mode A Squawk hit Count
@@ -229,23 +223,9 @@ struct aircraft {
     uint64_t      odd_cprtime;
     uint64_t      even_cprtime;
     double        lat, lon;       // Coordinated obtained from CPR encoded data
-    double        dx, dy; // distance in km    
-    double        oldDx[MODES_INTERACTIVE_TRAIL_LENGTH], oldDy[MODES_INTERACTIVE_TRAIL_LENGTH], oldHeading[MODES_INTERACTIVE_TRAIL_LENGTH]; // position history
-    time_t        oldSeen[MODES_INTERACTIVE_TRAIL_LENGTH];// position time    
-    uint8_t           oldIdx; // index for ring buffer
-    uint64_t      created;
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
 };
-
-struct {
-    double msgRate;
-    double avgSig;
-    int numPlanes;
-    int numVisiblePlanes;
-    double maxDist;
-    struct aircraft *closeCall;
-} Status;
 
 struct stDF {
     struct stDF     *pNext;                      // Pointer to next item in the linked list
@@ -338,19 +318,6 @@ struct {                             // Internal state
     int   metric;                    // Use metric units
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
-
-    // map options
-    int   map;
-    int   mapLogDist;
-    float maxDist;
-
-    //display options
-    int screen_upscale;
-    int screen_uiscale;
-    int screen_width;
-    int screen_height;
-    int screen_depth;
-    int fullscreen;
 
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location
@@ -491,13 +458,6 @@ void modesReadFromClients (void);
 void modesSendAllClients  (int service, void *msg, int len);
 void modesQueueOutput     (struct modesMessage *mm);
 void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
-
-//
-// Functions exported from maps.c
-//
-
-void drawMap         (void);
-
 
 #ifdef __cplusplus
 }

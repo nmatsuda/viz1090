@@ -6,18 +6,18 @@
 #include "SDL2/SDL_ttf.h"
 #include "mapdata.h"
 
-#ifdef RPI
-	#include <wiringPi.h>
-#endif
-
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 480
 
-#define UPSCALE 1
 #define UISCALE 1
 
-#define AA 0
+#define ROUND_RADIUS 3 //radius of text box corners
 
-#define MAGMA 0
+#define CENTEROFFSET .375 //vertical offset for middle of screen
 
-#define ROUND_RADIUS 3
+#define TRAIL_LENGTH 120
+#define TRAIL_TTL   240.0 
+#define DISPLAY_ACTIVE   30 
+#define TRAIL_TTL_STEP   2
+
+#define	FRAMETIME 33

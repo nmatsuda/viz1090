@@ -3,7 +3,7 @@
 
 #include "defs.h"
 
-typedef struct Game
+typedef struct AppData
 {
 	SDL_Window		*window;
 	SDL_Renderer	*renderer;
@@ -22,9 +22,64 @@ typedef struct Game
 	int labelFontHeight;	
 	int messageFontWidth;
 	int messageFontHeight;		
-} Game;
 
-Game game;
+	// map options
+    int   showList;
+    int   mapLogDist;
+    float maxDist;
+
+    //display options
+    int screen_upscale;
+    int screen_uiscale;
+    int screen_width;
+    int screen_height;
+    int screen_depth;
+    int fullscreen;
+
+    double centerLon;
+    double centerLat;
+
+    uint64_t lastFrameTime;
+} AppData;
+
+AppData appData;
+
+// mirrors aircraft struct in dump1090, separating for refactoring 
+
+struct planeObj {	
+    uint32_t      	addr;           // ICAO address
+    char          	flight[16];     // Flight number
+    unsigned char 	signalLevel[8]; // Last 8 Signal Amplitudes
+    double        	messageRate[8];
+    int           	altitude;       // Altitude
+    int           	speed;          // Velocity
+    int           	track;          // Angle of flight
+    int           	vert_rate;      // Vertical rate.
+    time_t        	seen;           // Time at which the last packet was received
+    double        	lat, lon;       // Coordinated obtained from CPR encoded data
+    
+	//history
+    double        	oldLon[TRAIL_LENGTH];
+    double			oldLat[TRAIL_LENGTH];
+    double			oldHeading[TRAIL_LENGTH];
+    time_t        	oldSeen[TRAIL_LENGTH];
+    uint8_t         oldIdx; 
+    uint64_t      	created;
+    int			live;
+
+    struct planeObj *next;        // Next aircraft in our linked list
+};
+
+struct planeObj *planes;
+
+struct {
+    double msgRate;
+    double avgSig;
+    int numPlanes;
+    int numVisiblePlanes;
+    double maxDist;
+    struct aircraft *closeCall;
+} Status;
 
 // functions
 
@@ -54,5 +109,9 @@ void draw();
 //status.c
 void updateStatus();
 void drawStatus();
+
+//planeObj.c
+void updatePlanes();
+
 
 #endif

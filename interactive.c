@@ -29,7 +29,6 @@
 //
 
 #include "dump1090.h"
-
 //
 // ============================= Utility functions ==========================
 //
@@ -138,18 +137,8 @@ struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
     // Now initialise things that should not be 0/NULL to their defaults
     a->addr = mm->addr;
     a->lat  = a->lon = 0.0;
-
-    a->created = 0;
-
-    a->oldIdx = 0;
-    memset(a->oldDx, 0, sizeof(a->oldDx));
-    memset(a->oldDy, 0, sizeof(a->oldDy));    
-    memset(a->oldHeading, 0, sizeof(a->oldHeading));    
-
     memset(a->signalLevel, mm->signalLevel, 8); // First time, initialise everything
                                                 // to the first signal strength
-
-    memset(a->messageRate, 0, sizeof(a->messageRate));
 
     // mm->msgtype 32 is used to represent Mode A/C. These values can never change, so 
     // set them once here during initialisation, and don't bother to set them every 
@@ -278,8 +267,7 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
     a = interactiveFindAircraft(mm->addr);
     if (!a) {                              // If it's a currently unknown aircraft....
         a = interactiveCreateAircraft(mm); // ., create a new record for it,
-        a->prev_seen = time(NULL);
-        a->next = Modes.aircrafts;         // .. and put it at the head of the list        
+        a->next = Modes.aircrafts;         // .. and put it at the head of the list
         Modes.aircrafts = a;
     } else {
         /* If it is an already known aircraft, move it on head
@@ -298,23 +286,11 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
             a->next = Modes.aircrafts;
             Modes.aircrafts = a;
         }
-
-        a->prev_seen = a->seen;
-    }
-
-    //strip trailing spaces
-    for(int i = 0; i<8; i++) {
-        a->flight[i] = (a->flight[i] == 32) ? 0 : a->flight[i];
     }
 
     a->signalLevel[a->messages & 7] = mm->signalLevel;// replace the 8th oldest signal strength
     a->seen      = time(NULL);
     a->timestamp = mm->timestampMsg;
-
-    if((a->seen - a->prev_seen) > 0) {
-        a->messageRate[a->messages & 7] = 1.0 / (double)(a->seen - a->prev_seen);
-    }
-
     a->messages++;
 
     // If a (new) CALLSIGN has been received, copy it to the aircraft structure
@@ -396,26 +372,6 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
             mm->bFlags |= MODES_ACFLAGS_LATLON_VALID;
             mm->fLat    = a->lat;
             mm->fLon    = a->lon;
-
-            // double dLon = a->lon;// - Modes.fUserLon;
-            // double dLat = a->lat;// - Modes.fUserLat;
-
-            // a->dx = 6371.0 * dLon * M_PI / 180.0f * cos(((a->lat + Modes.fUserLat)/2.0f) * M_PI / 180.0f);
-            // a->dy = 6371.0 * dLat * M_PI / 180.0f;
-
-            a->dx = a->lon;
-            a->dy = a->lat;
-
-            if(time(NULL) - a->oldSeen[a->oldIdx] > MODES_INTERACTIVE_TRAIL_TTL_STEP) {
-                a->oldIdx = (a->oldIdx+1) % 32;
-
-                a->oldDx[a->oldIdx] = a->dx;
-                a->oldDy[a->oldIdx] = a->dy;
-
-                a->oldHeading[a->oldIdx] = a->track;
-
-                a->oldSeen[a->oldIdx] = a->seen;
-            }
         }
     }
 
@@ -480,7 +436,7 @@ void interactiveShowData(void) {
 
     if (Modes.interactive_rtl1090 == 0) {
         printf (
-"Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    dx(km)   dy(km)  Sig  Msgs   Ti%c\n", progress);
+"Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -548,10 +504,8 @@ void interactiveShowData(void) {
                     if (flags & MODEAC_MSG_MODEC_HIT) {strMode[3] = 'c';}
 
                     if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
-                        
-                        snprintf(strLat, 8,"%7.03f", a->dx);
-                        snprintf(strLon, 9,"%8.03f", a->dy);
-
+                        snprintf(strLat, 8,"%7.03f", a->lat);
+                        snprintf(strLon, 9,"%8.03f", a->lon);
                     }
 
                     if (a->bFlags & MODES_ACFLAGS_AOG) {
