@@ -112,7 +112,7 @@ void drawList(int top) {
                         }      
                     }
 
-                    snprintf(strDir,3,"%c%c",cLat,cLon);
+                    //snprintf(strDir,3,"%c%c",cLat,cLon);
 
                     //distance is borked during refactor
 

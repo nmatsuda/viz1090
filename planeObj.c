@@ -19,11 +19,11 @@ struct planeObj *createPlaneObj(struct aircraft *a) {
     p->addr = a->addr;
     p->created = 0;
     p->oldIdx = 0;
+    p->prev_seen = 0;
 
     memset(p->oldLon, 0, sizeof(p->oldLon));
     memset(p->oldLat, 0, sizeof(p->oldLat));    
     memset(p->oldHeading, 0, sizeof(p->oldHeading));    
-    memset(p->messageRate, 0, sizeof(p->messageRate));
 
     return (p);
 }
@@ -45,6 +45,8 @@ void updatePlanes() {
             p = createPlaneObj(a);
             p->next = planes;       
             planes = p;      
+        } else {
+            p->prev_seen = p->seen;
         }
 
         p->live = 1;
@@ -53,7 +55,14 @@ void updatePlanes() {
             a = a->next;
             continue;
         }
-  
+
+        p->seen = a->seen;            
+
+        if((p->seen - p->prev_seen) > 0) {
+                p->messageRate = 1.0 / (double)(p->seen - p->prev_seen);
+        }
+
+
         memcpy(p->flight, a->flight, sizeof(p->flight));
         memcpy(p->signalLevel, a->signalLevel, sizeof(p->signalLevel));
 
@@ -61,7 +70,6 @@ void updatePlanes() {
         p->speed =  a->speed;          
         p->track = a->track;         
         p->vert_rate = a->vert_rate;    
-        p->seen = a->seen;          
         p->lon  = a->lon;
         p->lat   = a->lat;
 
