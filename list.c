@@ -13,24 +13,14 @@ void drawList(int top) {
 
     progress = spinner[time(NULL)%4];
 
-	drawStringBG(" Flight  Alt(m) km/h D(km) H  S ", 0, top, game.mapBoldFont, black, (SDL_Color){255,255,255,64});
+	drawStringBG(" Flight  Alt(m) km/h D(km) H  S ", 0, top, appData.mapBoldFont, black, (SDL_Color){255,255,255,64});
 
-    top = top + game.mapFontHeight;
-
-	// int xstride = 10;
-	// for(int i = 0; i < 320 / xstride; i++) {
-	// 	vlineRGBA (game.screen, i*xstride, 0, SCREEN_HEIGHT, 127, 127, 127, SDL_ALPHA_OPAQUE);		
-	// }
-
-	// int ystride = 20;
-	// for(int i = 0; i < 240 / ystride; i++) {	
-	// 	hlineRGBA (game.screen, 0, SCREEN_WIDTH, i * ystride, 127, 127, 127, SDL_ALPHA_OPAQUE);
-	// }
+    top = top + appData.mapFontHeight;
 
     int numNoDir = 0;
     while(a) {
 
-        if(top > Modes.screen_height) {
+        if(top > appData.screen_height) {
             return;
         }
 
@@ -102,20 +92,20 @@ void drawList(int top) {
 
                 if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
 
-                    if(fabs(a->dx) < .01 && fabs(a->dy) > fabs(a->dx)) {
+                    if(fabs(a->lon) < .01 && fabs(a->lat) > fabs(a->lon)) {
                         cLon = ' ';
                     } else {
-                        if(a->dx < 0) {
+                        if(a->lon < 0) {
                             cLon = 'W';
                         } else {
                             cLon = 'E';
                         }      
                     }
                  
-                   if(fabs(a->dy) < .01 && fabs(a->dx) > fabs(a->dy)) {
+                   if(fabs(a->lat) < .01 && fabs(a->lon) > fabs(a->lat)) {
                         cLat = ' ';
                     } else {
-                        if(a->dy < 0) {
+                        if(a->lat < 0) {
                             cLat = 'S';
                         } else {
                             cLat = 'N';
@@ -124,26 +114,28 @@ void drawList(int top) {
 
                     snprintf(strDir,3,"%c%c",cLat,cLon);
 
-                    d = sqrt(a->dx * a->dx + a->dy * a->dy);
+                    //distance is borked during refactor
 
-                    snprintf(strD, 5,"%4.01f", d);
+                    //d = sqrt(a->dx * a->dx + a->dy * a->dy);
+
+                    //snprintf(strD, 5,"%4.01f", d);
 
                     if ((now - a->seen) > 30 ) {
 
-                		drawString(a->flight, 0, top, game.listFont, (SDL_Color){96,96,96,255});
+                		drawString(a->flight, 0, top, appData.listFont, (SDL_Color){96,96,96,255});
 
                     } else {
-                		drawString(a->flight, 10, top, game.listFont, pink);
+                		drawString(a->flight, 10, top, appData.listFont, pink);
 
-                		drawString(strFl, 90, top, game.listFont, orange);
+                		drawString(strFl, 90, top, appData.listFont, orange);
 
-                		drawString(strGs, 160, top, game.listFont, green);
+                		drawString(strGs, 160, top, appData.listFont, green);
 
-                		drawString(strD, 210, top, game.listFont, blue);
+                		drawString(strD, 210, top, appData.listFont, blue);
 
-                		drawString(strDir, 270, top, game.listFont, yellow);
+                		drawString(strDir, 270, top, appData.listFont, yellow);
 
-                		// drawString(strS, 290, (count + 1) * 20, game.listFont, (SDL_Color){255,9,96,255});                		
+                		// drawString(strS, 290, (count + 1) * 20, appData.listFont, (SDL_Color){255,9,96,255});                		
 
                         // printf("\x1B[1;31m%-8s\x1B[1;32m%5s \x1B[1;33m%4s \x1B[1;34m%5s  \x1B[1;36m%c%c \x1B[1;35m%d",
                         //     a->flight, 
@@ -153,7 +145,7 @@ void drawList(int top) {
                         //     cLat, cLon,
                         //     (int)((float)signalAverage/25.0f));
                     }
-                    top = top + game.mapFontHeight;
+                    top = top + appData.mapFontHeight;
                     count++;
                 } else {
                     numNoDir++;

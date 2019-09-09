@@ -1,4 +1,4 @@
-#include "font.h"
+#include "structs.h"
 #include "SDL2/SDL2_rotozoom.h"
 
 TTF_Font *loadFont(char *name, int size)
@@ -51,8 +51,8 @@ void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 	dest.w = surface->w;
 	dest.h = surface->h;
 
-	SDL_Texture *texture = SDL_CreateTextureFromSurface(game.renderer, surface);
-	SDL_RenderCopy(game.renderer, texture, NULL, &dest);
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(appData.renderer, surface);
+	SDL_RenderCopy(appData.renderer, texture, NULL, &dest);
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
 }
@@ -81,8 +81,8 @@ void drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SD
 	dest.w = surface->w;
 	dest.h = surface->h;
 
-	SDL_Texture *texture = SDL_CreateTextureFromSurface(game.renderer, surface);
-	SDL_RenderCopy(game.renderer, texture, NULL, &dest);
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(appData.renderer, surface);
+	SDL_RenderCopy(appData.renderer, texture, NULL, &dest);
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
 }

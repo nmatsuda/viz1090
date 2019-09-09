@@ -31,8 +31,6 @@
 #include "view1090.h"
 #include "structs.h"
 
-Game game;
-
 int go = 1;
 
 //
@@ -43,27 +41,7 @@ void sigintHandler(int dummy) {
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
     Modes.exit = 1;           // Signal to threads that we are done
 }
-//
-// =============================== Terminal handling ========================
-//
-#ifndef _WIN32
-// Get the number of rows after the terminal changes size.
-int getTermRows() { 
-    struct winsize w; 
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); 
-    return (w.ws_row); 
-} 
 
-// Handle resizing terminal
-void sigWinchCallback() {
-    signal(SIGWINCH, SIG_IGN);
-    Modes.interactive_rows = getTermRows();
-    interactiveShowData();
-    signal(SIGWINCH, sigWinchCallback); 
-}
-#else 
-int getTermRows() { return MODES_INTERACTIVE_ROWS;}
-#endif
 //
 // =============================== Initialization ===========================
 //
@@ -76,7 +54,7 @@ void view1090InitConfig(void) {
     Modes.check_crc               = 1;
     strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
-    Modes.interactive_rows        = getTermRows();
+    Modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
@@ -86,17 +64,18 @@ void view1090InitConfig(void) {
     Modes.quiet                   = 1;
 
     // Map options
-    Modes.map                     = 1;
-    Modes.mapLogDist              = 0;
-    Modes.maxDist                 = 25.0;
+    appData.showList                = 0;
+    appData.mapLogDist              = 0;
+    appData.maxDist                 = 25.0;
+    appData.centerLon               = Modes.fUserLon;
+    appData.centerLat               = Modes.fUserLat;
 
     // Display options
-    Modes.screen_upscale          = UPSCALE;
-    Modes.screen_uiscale          = UISCALE;
-    Modes.screen_width            = SCREEN_WIDTH;
-    Modes.screen_height           = SCREEN_HEIGHT;    
-    Modes.screen_depth            = 32;
-    Modes.fullscreen              = 0;
+    appData.screen_uiscale          = UISCALE;
+    appData.screen_width            = SCREEN_WIDTH;
+    appData.screen_height           = SCREEN_HEIGHT;    
+    appData.screen_depth            = 32;
+    appData.fullscreen              = 0;
 
     // Initialize status
     Status.msgRate                = 0;
@@ -186,6 +165,8 @@ int setupConnection(struct client *c) {
         // replace with gps
         Modes.fUserLat = 47.6611754;
         Modes.fUserLon = -122.3562983;
+            appData.centerLon               = Modes.fUserLon;
+    appData.centerLat               = Modes.fUserLat;
     }
     return fd;
 }
@@ -215,7 +196,6 @@ void showHelp(void) {
   "\n-----------------------------------------------------------------------------\n"
   "|                        SDL DISPLAY OPTIONS                                |\n"
   "-----------------------------------------------------------------------------\n"
-  "--upscale <factor>       Buffer upscaling\n"  
   "--uiscale <factor>       UI global scaling\n"  
   "--screensize <width> <height>\n"
   "--fullscreen             Start fullscreen\n"
@@ -291,8 +271,10 @@ int main(int argc, char **argv) {
             Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--lat") && more) {
             Modes.fUserLat = atof(argv[++j]);
+            appData.centerLat = Modes.fUserLat;
         } else if (!strcmp(argv[j],"--lon") && more) {
             Modes.fUserLon = atof(argv[++j]);
+            appData.centerLon = Modes.fUserLon;
         } else if (!strcmp(argv[j],"--metric")) {
             Modes.metric = 1;
         } else if (!strcmp(argv[j],"--no-crc-check")) {
@@ -304,14 +286,12 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--aggressive")) {
             Modes.nfix_crc = MODES_MAX_BITERRORS;
         } else if (!strcmp(argv[j],"--fullscreen")) {
-            Modes.fullscreen = 1;
-        } else if (!strcmp(argv[j],"--upscale") && more) {
-            Modes.screen_upscale = atoi(argv[++j]);          
+            appData.fullscreen = 1;         
         } else if (!strcmp(argv[j],"--uiscale") && more) {
-            Modes.screen_uiscale = atoi(argv[++j]);   
+            appData.screen_uiscale = atoi(argv[++j]);   
          } else if (!strcmp(argv[j],"--screensize") && more) {
-            Modes.screen_width = atoi(argv[++j]);        
-            Modes.screen_height = atoi(argv[++j]);        
+            appData.screen_width = atoi(argv[++j]);        
+            appData.screen_height = atoi(argv[++j]);        
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
@@ -321,17 +301,6 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
-
-#ifdef _WIN32
-    // Try to comply with the Copyright license conditions for binary distribution
-    if (!Modes.quiet) {showCopyright();}
-#define MSG_DONTWAIT 0
-#endif
-
-#ifndef _WIN32
-    // Setup for SIGWINCH for handling lines
-    if (Modes.interactive) {signal(SIGWINCH, sigWinchCallback);}
-#endif
 
     // Initialization
     view1090Init();
