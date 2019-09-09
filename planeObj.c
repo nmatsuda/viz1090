@@ -1,6 +1,16 @@
 #include "structs.h"
 #include "dump1090.h"
 
+static uint64_t mstime(void) {
+    struct timeval tv;
+    uint64_t mst;
+
+    gettimeofday(&tv, NULL);
+    mst = ((uint64_t)tv.tv_sec)*1000;
+    mst += tv.tv_usec/1000;
+    return mst;
+}
+
 struct planeObj *findPlaneObj(uint32_t addr) {
     struct planeObj *p = planes;
 
@@ -57,11 +67,11 @@ void updatePlanes() {
         }
 
         p->seen = a->seen;            
+        p->msSeen = mstime();
 
         if((p->seen - p->prev_seen) > 0) {
                 p->messageRate = 1.0 / (double)(p->seen - p->prev_seen);
         }
-
 
         memcpy(p->flight, a->flight, sizeof(p->flight));
         memcpy(p->signalLevel, a->signalLevel, sizeof(p->signalLevel));
@@ -70,11 +80,12 @@ void updatePlanes() {
         p->speed =  a->speed;          
         p->track = a->track;         
         p->vert_rate = a->vert_rate;    
-        p->lon  = a->lon;
-        p->lat   = a->lat;
+        p->lon = a->lon;
+        p->lat = a->lat;
 
-        if(time(NULL) - p->oldSeen[p->oldIdx] > TRAIL_TTL_STEP) {
-
+        if(p->seenLatLon < a->seenLatLon) {
+            p->msSeenLatLon = mstime();
+            
             p->oldIdx = (p->oldIdx+1) % 32;
 
             p->oldLon[p->oldIdx] = p->lon;
@@ -82,8 +93,10 @@ void updatePlanes() {
 
             p->oldHeading[p->oldIdx] = p->track;
 
-            p->oldSeen[p->oldIdx] = p->seen;
+            p->oldSeen[p->oldIdx] = p->seenLatLon;
         }
+        
+        p->seenLatLon = a->seenLatLon;
     
         a = a->next;
     }

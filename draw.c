@@ -250,7 +250,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
 
         uint8_t colorVal = (uint8_t)floor(255.0 * age);
                    
-        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 4 * appData.screen_uiscale, colorVal, colorVal, colorVal, 127);                    
+        //thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 4 * appData.screen_uiscale, colorVal, colorVal, colorVal, 127);                    
 
         //tick marks
 
@@ -268,7 +268,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
 
         int x1, y1, x2, y2;
 
-        int cross_size = 8 * appData.screen_uiscale;
+        int cross_size = 5 * appData.screen_uiscale;
 
         //forward cross
         x1 = currentX + round(-cross_size*vec[0]);
@@ -351,6 +351,7 @@ void drawGeography() {
 }
 
 void drawPlaneText(struct planeObj *p, int x, int y) {
+
     drawStringBG(p->flight, x + 5, y + appData.mapFontHeight, appData.mapBoldFont, white, black);                    
 
     char alt[10] = " ";
@@ -370,38 +371,58 @@ void drawPlaneText(struct planeObj *p, int x, int y) {
     drawStringBG(speed, x + 5, y + 3*appData.mapFontHeight, appData.mapFont, grey, black);                           
 }
 
+void drawSignalMarks(struct planeObj *p, int x, int y) {
+    unsigned char * pSig       = p->signalLevel;
+    unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
+
+    SDL_Color barColor = signalToColor(signalAverage);
+
+    Uint8 seenFade = (Uint8) (255.0 - (mstime() - p->msSeen) / 4.0);
+
+    circleRGBA(appData.renderer, x + 5 * appData.screen_uiscale, y + 10 * appData.screen_uiscale, 2 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+
+    seenFade = (Uint8) (255.0 - (mstime() - p->msSeenLatLon) / 4.0);
+
+    hlineRGBA(appData.renderer, x + 10 * appData.screen_uiscale, x + 14 * appData.screen_uiscale, y + 10 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    vlineRGBA(appData.renderer, x + 12 * appData.screen_uiscale, y + 8 * appData.screen_uiscale, y + 12 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+}
+
 void drawMap() {
     struct planeObj *p = planes;
     time_t now = time(NULL);
-
+    SDL_Color planeColor;
     drawGeography();
 
     drawGrid(); 
+
+    //draw all trails first so they don't cover up planes and text
+
+    while(p) {
+        if ((now - p->seen) < Modes.interactive_display_ttl) {
+            drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
+        }
+        p = p->next;
+    }
+
+    p = planes;
 
     while(p) {
         if ((now - p->seen) < Modes.interactive_display_ttl) {
             if (p->lon && p->lat) {
 
-                unsigned char * pSig       = p->signalLevel;
-                unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
 
-                drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
-
-                int colorIdx;
-                if((int)(now - p->seen) > DISPLAY_ACTIVE) {
-                    colorIdx = -1;
-                } else {
-                    colorIdx = signalAverage;
-                }
-
-                SDL_Color planeColor = signalToColor(colorIdx);
                 int x, y;
-                //screenCoords(&x, &y, p->dx, p->dy);
 
                 double dx, dy;
                 pxFromLonLat(&dx, &dy, p->lon, p->lat);
                 screenCoords(&x, &y, dx, dy);
+
+                if((int)(now - p->seen) > DISPLAY_ACTIVE) {
+                    planeColor = grey;
+                } else {
+                    planeColor = white;
+                }
 
                 if(outOfBounds(x,y)) {
                     int outx, outy;
@@ -419,11 +440,28 @@ void drawMap() {
                     circleRGBA(appData.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
                 } else {
                     if(MODES_ACFLAGS_HEADING_VALID) {
-                        drawPlaneHeading(x, y,p->track, planeColor);
+                        int usex = x;
+                        int usey = y;
 
-                        drawPlaneText(p, x, y); 
+                        if(p->seenLatLon > p->oldSeen[p->oldIdx]) {
+                            int oldx, oldy;
+                            int idx = (p->oldIdx - 1) % TRAIL_LENGTH;
 
-                        lineRGBA(appData.renderer, x, y, x, y + 4*appData.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+                            pxFromLonLat(&dx, &dy, p->oldLon[idx], p->oldLat[idx]);
+                            screenCoords(&oldx, &oldy, dx, dy);
+
+                            double velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+                            double vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+
+                            usex = x + (mstime() - p->msSeenLatLon) * velx;
+                            usey = y + (mstime() - p->msSeenLatLon) * vely;
+                        } 
+
+                        drawPlaneHeading(usex, usey, p->track, planeColor);
+                        drawSignalMarks(p, usex, usey);
+                        drawPlaneText(p, usex, usey); 
+                        lineRGBA(appData.renderer, usex, usey, usex, usey + 4*appData.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+                        
                     } else {
                         drawPlane(x, y, planeColor);
                     }  

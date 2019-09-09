@@ -56,6 +56,7 @@ struct planeObj {
     int           	track;          // Angle of flight
     int           	vert_rate;      // Vertical rate.
     time_t        	seen;           // Time at which the last packet was received
+    time_t        	seenLatLon;           // Time at which the last packet was received
     time_t			prev_seen;
     double        	lat, lon;       // Coordinated obtained from CPR encoded data
     
@@ -66,6 +67,8 @@ struct planeObj {
     time_t        	oldSeen[TRAIL_LENGTH];
     uint8_t         oldIdx; 
     uint64_t      	created;
+    uint64_t		msSeen;
+    uint64_t		msSeenLatLon;
     int			live;
 
     struct planeObj *next;        // Next aircraft in our linked list
