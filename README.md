@@ -1,6 +1,31 @@
 #spidr1090
 
+### TODO
+* change plane history from fixed array to linked list of planeObj, handle cleanup
+* status box layout system
+* status box tap for info
+	* trails w/ altitudes
+* menu system (toggles for UI elements)
+* map system (automatically load open source)
+* separate fully from view1090 (which interface?)
+
+
 ###HARDWARE
+
+Notes:
+Pi 3b+ and below are a little underpowerd for unoptimized map drawing
+Pi 4 is smooth, may have USB issues with RTLSDR?
+Up squared is good, but large
+Up Core may be fine but bad connection options - try up core?
+
+PiJuice is by far best battery option. FCC/CE certified!
+
+Need to test stratux low power dongles. 987Mhz?
+
+Waveshare 4.3" HDMI(B) is very good, slightly too large for handheld. Uses a lot of power, around 500ma
+Pimoroni Hyperpixel 4.0 is the right size, but takes over default I2C pins so conflicts with PiJuice, unless some pin remapping. Also lower power, around 150ma
+Adafruit PiTFT 2.8" capacitive touch is ok, but a little small. Not sure about power draw. Docs claim no multitouch?
+
 
 ####Pi Zero Version
 Part | Link | Cost
@@ -52,34 +77,41 @@ MicroSD Card | |
 alt screen https://www.amazon.com/3-5inch-RPi-LCD-Directly-pluggable-Displaying/dp/B01N48NOXI/ref=sr_1_26?ie=UTF8&qid=1505871836&sr=8-26&keywords=pi+3.5%22+tft, $30 instead of 45, larger, not cap touch
 
 ####Battery Options
+
+Recommended: PiJuice
+
+
 18650 batteries (18mm x 65mm). ~2200mAH ea. 
 Adafruit pack + PowerBoost Charger, ~$40
 http://www.ebay.com/itm/3-7-volts-6400-mAh-1S2P-18650-Li-Ion-Battery-Pack-PCB-protected-Panasonic-Cells-/221923032745?hash=item33aba4bea9:g:0-IAAOSw14xWLSr2
 
 ###INSTALLATION
 
-####On RPI
+Tested and working on Ubuntu 18.04, Raspbian Stretch
 
-1. Follow [Adafruit PiTFT install guide] (https://learn.adafruit.com/adafruit-2-2-pitft-hat-320-240-primary-display-for-raspberry-pi/easy-install) 
-
-2. Install SDL and RTL-SDR libararies
+1. Install SDL and RTL-SDR libararies
 ```
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev wiringpi
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
-3. Download spidr
+2. Download and build spidr
 ```
-git clone sdfsdfdfs
-```
-
-4. Build spidr with RPI flag set
-```
+cd ~
+git clone https://www.github.com/nmatsuda/spidr
 cd spidr
-make RPI=1
+make clean; make
 ```
 
-TODO
-make install should set up service?
+3. Download and build dump1090 
+```
+cd ~
+git clone http://www.github.com/MalcolmRobb/dump1090)
+cd dump1090
+make clean; make
 
+4. Run
+```
+~/dump1090/dump1090
+cd spidr
+./view1090 --screensize 240 400 --fullsceen
 
-
-
+### Runtime Options
