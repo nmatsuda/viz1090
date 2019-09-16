@@ -235,11 +235,11 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
         screenCoords(&prevX, &prevY, dx, dy);
 
         if(outOfBounds(currentX,currentY)) {
-            return;
+            continue;
         }
 
         if(outOfBounds(prevX,prevY)) {
-            return;
+            continue;
         }
 
         double age = pow(1.0 - (double)(now - oldSeen[currentIdx]) / TRAIL_TTL, 2.2);
@@ -250,7 +250,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
 
         uint8_t colorVal = (uint8_t)floor(255.0 * age);
                    
-        //thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 4 * appData.screen_uiscale, colorVal, colorVal, colorVal, 127);                    
+        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, colorVal, colorVal, colorVal, 64);                    
 
         //tick marks
 
@@ -350,27 +350,6 @@ void drawGeography() {
     }
 }
 
-void drawPlaneText(struct planeObj *p, int x, int y) {
-
-    drawStringBG(p->flight, x + 5, y + appData.mapFontHeight, appData.mapBoldFont, white, black);                    
-
-    char alt[10] = " ";
-    if (Modes.metric) {
-        snprintf(alt,10,"%dm", (int) (p->altitude / 3.2828)); 
-    } else {
-        snprintf(alt,10,"%d'", p->altitude); 
-    }
-    drawStringBG(alt, x + 5, y + 2*appData.mapFontHeight, appData.mapFont, grey, black);                    
-
-    char speed[10] = " ";
-    if (Modes.metric) {
-        snprintf(speed,10,"%dkm/h", (int) (p->speed * 1.852));
-    } else {
-        snprintf(speed,10,"%dmph", p->speed);
-    }
-    drawStringBG(speed, x + 5, y + 3*appData.mapFontHeight, appData.mapFont, grey, black);                           
-}
-
 void drawSignalMarks(struct planeObj *p, int x, int y) {
     unsigned char * pSig       = p->signalLevel;
     unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
@@ -380,13 +359,255 @@ void drawSignalMarks(struct planeObj *p, int x, int y) {
 
     Uint8 seenFade = (Uint8) (255.0 - (mstime() - p->msSeen) / 4.0);
 
-    circleRGBA(appData.renderer, x + 5 * appData.screen_uiscale, y + 10 * appData.screen_uiscale, 2 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    circleRGBA(appData.renderer, x, y - 5, 2 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
 
     seenFade = (Uint8) (255.0 - (mstime() - p->msSeenLatLon) / 4.0);
 
-    hlineRGBA(appData.renderer, x + 10 * appData.screen_uiscale, x + 14 * appData.screen_uiscale, y + 10 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
-    vlineRGBA(appData.renderer, x + 12 * appData.screen_uiscale, y + 8 * appData.screen_uiscale, y + 12 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    hlineRGBA(appData.renderer, x + 5 * appData.screen_uiscale, x + 9 * appData.screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
+    vlineRGBA(appData.renderer, x + 7 * appData.screen_uiscale, y - 2 * appData.screen_uiscale - 5, y + 2 * appData.screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
 }
+
+
+void drawPlaneText(struct planeObj *p) {
+
+    drawSignalMarks(p, p->x, p->y);
+
+    int maxCharCount;
+    int currentCharCount;
+
+    int currentLine = 0;
+
+    char flight[10] = " ";
+    maxCharCount = snprintf(flight,10,"%s", p->flight);
+
+    if(maxCharCount > 0) {
+        drawStringBG(flight, p->x, p->y, appData.mapBoldFont, white, black);       
+        currentLine++;             
+    }
+
+    char alt[10] = " ";
+    if (Modes.metric) {
+        currentCharCount = snprintf(alt,10,"%dm", (int) (p->altitude / 3.2828)); 
+    } else {
+        currentCharCount = snprintf(alt,10,"%d'", p->altitude); 
+    }
+
+    if(currentCharCount > 0) {
+        drawStringBG(alt, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
+        currentLine++;                              
+    }
+
+    if(currentCharCount > maxCharCount) {
+        maxCharCount = currentCharCount;
+    }   
+
+    char speed[10] = " ";
+    if (Modes.metric) {
+        currentCharCount = snprintf(speed,10,"%dkm/h", (int) (p->speed * 1.852));
+    } else {
+        currentCharCount = snprintf(speed,10,"%dmph", p->speed);
+    }
+
+    if(currentCharCount > 0) {
+        drawStringBG(speed, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
+        currentLine++;               
+    }
+
+    if(currentCharCount > maxCharCount) {
+        maxCharCount = currentCharCount;
+    }
+
+    p->w = maxCharCount * appData.mapFontWidth;
+    p->h = currentLine * appData.mapFontHeight;         
+}
+
+float sign(float x) {
+    return (x > 0) - (x < 0);
+}
+
+
+void resolveLabelConflicts() {
+    struct planeObj *p = planes;
+
+    while(p) {
+
+        struct planeObj *check_p = planes;
+
+        int p_left = p->x - 10 * appData.screen_uiscale;
+        int p_right = p->x + p->w + 10 * appData.screen_uiscale;
+        int p_top = p->y - 10 * appData.screen_uiscale;
+        int p_bottom = p->y + p->h + 10 * appData.screen_uiscale;
+
+        //debug box 
+        //rectangleRGBA(appData.renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
+        //lineRGBA(appData.renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);
+
+        //apply damping
+
+        p->ddox -= 0.7f * p->dox;
+        p->ddoy -= 0.7f * p->doy;
+
+        //spring back to origin
+        p->ddox -= 0.05f * p->ox;
+        p->ddoy -= 0.05f * p->oy;
+        
+        // // //screen edge 
+
+        if(p_left < 10 * appData.screen_uiscale) {
+            p->ox += (float)(10 * appData.screen_uiscale - p_left);
+        }
+
+        if(p_right > (appData.screen_width - 10 * appData.screen_uiscale)) {
+            p->ox -= (float)(p_right - (appData.screen_width - 10 * appData.screen_uiscale));
+        }
+
+        if(p_top < 10 * appData.screen_uiscale) {
+            p->oy += (float)(10 * appData.screen_uiscale - p_top);
+        }
+
+        if(p_bottom > (appData.screen_height - 10 * appData.screen_uiscale)) {
+            p->oy -= (float)(p_bottom - (appData.screen_height - 10 * appData.screen_uiscale));
+        }
+
+
+        //check against other labels
+
+        while(check_p) {
+            if(check_p->addr != p->addr) {
+
+                int check_left = check_p->x - 5 * appData.screen_uiscale;
+                int check_right = check_p->x + check_p->w + 5 * appData.screen_uiscale;
+                int check_top = check_p->y - 5 * appData.screen_uiscale; 
+                int check_bottom = check_p->y + check_p->h + 5 * appData.screen_uiscale;
+
+                //if(check_left > (p_right + 10) || check_right < (p_left - 10)) {
+                if(check_left > p_right || check_right < p_left) {
+                    check_p = check_p -> next;
+                    continue;
+                }
+
+                //if(check_top > (p_bottom + 10) || check_bottom < (p_top - 10)) {
+                if(check_top > p_bottom || check_bottom < p_top) {
+                    check_p = check_p -> next;
+                    continue;
+                }
+
+                //left collision
+                if(check_left > p_left && check_left < p_right) {
+                    check_p->ddox -= 0.1f * (float)(check_left - p_right);   
+                }
+
+                //right collision
+                if(check_right > p_left && check_right < p_right) {
+                    check_p->ddox -= 0.1f * (float)(check_right - p_left);   
+                }
+
+                //top collision
+                if(check_top > p_top && check_top < p_bottom) {
+                    check_p->ddoy -= 0.1f * (float)(check_top - p_bottom);   
+                }
+
+                //bottom collision
+                if(check_bottom > p_top && check_bottom < p_bottom) {
+                    check_p->ddoy -= 0.1f * (float)(check_bottom - p_top);   
+                }            
+            }
+            check_p = check_p -> next;
+        }
+
+        check_p = planes;
+
+        //check against plane icons (include self)
+
+        p_left = p->x - 5 * appData.screen_uiscale;
+        p_right = p->x + 5 * appData.screen_uiscale;
+        p_top = p->y - 5 * appData.screen_uiscale;
+        p_bottom = p->y + 5 * appData.screen_uiscale;
+
+        while(check_p) {
+
+            int check_left = check_p->x - 5 * appData.screen_uiscale;
+            int check_right = check_p->x + check_p->w + 5 * appData.screen_uiscale;
+            int check_top = check_p->y - 5 * appData.screen_uiscale; 
+            int check_bottom = check_p->y + check_p->h + 5 * appData.screen_uiscale;
+
+            if(check_left > p_right || check_right < p_left) {
+                check_p = check_p -> next;
+                continue;
+            }
+
+            if(check_top > p_bottom || check_bottom < p_top) {
+                check_p = check_p -> next;
+                continue;
+            }
+
+            //left collision
+            if(check_left > p_left && check_left < p_right) {
+                check_p->ddox -= 0.1f * (float)(check_left - p_right);   
+            }
+
+            //right collision
+            if(check_right > p_left && check_right < p_right) {
+                check_p->ddox -= 0.1f * (float)(check_right - p_left);   
+            }
+
+            //top collision
+            if(check_top > p_top && check_top < p_bottom) {
+                check_p->ddoy -= 0.1f * (float)(check_top - p_bottom);   
+            }
+
+            //bottom collision
+            if(check_bottom > p_top && check_bottom < p_bottom) {
+                check_p->ddoy -= 0.1f * (float)(check_bottom - p_top);   
+            }            
+        
+            check_p = check_p -> next;
+        }
+
+        p = p->next;
+    }
+
+    //update 
+
+    p = planes;
+
+    while(p) {
+            //incorporate accelerate from label conflict resolution
+      
+        p->dox += p->ddox;
+        p->doy += p->ddoy;
+
+        if(fabs(p->dox) > 10.0f) {
+            p->dox = sign(p->dox) * 10.0f;
+        }
+
+        if(fabs(p->doy) > 10.0f) {
+            p->doy = sign(p->doy) * 10.0f;
+        }
+
+        if(fabs(p->dox) < 1.0f) {
+            p->dox = 0;
+        }
+
+        if(fabs(p->doy) < 1.0f) {
+            p->doy = 0;
+        }
+
+        p->ox += p->dox;
+        p->oy += p->doy;
+
+        //printf("p_ox: %f, p_oy %f\n",p->ox, p->oy);
+
+        p->ddox = 0;
+        p->ddoy = 0;
+
+        p->x = p->cx + (int)round(p->ox);
+        p->y = p->cy + (int)round(p->oy);
+
+        p = p->next;
+    }
+}
+
 
 void drawMap() {
     struct planeObj *p = planes;
@@ -394,7 +615,11 @@ void drawMap() {
     SDL_Color planeColor;
     drawGeography();
 
-    drawGrid(); 
+    drawGrid();     
+
+    //for(int i = 0; i < 2; i++) {
+        resolveLabelConflicts();
+    //}
 
     //draw all trails first so they don't cover up planes and text
 
@@ -402,6 +627,7 @@ void drawMap() {
         if ((now - p->seen) < Modes.interactive_display_ttl) {
             drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
         }
+
         p = p->next;
     }
 
@@ -423,13 +649,6 @@ void drawMap() {
                 } else {
                     planeColor = white;
                 }
-
-                if(outOfBounds(x,y)) {
-                    int outx, outy;
-                    drawPlaneOffMap(x, y, &outx, &outy, planeColor); 
-                    drawPlaneText(p, outx, outy);
-                }
-
 
                 if(p->created == 0) {
                     p->created = mstime();
@@ -457,13 +676,28 @@ void drawMap() {
                             usey = y + (mstime() - p->msSeenLatLon) * vely;
                         } 
 
-                        drawPlaneHeading(usex, usey, p->track, planeColor);
-                        drawSignalMarks(p, usex, usey);
-                        drawPlaneText(p, usex, usey); 
-                        lineRGBA(appData.renderer, usex, usey, usex, usey + 4*appData.mapFontHeight, grey.r, grey.g, grey.b, SDL_ALPHA_OPAQUE);
+
+                        if(outOfBounds(x,y)) {
+                            drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
+                            thickLineRGBA(appData.renderer, p->cx, p->cy, p->x+(p->w>>2), p->y, appData.screen_uiscale, 200,200,200,SDL_ALPHA_OPAQUE);
+                        } else {
+                            drawPlaneHeading(usex, usey, p->track, planeColor);
+
+                            p->cx = usex;// + 5;
+                            p->cy = usey;// + 10 * appData.screen_uiscale;
+
+                            if(p->cx != 0 && p->cy != 0 && p->x != 0 && p->y != 0) {
+
+                            thickLineRGBA(appData.renderer, usex, usey, p->x+(p->w>>2), p->y, appData.screen_uiscale, 200,200,200, SDL_ALPHA_OPAQUE);
+                            }
+                        }
+                          
+
+                        drawPlaneText(p);
+
                         
                     } else {
-                        drawPlane(x, y, planeColor);
+                        //drawPlane(x, y, planeColor);
                     }  
                 }
             }

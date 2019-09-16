@@ -12,6 +12,10 @@
 
 ###HARDWARE
 
+best option seems to be pi4 + pijuice zero (w/ rewired  i2c) + hyperpixel 4. RTLSDR  (stratux) sticks down or needs u shaped adapter.
+For future tuner, need to test audio phat w/ little speaker, i2c knob, etc.
+
+
 Notes:
 Pi 3b+ and below are a little underpowerd for unoptimized map drawing
 Pi 4 is smooth, may have USB issues with RTLSDR?
