@@ -31,6 +31,18 @@ struct planeObj *createPlaneObj(struct aircraft *a) {
     p->oldIdx = 0;
     p->prev_seen = 0;
 
+    p->x = 0;
+    p->y = 0;
+    p->cx = 0;
+    p->cy = 0;
+
+    p->ox = 0;
+    p->oy = 0;
+    p->dox = 0;
+    p->doy  = 0;
+    p->ddox = 0;
+    p->ddoy = 0;
+
     memset(p->oldLon, 0, sizeof(p->oldLon));
     memset(p->oldLat, 0, sizeof(p->oldLat));    
     memset(p->oldHeading, 0, sizeof(p->oldHeading));    
@@ -85,7 +97,7 @@ void updatePlanes() {
 
         if(p->seenLatLon < a->seenLatLon) {
             p->msSeenLatLon = mstime();
-            
+
             p->oldIdx = (p->oldIdx+1) % 32;
 
             p->oldLon[p->oldIdx] = p->lon;

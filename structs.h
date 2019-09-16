@@ -72,6 +72,12 @@ struct planeObj {
     int			live;
 
     struct planeObj *next;        // Next aircraft in our linked list
+
+//// label stuff
+
+    int 			x, y, cx, cy, w, h;
+    float			ox, oy, dox, doy, ddox, ddoy;
+
 };
 
 struct planeObj *planes;
