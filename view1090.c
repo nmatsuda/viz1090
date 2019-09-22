@@ -71,9 +71,9 @@ void view1090InitConfig(void) {
     appData.centerLat               = Modes.fUserLat;
 
     // Display options
-    appData.screen_uiscale          = UISCALE;
-    appData.screen_width            = SCREEN_WIDTH;
-    appData.screen_height           = SCREEN_HEIGHT;    
+    appData.screen_uiscale          = 1;
+    appData.screen_width            = 0;
+    appData.screen_height           = 0;    
     appData.screen_depth            = 32;
     appData.fullscreen              = 0;
 

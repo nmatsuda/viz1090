@@ -48,6 +48,64 @@ SDL_Color signalToColor(int signal) {
     return planeColor;
 }
 
+SDL_Color hsv2SDLColor(double h, double s, double v)
+{
+    double      hh, p, q, t, ff;
+    long        i;
+    SDL_Color         out;
+
+    if(s <= 0.0) {       // < is bogus, just shuts up warnings
+        out.r = (uint8_t)v;
+        out.g = (uint8_t)v;
+        out.b = (uint8_t)v;
+        return out;
+    }
+    hh = h;
+    if(hh >= 360.0) hh = 0.0;
+    hh /= 60.0;
+    i = (long)hh;
+    ff = hh - i;
+    p = v * (1.0 - s);
+    q = v * (1.0 - (s * ff));
+    t = v * (1.0 - (s * (1.0 - ff)));
+
+    switch(i) {
+    case 0:
+        out.r = (uint8_t)v;
+        out.g = (uint8_t)t;
+        out.b = (uint8_t)p;
+        break;
+    case 1:
+        out.r = (uint8_t)q;
+        out.g = (uint8_t)v;
+        out.b = (uint8_t)p;
+        break;
+    case 2:
+        out.r = (uint8_t)p;
+        out.g = (uint8_t)v;
+        out.b = (uint8_t)t;
+        break;
+
+    case 3:
+        out.r = (uint8_t)p;
+        out.g = (uint8_t)q;
+        out.b = (uint8_t)v;
+        break;
+    case 4:
+        out.r = (uint8_t)t;
+        out.g = (uint8_t)p;
+        out.b = (uint8_t)v;
+        break;
+    case 5:
+    default:
+        out.r = (uint8_t)v;
+        out.g = (uint8_t)p;
+        out.b = (uint8_t)q;
+        break;
+    }
+    return out;     
+}
+
 int screenDist(double d) {
 
     double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
@@ -276,7 +334,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
         x2 = currentX + round(cross_size*vec[0]);
         y2 = currentY + round(cross_size*vec[1]);
 
-        lineRGBA(appData.renderer,x1,y1,x2,y2,colorVal,colorVal,colorVal,127);
+        thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,colorVal,colorVal,colorVal,127);
    
         //side cross
         x1 = currentX + round(-cross_size*out[0]);
@@ -284,7 +342,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
         x2 = currentX + round(cross_size*out[0]);
         y2 = currentY + round(cross_size*out[1]);
         
-        lineRGBA(appData.renderer,x1,y1,x2,y2,colorVal,colorVal,colorVal,127);
+        thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,colorVal,colorVal,colorVal,127);
     }
 }
 
@@ -306,11 +364,32 @@ void drawGrid()
 void drawGeography() {
     int x1, y1, x2, y2;
 
-    for(int i=1; i<mapPoints_count/2; i++) {
+    int skip = (int)(appData.maxDist / 25.0f);
+    if(skip < 1) {
+        skip = 1;
+    }
+
+    for(int i=skip; i<mapPoints_count/2; i+=skip) {
 
         double dx, dy;
 
-        pxFromLonLat(&dx, &dy, mapPoints_relative[(i - 1) * 2], mapPoints_relative[(i - 1) * 2 + 1]);   
+        dx = 1;
+        dy = 1;
+        for(int j = 0; j < skip; j++) {
+            if(!mapPoints_relative[(i - skip + j) * 2]) {
+                dx = 0;
+            }
+
+            if(!mapPoints_relative[(i - skip + j) * 2 + 1]) {
+                dy = 0;
+            }
+        }
+
+        if(!dx || !dy) {
+            continue;
+        }
+
+        pxFromLonLat(&dx, &dy, mapPoints_relative[(i - skip) * 2], mapPoints_relative[(i - skip) * 2 + 1]);   
 
         if(!dx || !dy) {
             continue;
@@ -345,7 +424,7 @@ void drawGeography() {
 
 
         alpha = (alpha < 0) ? 0 : alpha;
-        lineRGBA(appData.renderer, x1, y1, x2, y2, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
+        thickLineRGBA(appData.renderer, x1, y1, x2, y2, appData.screen_uiscale, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
         
     }
 }
@@ -359,64 +438,85 @@ void drawSignalMarks(struct planeObj *p, int x, int y) {
 
     Uint8 seenFade = (Uint8) (255.0 - (mstime() - p->msSeen) / 4.0);
 
-    circleRGBA(appData.renderer, x, y - 5, 2 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    circleRGBA(appData.renderer, x + appData.mapFontWidth, y - 5, 2 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
 
     seenFade = (Uint8) (255.0 - (mstime() - p->msSeenLatLon) / 4.0);
 
-    hlineRGBA(appData.renderer, x + 5 * appData.screen_uiscale, x + 9 * appData.screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
-    vlineRGBA(appData.renderer, x + 7 * appData.screen_uiscale, y - 2 * appData.screen_uiscale - 5, y + 2 * appData.screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
+    hlineRGBA(appData.renderer, x + appData.mapFontWidth + 5 * appData.screen_uiscale, x + appData.mapFontWidth + 9 * appData.screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
+    vlineRGBA(appData.renderer, x + appData.mapFontWidth + 7 * appData.screen_uiscale, y - 2 * appData.screen_uiscale - 5, y + 2 * appData.screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
 }
 
 
 void drawPlaneText(struct planeObj *p) {
-
-    drawSignalMarks(p, p->x, p->y);
-
-    int maxCharCount;
+    int maxCharCount = 0;
     int currentCharCount;
 
     int currentLine = 0;
 
-    char flight[10] = " ";
-    maxCharCount = snprintf(flight,10,"%s", p->flight);
+    if(p->pressure * appData.screen_width< 0.4f) {
+        drawSignalMarks(p, p->x, p->y);
+
+        char flight[10] = " ";
+        maxCharCount = snprintf(flight,10," %s", p->flight);
+
+        if(maxCharCount > 0) {
+            drawStringBG(flight, p->x, p->y, appData.mapBoldFont, white, black); 
+            //roundedRectangleRGBA(appData.renderer, p->x, p->y, p->x + maxCharCount * appData.mapFontWidth, p->y + appData.mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
+            //drawString(flight, p->x, p->y, appData.mapBoldFont, white); 
+            currentLine++;             
+        }
+    }
+
+  if(p->pressure * appData.screen_width < 0.2f) {
+        char alt[10] = " ";
+        if (Modes.metric) {
+            currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
+        } else {
+            currentCharCount = snprintf(alt,10," %d'", p->altitude); 
+        }
+
+        if(currentCharCount > 0) {
+            drawStringBG(alt, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
+            currentLine++;                              
+        }
+
+        if(currentCharCount > maxCharCount) {
+            maxCharCount = currentCharCount;
+        }   
+
+        char speed[10] = " ";
+        if (Modes.metric) {
+            currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
+        } else {
+            currentCharCount = snprintf(speed,10," %dmph", p->speed);
+        }
+
+        if(currentCharCount > 0) {
+            drawStringBG(speed, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
+            currentLine++;               
+        }
+
+        if(currentCharCount > maxCharCount) {
+            maxCharCount = currentCharCount;
+        }
+    }
 
     if(maxCharCount > 0) {
-        drawStringBG(flight, p->x, p->y, appData.mapBoldFont, white, black);       
-        currentLine++;             
+
+        Sint16 vx[4] = {p->cx, p->cx + (p->x - p->cx) / 2, p->x, p->x};
+        Sint16 vy[4] = {p->cy, p->cy + (p->y - p->cy) / 2, p->y - appData.mapFontHeight, p->y};
+        
+        if(p->cy > p->y + currentLine * appData.mapFontHeight) {
+            vy[2] = p->y + currentLine * appData.mapFontHeight + appData.mapFontHeight;
+            vy[3] = p->y + currentLine * appData.mapFontHeight;
+        } 
+
+        bezierRGBA(appData.renderer,vx,vy,4,2,200,200,200,SDL_ALPHA_OPAQUE);
+
+
+        thickLineRGBA(appData.renderer,p->x,p->y,p->x,p->y+currentLine*appData.mapFontHeight,appData.screen_uiscale,200,200,200,SDL_ALPHA_OPAQUE);
     }
-
-    char alt[10] = " ";
-    if (Modes.metric) {
-        currentCharCount = snprintf(alt,10,"%dm", (int) (p->altitude / 3.2828)); 
-    } else {
-        currentCharCount = snprintf(alt,10,"%d'", p->altitude); 
-    }
-
-    if(currentCharCount > 0) {
-        drawStringBG(alt, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
-        currentLine++;                              
-    }
-
-    if(currentCharCount > maxCharCount) {
-        maxCharCount = currentCharCount;
-    }   
-
-    char speed[10] = " ";
-    if (Modes.metric) {
-        currentCharCount = snprintf(speed,10,"%dkm/h", (int) (p->speed * 1.852));
-    } else {
-        currentCharCount = snprintf(speed,10,"%dmph", p->speed);
-    }
-
-    if(currentCharCount > 0) {
-        drawStringBG(speed, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
-        currentLine++;               
-    }
-
-    if(currentCharCount > maxCharCount) {
-        maxCharCount = currentCharCount;
-    }
-
+    
     p->w = maxCharCount * appData.mapFontWidth;
     p->h = currentLine * appData.mapFontHeight;         
 }
@@ -444,12 +544,12 @@ void resolveLabelConflicts() {
 
         //apply damping
 
-        p->ddox -= 0.7f * p->dox;
-        p->ddoy -= 0.7f * p->doy;
+        p->ddox -= 0.07f * p->dox;
+        p->ddoy -= 0.07f * p->doy;
 
         //spring back to origin
-        p->ddox -= 0.05f * p->ox;
-        p->ddoy -= 0.05f * p->oy;
+        p->ddox -= 0.005f * p->ox;
+        p->ddoy -= 0.005f * p->oy;
         
         // // //screen edge 
 
@@ -469,9 +569,10 @@ void resolveLabelConflicts() {
             p->oy -= (float)(p_bottom - (appData.screen_height - 10 * appData.screen_uiscale));
         }
 
+        p->pressure = 0;
+
 
         //check against other labels
-
         while(check_p) {
             if(check_p->addr != p->addr) {
 
@@ -479,6 +580,10 @@ void resolveLabelConflicts() {
                 int check_right = check_p->x + check_p->w + 5 * appData.screen_uiscale;
                 int check_top = check_p->y - 5 * appData.screen_uiscale; 
                 int check_bottom = check_p->y + check_p->h + 5 * appData.screen_uiscale;
+
+
+                p->pressure += 1.0f / ((check_p->cx - p->cx) * (check_p->cx - p->cx) + (check_p->cy - p->cy) * (check_p->cy - p->cy));
+
 
                 //if(check_left > (p_right + 10) || check_right < (p_left - 10)) {
                 if(check_left > p_right || check_right < p_left) {
@@ -494,23 +599,23 @@ void resolveLabelConflicts() {
 
                 //left collision
                 if(check_left > p_left && check_left < p_right) {
-                    check_p->ddox -= 0.1f * (float)(check_left - p_right);   
+                    check_p->ddox -= 0.01f * (float)(check_left - p_right);   
                 }
 
                 //right collision
                 if(check_right > p_left && check_right < p_right) {
-                    check_p->ddox -= 0.1f * (float)(check_right - p_left);   
+                    check_p->ddox -= 0.01f * (float)(check_right - p_left);   
                 }
 
                 //top collision
                 if(check_top > p_top && check_top < p_bottom) {
-                    check_p->ddoy -= 0.1f * (float)(check_top - p_bottom);   
+                    check_p->ddoy -= 0.01f * (float)(check_top - p_bottom);   
                 }
 
                 //bottom collision
                 if(check_bottom > p_top && check_bottom < p_bottom) {
-                    check_p->ddoy -= 0.1f * (float)(check_bottom - p_top);   
-                }            
+                    check_p->ddoy -= 0.01f * (float)(check_bottom - p_top);   
+                }    
             }
             check_p = check_p -> next;
         }
@@ -543,22 +648,22 @@ void resolveLabelConflicts() {
 
             //left collision
             if(check_left > p_left && check_left < p_right) {
-                check_p->ddox -= 0.1f * (float)(check_left - p_right);   
+                check_p->ddox -= 0.04f * (float)(check_left - p_right);   
             }
 
             //right collision
             if(check_right > p_left && check_right < p_right) {
-                check_p->ddox -= 0.1f * (float)(check_right - p_left);   
+                check_p->ddox -= 0.04f * (float)(check_right - p_left);   
             }
 
             //top collision
             if(check_top > p_top && check_top < p_bottom) {
-                check_p->ddoy -= 0.1f * (float)(check_top - p_bottom);   
+                check_p->ddoy -= 0.04f * (float)(check_top - p_bottom);   
             }
 
             //bottom collision
             if(check_bottom > p_top && check_bottom < p_bottom) {
-                check_p->ddoy -= 0.1f * (float)(check_bottom - p_top);   
+                check_p->ddoy -= 0.04f * (float)(check_bottom - p_top);   
             }            
         
             check_p = check_p -> next;
@@ -617,9 +722,9 @@ void drawMap() {
 
     drawGrid();     
 
-    //for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < 4; i++) {
         resolveLabelConflicts();
-    //}
+    }
 
     //draw all trails first so they don't cover up planes and text
 
@@ -648,6 +753,10 @@ void drawMap() {
                     planeColor = grey;
                 } else {
                     planeColor = white;
+                    //srand(p->addr);
+                    // planeColor = hsv2SDLColor(255.0 * (double)rand()/(double)RAND_MAX, 255.0, 200.0);
+                    //planeColor = signalToColor((int)(255.0f * (float)rand()/(float)RAND_MAX));
+                    //fprintf("%d %d %d\n", planeColor.r, planeColor.g, planeColor.b);
                 }
 
                 if(p->created == 0) {
@@ -679,17 +788,17 @@ void drawMap() {
 
                         if(outOfBounds(x,y)) {
                             drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
-                            thickLineRGBA(appData.renderer, p->cx, p->cy, p->x+(p->w>>2), p->y, appData.screen_uiscale, 200,200,200,SDL_ALPHA_OPAQUE);
+
+                            //lineRGBA(appData.renderer, p->cx, p->cy, p->x+(p->w/2), p->y, 200,200,200,SDL_ALPHA_OPAQUE);
+                            
                         } else {
                             drawPlaneHeading(usex, usey, p->track, planeColor);
 
                             p->cx = usex;// + 5;
                             p->cy = usey;// + 10 * appData.screen_uiscale;
-
-                            if(p->cx != 0 && p->cy != 0 && p->x != 0 && p->y != 0) {
-
-                            thickLineRGBA(appData.renderer, usex, usey, p->x+(p->w>>2), p->y, appData.screen_uiscale, 200,200,200, SDL_ALPHA_OPAQUE);
-                            }
+                    
+                            //lineRGBA(appData.renderer, usex, usey, p->x+(p->w/2), p->y, 200,200,200, SDL_ALPHA_OPAQUE);
+                            
                         }
                           
 
