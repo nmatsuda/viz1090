@@ -6,11 +6,6 @@
 #include "SDL2/SDL_ttf.h"
 #include "mapdata.h"
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 480
-
-#define UISCALE 1
-
 #define ROUND_RADIUS 3 //radius of text box corners
 
 #define CENTEROFFSET .375 //vertical offset for middle of screen
@@ -21,3 +16,5 @@
 #define TRAIL_TTL_STEP   2
 
 #define	FRAMETIME 33
+
+#define PAD 5

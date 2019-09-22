@@ -4,8 +4,6 @@
 #include "monokai.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
 
-#define PAD 5
-
 void updateStatus() {
 	// struct aircraft *a = Modes.aircrafts;
 
@@ -102,12 +100,12 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * appData.messageFontWidth;
 
 	//newline if no message or label
-	if(strlen(label) == 0 && strlen(message) == 0 ) {
-		boxRGBA(appData.renderer, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight,0, 0, 0, 0);
-		*left = PAD;
-		*top = *top - appData.messageFontHeight - PAD;		
-		return;
-	}	
+	// if(strlen(label) == 0 && strlen(message) == 0 ) {
+	// 	boxRGBA(appData.renderer, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight,0, 0, 0, 0);
+	// 	*left = PAD;
+	// 	*top = *top - appData.messageFontHeight - PAD;		
+	// 	return;
+	// }	
 
 	if(*left + labelWidth + messageWidth + PAD > appData.screen_width) {
 		// if(*left + PAD < appData.screen_width) {
@@ -200,8 +198,8 @@ void drawBattery(int *left, int *top, double level) {
 
 void drawStatus() {
 
-	int left = PAD + 2 * appData.messageFontHeight ;	
-	int	top = appData.screen_height - 2 * appData.messageFontHeight - PAD;
+	int left = PAD;	
+	int	top = appData.screen_height - appData.messageFontHeight - PAD;
 
 	char strLoc[20] = " ";
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", appData.centerLat, fabs(appData.centerLon),(appData.centerLon > 0) ? 'E' : 'W');
