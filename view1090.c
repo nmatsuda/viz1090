@@ -178,24 +178,12 @@ void showHelp(void) {
 "-----------------------------------------------------------------------------\n"
 "|                        view1090 dump1090 Viewer        Ver : "MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
-  "--interactive            Interactive mode refreshing data on screen\n"
-  "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
-  "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
-  "--interactive-rtl1090    Display flight table in RTL1090 format\n"
-  "--modeac                 Enable decoding of SSR modes 3/A & 3/C\n"
-  "--net-bo-ipaddr <IPv4>   TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
+  "--server <IPv4/hosname>   TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
   "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
   "--lat <latitude>         Reference/receiver latitide for surface posn (opt)\n"
   "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
-  "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
-  "--no-fix                 Disable single-bits error correction using CRC\n"
-  "--fix                    Enable single-bits error correction using CRC\n"
-  "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
   "--metric                 Use metric units (meters, km/h, ...)\n"
   "--help                   Show this help\n"
-  "\n-----------------------------------------------------------------------------\n"
-  "|                        SDL DISPLAY OPTIONS                                |\n"
-  "-----------------------------------------------------------------------------\n"
   "--uiscale <factor>       UI global scaling\n"  
   "--screensize <width> <height>\n"
   "--fullscreen             Start fullscreen\n"
@@ -258,6 +246,8 @@ int main(int argc, char **argv) {
             Modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             strcpy(View1090.net_input_beast_ipaddr, argv[++j]);
+        } else if (!strcmp(argv[j],"--server") && more) {
+            strcpy(View1090.net_input_beast_ipaddr, argv[++j]);            
         } else if (!strcmp(argv[j],"--modeac")) {
             Modes.mode_ac = 1;
         } else if (!strcmp(argv[j],"--interactive-rows") && more) {

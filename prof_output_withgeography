@@ -1,0 +1,517 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 38.46      0.05     0.05       62     0.81     2.10  drawGeography
+ 23.08      0.08     0.03  7006834     0.00     0.00  screenDist
+ 23.08      0.11     0.03  3503324     0.00     0.00  screenCoords
+ 15.39      0.13     0.02  3508939     0.00     0.00  pxFromLonLat
+  0.00      0.13     0.00  3502994     0.00     0.00  outOfBounds
+  0.00      0.13     0.00     1057     0.00     0.00  mstime
+  0.00      0.13     0.00      698     0.00     0.00  drawTrail
+  0.00      0.13     0.00      698     0.00     0.00  findPlaneObj
+  0.00      0.13     0.00      682     0.00     0.00  drawString
+  0.00      0.13     0.00      510     0.00     0.00  drawStringBG
+  0.00      0.13     0.00      478     0.00     0.00  modesChecksum
+  0.00      0.13     0.00      372     0.00     0.00  ICAOCacheHashAddress
+  0.00      0.13     0.00      371     0.00     0.00  decodeBinMessage
+  0.00      0.13     0.00      371     0.00     0.00  decodeModesMessage
+  0.00      0.13     0.00      371     0.00     0.00  modesMessageLenByType
+  0.00      0.13     0.00      371     0.00     0.00  useModesMessage
+  0.00      0.13     0.00      351     0.00     0.00  interactiveFindAircraft
+  0.00      0.13     0.00      351     0.00     0.00  interactiveReceiveData
+  0.00      0.13     0.00      251     0.00     0.00  CROSSVP
+  0.00      0.13     0.00      248     0.00     0.00  drawStatusBox
+  0.00      0.13     0.00      248     0.00     0.00  resolveLabelConflicts
+  0.00      0.13     0.00      234     0.00     0.00  cprNLFunction
+  0.00      0.13     0.00      199     0.00     0.00  ICAOAddressWasRecentlySeen
+  0.00      0.13     0.00      178     0.00     0.00  drawPlaneText
+  0.00      0.13     0.00      175     0.00     0.00  decodeAC13Field
+  0.00      0.13     0.00      173     0.00     0.00  addRecentlySeenICAOAddr
+  0.00      0.13     0.00      172     0.00     0.00  sign
+  0.00      0.13     0.00      170     0.00     0.00  drawSignalMarks
+  0.00      0.13     0.00      170     0.00     0.00  setColor
+  0.00      0.13     0.00      170     0.00     0.00  signalToColor
+  0.00      0.13     0.00      117     0.00     0.00  cprModFunction
+  0.00      0.13     0.00       89     0.00     0.00  drawPlaneHeading
+  0.00      0.13     0.00       89     0.00     0.00  drawPlaneOffMap
+  0.00      0.13     0.00       82     0.00     0.00  mstime
+  0.00      0.13     0.00       78     0.00     0.00  cprNFunction
+  0.00      0.13     0.00       63     0.00     0.00  getInput
+  0.00      0.13     0.00       62     0.00     2.10  draw
+  0.00      0.13     0.00       62     0.00     0.00  drawGrid
+  0.00      0.13     0.00       62     0.00     2.10  drawMap
+  0.00      0.13     0.00       62     0.00     0.00  drawStatus
+  0.00      0.13     0.00       62     0.00     0.00  interactiveRemoveStaleAircrafts
+  0.00      0.13     0.00       62     0.00     0.00  modesReadFromClient
+  0.00      0.13     0.00       62     0.00     0.00  updatePlanes
+  0.00      0.13     0.00       62     0.00     0.00  updateStatus
+  0.00      0.13     0.00       57     0.00     0.00  decodeAC12Field
+  0.00      0.13     0.00       57     0.00     0.00  mstime
+  0.00      0.13     0.00       39     0.00     0.00  cprDlonFunction
+  0.00      0.13     0.00       39     0.00     0.00  decodeCPR
+  0.00      0.13     0.00       18     0.00     0.00  decodeCPRrelative
+  0.00      0.13     0.00       13     0.00     0.00  createPlaneObj
+  0.00      0.13     0.00       13     0.00     0.00  interactiveCreateAircraft
+  0.00      0.13     0.00        7     0.00     0.00  decodeID13Field
+  0.00      0.13     0.00        6     0.00     0.00  interactiveRemoveStaleDF
+  0.00      0.13     0.00        5     0.00     0.00  closeFont
+  0.00      0.13     0.00        5     0.00     0.00  loadFont
+  0.00      0.13     0.00        1     0.00     0.00  anetCreateSocket
+  0.00      0.13     0.00        1     0.00     0.00  anetNonBlock
+  0.00      0.13     0.00        1     0.00     0.00  anetTcpConnect
+  0.00      0.13     0.00        1     0.00     0.00  anetTcpGenericConnect
+  0.00      0.13     0.00        1     0.00     0.00  init
+  0.00      0.13     0.00        1     0.00     0.00  initMaps
+  0.00      0.13     0.00        1     0.00     0.00  modesInitErrorInfo
+  0.00      0.13     0.00        1     0.00     0.00  setupConnection
+  0.00      0.13     0.00        1     0.00     0.00  view1090Init
+  0.00      0.13     0.00        1     0.00     0.00  view1090InitConfig
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 7.69% of 0.13 seconds
+
+index % time    self  children    called     name
+                0.00    0.13      62/62          main [3]
+[1]    100.0    0.00    0.13      62         draw [1]
+                0.00    0.13      62/62          drawMap [2]
+                0.00    0.00     124/1057        mstime [11]
+                0.00    0.00      62/62          updatePlanes [44]
+                0.00    0.00      62/62          updateStatus [45]
+                0.00    0.00      62/62          drawStatus [41]
+-----------------------------------------------
+                0.00    0.13      62/62          draw [1]
+[2]    100.0    0.00    0.13      62         drawMap [2]
+                0.05    0.08      62/62          drawGeography [4]
+                0.00    0.00     698/698         drawTrail [8]
+                0.00    0.00     406/3503324     screenCoords [5]
+                0.00    0.00     406/3508939     pxFromLonLat [7]
+                0.00    0.00      62/62          drawGrid [9]
+                0.00    0.00     593/1057        mstime [11]
+                0.00    0.00     248/248         resolveLabelConflicts [25]
+                0.00    0.00     178/3502994     outOfBounds [10]
+                0.00    0.00     178/178         drawPlaneText [28]
+                0.00    0.00      89/89          drawPlaneOffMap [37]
+                0.00    0.00      89/89          drawPlaneHeading [36]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]    100.0    0.00    0.13                 main [3]
+                0.00    0.13      62/62          draw [1]
+                0.00    0.00      63/63          getInput [40]
+                0.00    0.00      62/62          interactiveRemoveStaleAircrafts [42]
+                0.00    0.00      62/62          modesReadFromClient [43]
+                0.00    0.00       1/1           view1090InitConfig [66]
+                0.00    0.00       1/1           view1090Init [65]
+                0.00    0.00       1/1           setupConnection [64]
+                0.00    0.00       1/1           init [61]
+-----------------------------------------------
+                0.05    0.08      62/62          drawMap [2]
+[4]    100.0    0.05    0.08      62         drawGeography [4]
+                0.03    0.03 3502560/3503324     screenCoords [5]
+                0.02    0.00 3508175/3508939     pxFromLonLat [7]
+                0.00    0.00 3502560/3502994     outOfBounds [10]
+-----------------------------------------------
+                0.00    0.00     358/3503324     drawTrail [8]
+                0.00    0.00     406/3503324     drawMap [2]
+                0.03    0.03 3502560/3503324     drawGeography [4]
+[5]     46.2    0.03    0.03 3503324         screenCoords [5]
+                0.03    0.00 7006648/7006834     screenDist [6]
+-----------------------------------------------
+                0.00    0.00     186/7006834     drawGrid [9]
+                0.03    0.00 7006648/7006834     screenCoords [5]
+[6]     23.1    0.03    0.00 7006834         screenDist [6]
+-----------------------------------------------
+                0.00    0.00     358/3508939     drawTrail [8]
+                0.00    0.00     406/3508939     drawMap [2]
+                0.02    0.00 3508175/3508939     drawGeography [4]
+[7]     15.4    0.02    0.00 3508939         pxFromLonLat [7]
+-----------------------------------------------
+                0.00    0.00     698/698         drawMap [2]
+[8]      0.0    0.00    0.00     698         drawTrail [8]
+                0.00    0.00     358/3503324     screenCoords [5]
+                0.00    0.00     358/3508939     pxFromLonLat [7]
+                0.00    0.00     256/3502994     outOfBounds [10]
+                0.00    0.00      73/251         CROSSVP [23]
+-----------------------------------------------
+                0.00    0.00      62/62          drawMap [2]
+[9]      0.0    0.00    0.00      62         drawGrid [9]
+                0.00    0.00     186/7006834     screenDist [6]
+                0.00    0.00     186/682         drawString [13]
+-----------------------------------------------
+                0.00    0.00     178/3502994     drawMap [2]
+                0.00    0.00     256/3502994     drawTrail [8]
+                0.00    0.00 3502560/3502994     drawGeography [4]
+[10]     0.0    0.00    0.00 3502994         outOfBounds [10]
+-----------------------------------------------
+                0.00    0.00     124/1057        draw [1]
+                0.00    0.00     340/1057        drawSignalMarks [32]
+                0.00    0.00     593/1057        drawMap [2]
+[11]     0.0    0.00    0.00    1057         mstime [11]
+-----------------------------------------------
+                0.00    0.00     698/698         updatePlanes [44]
+[12]     0.0    0.00    0.00     698         findPlaneObj [12]
+-----------------------------------------------
+                0.00    0.00     186/682         drawGrid [9]
+                0.00    0.00     496/682         drawStatusBox [24]
+[13]     0.0    0.00    0.00     682         drawString [13]
+-----------------------------------------------
+                0.00    0.00     510/510         drawPlaneText [28]
+[14]     0.0    0.00    0.00     510         drawStringBG [14]
+-----------------------------------------------
+                0.00    0.00     107/478         modesInitErrorInfo [63]
+                0.00    0.00     371/478         decodeModesMessage [18]
+[15]     0.0    0.00    0.00     478         modesChecksum [15]
+-----------------------------------------------
+                0.00    0.00     173/372         addRecentlySeenICAOAddr [30]
+                0.00    0.00     199/372         ICAOAddressWasRecentlySeen [27]
+[16]     0.0    0.00    0.00     372         ICAOCacheHashAddress [16]
+-----------------------------------------------
+                0.00    0.00     371/371         modesReadFromClient [43]
+[17]     0.0    0.00    0.00     371         decodeBinMessage [17]
+                0.00    0.00     371/371         decodeModesMessage [18]
+                0.00    0.00     371/371         useModesMessage [20]
+-----------------------------------------------
+                0.00    0.00     371/371         decodeBinMessage [17]
+[18]     0.0    0.00    0.00     371         decodeModesMessage [18]
+                0.00    0.00     371/371         modesMessageLenByType [19]
+                0.00    0.00     371/478         modesChecksum [15]
+                0.00    0.00     199/199         ICAOAddressWasRecentlySeen [27]
+                0.00    0.00     175/175         decodeAC13Field [29]
+                0.00    0.00     173/173         addRecentlySeenICAOAddr [30]
+                0.00    0.00      57/57          decodeAC12Field [46]
+                0.00    0.00       7/7           decodeID13Field [53]
+-----------------------------------------------
+                0.00    0.00     371/371         decodeModesMessage [18]
+[19]     0.0    0.00    0.00     371         modesMessageLenByType [19]
+-----------------------------------------------
+                0.00    0.00     371/371         decodeBinMessage [17]
+[20]     0.0    0.00    0.00     371         useModesMessage [20]
+                0.00    0.00     351/351         interactiveReceiveData [22]
+-----------------------------------------------
+                0.00    0.00     351/351         interactiveReceiveData [22]
+[21]     0.0    0.00    0.00     351         interactiveFindAircraft [21]
+-----------------------------------------------
+                0.00    0.00     351/351         useModesMessage [20]
+[22]     0.0    0.00    0.00     351         interactiveReceiveData [22]
+                0.00    0.00     351/351         interactiveFindAircraft [21]
+                0.00    0.00      57/57          mstime [47]
+                0.00    0.00      39/39          decodeCPR [49]
+                0.00    0.00      18/18          decodeCPRrelative [50]
+                0.00    0.00      13/13          interactiveCreateAircraft [52]
+-----------------------------------------------
+                0.00    0.00      73/251         drawTrail [8]
+                0.00    0.00      89/251         drawPlaneOffMap [37]
+                0.00    0.00      89/251         drawPlaneHeading [36]
+[23]     0.0    0.00    0.00     251         CROSSVP [23]
+-----------------------------------------------
+                0.00    0.00     248/248         drawStatus [41]
+[24]     0.0    0.00    0.00     248         drawStatusBox [24]
+                0.00    0.00     496/682         drawString [13]
+-----------------------------------------------
+                0.00    0.00     248/248         drawMap [2]
+[25]     0.0    0.00    0.00     248         resolveLabelConflicts [25]
+                0.00    0.00     172/172         sign [31]
+-----------------------------------------------
+                0.00    0.00      78/234         cprNFunction [39]
+                0.00    0.00     156/234         decodeCPR [49]
+[26]     0.0    0.00    0.00     234         cprNLFunction [26]
+-----------------------------------------------
+                0.00    0.00     199/199         decodeModesMessage [18]
+[27]     0.0    0.00    0.00     199         ICAOAddressWasRecentlySeen [27]
+                0.00    0.00     199/372         ICAOCacheHashAddress [16]
+-----------------------------------------------
+                0.00    0.00     178/178         drawMap [2]
+[28]     0.0    0.00    0.00     178         drawPlaneText [28]
+                0.00    0.00     510/510         drawStringBG [14]
+                0.00    0.00     170/170         drawSignalMarks [32]
+-----------------------------------------------
+                0.00    0.00     175/175         decodeModesMessage [18]
+[29]     0.0    0.00    0.00     175         decodeAC13Field [29]
+-----------------------------------------------
+                0.00    0.00     173/173         decodeModesMessage [18]
+[30]     0.0    0.00    0.00     173         addRecentlySeenICAOAddr [30]
+                0.00    0.00     173/372         ICAOCacheHashAddress [16]
+-----------------------------------------------
+                0.00    0.00     172/172         resolveLabelConflicts [25]
+[31]     0.0    0.00    0.00     172         sign [31]
+-----------------------------------------------
+                0.00    0.00     170/170         drawPlaneText [28]
+[32]     0.0    0.00    0.00     170         drawSignalMarks [32]
+                0.00    0.00     340/1057        mstime [11]
+                0.00    0.00     170/170         signalToColor [34]
+-----------------------------------------------
+                0.00    0.00     170/170         signalToColor [34]
+[33]     0.0    0.00    0.00     170         setColor [33]
+-----------------------------------------------
+                0.00    0.00     170/170         drawSignalMarks [32]
+[34]     0.0    0.00    0.00     170         signalToColor [34]
+                0.00    0.00     170/170         setColor [33]
+-----------------------------------------------
+                0.00    0.00     117/117         decodeCPR [49]
+[35]     0.0    0.00    0.00     117         cprModFunction [35]
+-----------------------------------------------
+                0.00    0.00      89/89          drawMap [2]
+[36]     0.0    0.00    0.00      89         drawPlaneHeading [36]
+                0.00    0.00      89/251         CROSSVP [23]
+-----------------------------------------------
+                0.00    0.00      89/89          drawMap [2]
+[37]     0.0    0.00    0.00      89         drawPlaneOffMap [37]
+                0.00    0.00      89/251         CROSSVP [23]
+-----------------------------------------------
+                0.00    0.00      82/82          updatePlanes [44]
+[38]     0.0    0.00    0.00      82         mstime [38]
+-----------------------------------------------
+                0.00    0.00      39/78          cprDlonFunction [48]
+                0.00    0.00      39/78          decodeCPR [49]
+[39]     0.0    0.00    0.00      78         cprNFunction [39]
+                0.00    0.00      78/234         cprNLFunction [26]
+-----------------------------------------------
+                0.00    0.00      63/63          main [3]
+[40]     0.0    0.00    0.00      63         getInput [40]
+-----------------------------------------------
+                0.00    0.00      62/62          draw [1]
+[41]     0.0    0.00    0.00      62         drawStatus [41]
+                0.00    0.00     248/248         drawStatusBox [24]
+-----------------------------------------------
+                0.00    0.00      62/62          main [3]
+[42]     0.0    0.00    0.00      62         interactiveRemoveStaleAircrafts [42]
+                0.00    0.00       6/6           interactiveRemoveStaleDF [54]
+-----------------------------------------------
+                0.00    0.00      62/62          main [3]
+[43]     0.0    0.00    0.00      62         modesReadFromClient [43]
+                0.00    0.00     371/371         decodeBinMessage [17]
+-----------------------------------------------
+                0.00    0.00      62/62          draw [1]
+[44]     0.0    0.00    0.00      62         updatePlanes [44]
+                0.00    0.00     698/698         findPlaneObj [12]
+                0.00    0.00      82/82          mstime [38]
+                0.00    0.00      13/13          createPlaneObj [51]
+-----------------------------------------------
+                0.00    0.00      62/62          draw [1]
+[45]     0.0    0.00    0.00      62         updateStatus [45]
+-----------------------------------------------
+                0.00    0.00      57/57          decodeModesMessage [18]
+[46]     0.0    0.00    0.00      57         decodeAC12Field [46]
+-----------------------------------------------
+                0.00    0.00      57/57          interactiveReceiveData [22]
+[47]     0.0    0.00    0.00      57         mstime [47]
+-----------------------------------------------
+                0.00    0.00      39/39          decodeCPR [49]
+[48]     0.0    0.00    0.00      39         cprDlonFunction [48]
+                0.00    0.00      39/78          cprNFunction [39]
+-----------------------------------------------
+                0.00    0.00      39/39          interactiveReceiveData [22]
+[49]     0.0    0.00    0.00      39         decodeCPR [49]
+                0.00    0.00     156/234         cprNLFunction [26]
+                0.00    0.00     117/117         cprModFunction [35]
+                0.00    0.00      39/78          cprNFunction [39]
+                0.00    0.00      39/39          cprDlonFunction [48]
+-----------------------------------------------
+                0.00    0.00      18/18          interactiveReceiveData [22]
+[50]     0.0    0.00    0.00      18         decodeCPRrelative [50]
+-----------------------------------------------
+                0.00    0.00      13/13          updatePlanes [44]
+[51]     0.0    0.00    0.00      13         createPlaneObj [51]
+-----------------------------------------------
+                0.00    0.00      13/13          interactiveReceiveData [22]
+[52]     0.0    0.00    0.00      13         interactiveCreateAircraft [52]
+-----------------------------------------------
+                0.00    0.00       7/7           decodeModesMessage [18]
+[53]     0.0    0.00    0.00       7         decodeID13Field [53]
+-----------------------------------------------
+                0.00    0.00       6/6           interactiveRemoveStaleAircrafts [42]
+[54]     0.0    0.00    0.00       6         interactiveRemoveStaleDF [54]
+-----------------------------------------------
+                0.00    0.00       5/5           cleanup [86]
+[55]     0.0    0.00    0.00       5         closeFont [55]
+-----------------------------------------------
+                0.00    0.00       5/5           init [61]
+[56]     0.0    0.00    0.00       5         loadFont [56]
+-----------------------------------------------
+                0.00    0.00       1/1           anetTcpGenericConnect [60]
+[57]     0.0    0.00    0.00       1         anetCreateSocket [57]
+-----------------------------------------------
+                0.00    0.00       1/1           setupConnection [64]
+[58]     0.0    0.00    0.00       1         anetNonBlock [58]
+-----------------------------------------------
+                0.00    0.00       1/1           setupConnection [64]
+[59]     0.0    0.00    0.00       1         anetTcpConnect [59]
+                0.00    0.00       1/1           anetTcpGenericConnect [60]
+-----------------------------------------------
+                0.00    0.00       1/1           anetTcpConnect [59]
+[60]     0.0    0.00    0.00       1         anetTcpGenericConnect [60]
+                0.00    0.00       1/1           anetCreateSocket [57]
+-----------------------------------------------
+                0.00    0.00       1/1           main [3]
+[61]     0.0    0.00    0.00       1         init [61]
+                0.00    0.00       5/5           loadFont [56]
+                0.00    0.00       1/1           initMaps [62]
+-----------------------------------------------
+                0.00    0.00       1/1           init [61]
+[62]     0.0    0.00    0.00       1         initMaps [62]
+-----------------------------------------------
+                0.00    0.00       1/1           view1090Init [65]
+[63]     0.0    0.00    0.00       1         modesInitErrorInfo [63]
+                0.00    0.00     107/478         modesChecksum [15]
+-----------------------------------------------
+                0.00    0.00       1/1           main [3]
+[64]     0.0    0.00    0.00       1         setupConnection [64]
+                0.00    0.00       1/1           anetTcpConnect [59]
+                0.00    0.00       1/1           anetNonBlock [58]
+-----------------------------------------------
+                0.00    0.00       1/1           main [3]
+[65]     0.0    0.00    0.00       1         view1090Init [65]
+                0.00    0.00       1/1           modesInitErrorInfo [63]
+-----------------------------------------------
+                0.00    0.00       1/1           main [3]
+[66]     0.0    0.00    0.00       1         view1090InitConfig [66]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+  [23] CROSSVP                 [4] drawGeography          [15] modesChecksum
+  [27] ICAOAddressWasRecentlySeen [9] drawGrid            [63] modesInitErrorInfo
+  [16] ICAOCacheHashAddress    [2] drawMap                [19] modesMessageLenByType
+  [30] addRecentlySeenICAOAddr [36] drawPlaneHeading      [43] modesReadFromClient
+  [57] anetCreateSocket       [37] drawPlaneOffMap        [47] mstime
+  [58] anetNonBlock           [28] drawPlaneText          [38] mstime
+  [59] anetTcpConnect         [32] drawSignalMarks        [11] mstime
+  [60] anetTcpGenericConnect  [41] drawStatus             [10] outOfBounds
+  [55] closeFont              [24] drawStatusBox           [7] pxFromLonLat
+  [48] cprDlonFunction        [13] drawString             [25] resolveLabelConflicts
+  [35] cprModFunction         [14] drawStringBG            [5] screenCoords
+  [39] cprNFunction            [8] drawTrail               [6] screenDist
+  [26] cprNLFunction          [12] findPlaneObj           [33] setColor
+  [51] createPlaneObj         [40] getInput               [64] setupConnection
+  [46] decodeAC12Field        [61] init                   [31] sign
+  [29] decodeAC13Field        [62] initMaps               [34] signalToColor
+  [17] decodeBinMessage       [52] interactiveCreateAircraft [44] updatePlanes
+  [49] decodeCPR              [21] interactiveFindAircraft [45] updateStatus
+  [50] decodeCPRrelative      [22] interactiveReceiveData [20] useModesMessage
+  [53] decodeID13Field        [42] interactiveRemoveStaleAircrafts [65] view1090Init
+  [18] decodeModesMessage     [54] interactiveRemoveStaleDF [66] view1090InitConfig
+   [1] draw                   [56] loadFont

@@ -225,7 +225,7 @@ void drawStatus() {
     snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
   	drawStatusBox(&left, &top, "sAvg", strSig, green);
 
-	// drawStatusBox(&left, &top, "||||", "MENU", grey);
+	//drawStatusBox(&left, &top, "x", "exit", grey);
 
 	// if(Status.closeCall != NULL) {
 	// 	drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline						
