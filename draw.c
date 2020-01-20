@@ -373,70 +373,144 @@ void drawGrid()
 
 void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, double screen_lon_min, double screen_lon_max) {
 
+    // int skip = (int)(appData.maxDist / 25.0f);
+    // if(skip < 2) {
+    //     skip = 2;
+    // }
+    int skip = 1;
+
+
     if(tree == NULL) {
         return;
     }
 
+    if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
+        return; 
+    }
+  
+    if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) 
+        return; 
+
     double dx, dy;
     int x, y;
 
-    if (!(tree->lat_min < screen_lat_min &&
-        tree->lat_max > screen_lat_max &&
-        tree->lon_min < screen_lon_min &&
-        tree->lon_max > screen_lon_max)) {
-        return;
-    }
+    drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+  
+    //  if(!(tree->lat_min > screen_lat_min &&
+    //     tree->lat_max < screen_lat_max &&
+    //     tree->lon_min > screen_lon_min &&
+    //     tree->lon_max < screen_lon_max)){
+    //     //printf("%f %f\n", tree->lat_min, screen_lat_min);
+    //     return;
+    // }
+
+    //Draw quadtree bounds
+    // pxFromLonLat(&dx, &dy, tree->lon_min, tree->lat_min); 
+    // screenCoords(&x, &y, dx, dy);
+
+    // int top = y;
+    // int left = x;
+
+    // pxFromLonLat(&dx, &dy, tree->lon_max, tree->lat_max); 
+    // screenCoords(&x, &y, dx, dy);
+
+    // int bottom = y;
+    // int right = x;
+    
+//    rectangleRGBA(appData.renderer, left, top, right, bottom,  red.r, red.g, red.b, 255);      
+    
 
 
     Polygon *currentPolygon = tree->polygons;
 
     while(currentPolygon != NULL) {
-        // Sint16 *px = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
-        // Sint16 *py = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
 
-        // for(int i=0; i<currentPolygon->numPoints; i++) {
 
-        //     pxFromLonLat(&dx, &dy, currentPolygon->points[i].lat, currentPolygon->points[i].lon); 
-        //     screenCoords(&x, &y, dx, dy);
+        Sint16 *px = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
+        Sint16 *py = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
 
-        //     px[i] = x;
-        //     py[i] = y;
+        Point *currentPoint = currentPolygon->points;
+
+        int i = 0;
+        while(currentPoint != NULL){
+            pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
+            screenCoords(&x, &y, dx, dy);
+    
+            px[i] = x;
+            py[i] = y;
+
+            i++;
+
+            for(int k = 0; k < skip; k++) {
+                currentPoint = currentPoint->next;
+                if(currentPoint == NULL)
+                    break;
+            }
+        }
+
+        double alpha = 1.0;
+        //filledPolygonRGBA (appData.renderer, px, py, i, 0, 0, 0, 255);      
+
+        polygonRGBA (appData.renderer, px, py, i, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
+        
+
+        //// line version
+       
+        // int x1,y1,x2,y2;
+
+        // if(currentPolygon->points == NULL)
+        //     continue;
+
+        // Point *prevPoint = currentPolygon->points;
+        // Point *currentPoint = prevPoint->next;
+
+        // while(currentPoint != NULL){
+        //     pxFromLonLat(&dx, &dy, prevPoint->lon, prevPoint->lat); 
+        //     screenCoords(&x1, &y1, dx, dy);
+    
+        //     pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
+        //     screenCoords(&x2, &y2, dx, dy);
+
+        //     double alpha = 1.0;
+        //     thickLineRGBA(appData.renderer, x1, y1, x2, y2, appData.screen_uiscale, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
+
+        //     prevPoint = currentPoint;
+        //     currentPoint = currentPoint->next;
         // }
 
-        // double alpha = 1.0;
+        ////bounding boxes
 
-        pxFromLonLat(&dx, &dy, currentPolygon->lat_min, currentPolygon->lon_min); 
-        screenCoords(&x, &y, dx, dy);
+        // pxFromLonLat(&dx, &dy, currentPolygon->lon_min, currentPolygon->lat_min); 
+        // screenCoords(&x, &y, dx, dy);
 
-        int top = y;
-        int left = x;
+        // int top = y;
+        // int left = x;
 
-        pxFromLonLat(&dx, &dy, currentPolygon->lat_max, currentPolygon->lon_max); 
-        screenCoords(&x, &y, dx, dy);
+        // pxFromLonLat(&dx, &dy, currentPolygon->lon_max, currentPolygon->lat_max); 
+        // screenCoords(&x, &y, dx, dy);
 
-        int bottom = y;
-        int right = x;
+        // int bottom = y;
+        // int right = x;
   
-        //polygonRGBA (appData.renderer, px, py, currentPolygon->numPoints, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
         
-        rectangleRGBA(appData.renderer, left, top, right, bottom,  purple.r, purple.g, purple.b, 255);      
+        // rectangleRGBA(appData.renderer, left, top, right, bottom,  purple.r, purple.g, purple.b, 255);      
         
 
         currentPolygon = currentPolygon->next;
     }
-
-    //drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    //drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    //drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    //drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 }
 
 void drawGeography() {
 
     double screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
-    latLonFromScreenCoords(&screen_lon_min, &screen_lat_min, 0, 0);
-    latLonFromScreenCoords(&screen_lon_max, &screen_lat_max, appData.screen_width, appData.screen_height);
+    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0, 0);
+    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height);
+
+    //printf("lat_min: %f, lat_max: %f, lon_min: %f, lon_max: %f\n", screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
     drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
@@ -911,7 +985,7 @@ void draw() {
 
     updateStatus();
 
-    SDL_SetRenderDrawColor( appData.renderer, 0, 0, 0, 0);
+    SDL_SetRenderDrawColor( appData.renderer, 0, 15, 30, 0);
 
     SDL_RenderClear(appData.renderer);
 
