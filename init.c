@@ -2,6 +2,7 @@
 #include "structs.h"
 
 void init(char *title) {
+
 	// raspberry pi compiler flag enables these options
 	#ifdef RPI
 		putenv((char*)"FRAMEBUFFER=/dev/fb1");

@@ -2,7 +2,7 @@
 #include "structs.h"
 #include "SDL2/SDL2_rotozoom.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
-
+#include "mapdata.h"
 //color schemes
 #include "parula.h"
 #include "monokai.h"
@@ -126,6 +126,16 @@ void pxFromLonLat(double *dx, double *dy, double lon, double lat) {
 
     *dx = 6371.0 * (lon - appData.centerLon) * M_PI / 180.0f * cos(((lat + appData.centerLat)/2.0f) * M_PI / 180.0f);
     *dy = 6371.0 * (lat - appData.centerLat) * M_PI / 180.0f;
+}
+
+void latLonFromScreenCoords(double *lat, double *lon, int x, int y) {
+    double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+
+    double dx = appData.maxDist * (x  - (appData.screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
+    double dy = appData.maxDist * (y  - (appData.screen_height * CENTEROFFSET)) / (0.95 * scale_factor * 0.5 );
+
+    *lat = 180.0f * dy / (6371.0 * M_PI) + appData.centerLat;
+    *lon = 180.0 * dx / (cos(((*lat + appData.centerLat)/2.0f) * M_PI / 180.0f) * 6371.0 * M_PI) + appData.centerLon;
 }
 
 
@@ -361,7 +371,77 @@ void drawGrid()
     drawString("100km", (appData.screen_width>>1) + (0.707 * p100km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, appData.mapFont, pink);            
 }
 
+void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, double screen_lon_min, double screen_lon_max) {
+
+    if(tree == NULL) {
+        return;
+    }
+
+    double dx, dy;
+    int x, y;
+
+    if (!(tree->lat_min < screen_lat_min &&
+        tree->lat_max > screen_lat_max &&
+        tree->lon_min < screen_lon_min &&
+        tree->lon_max > screen_lon_max)) {
+        return;
+    }
+
+
+    Polygon *currentPolygon = tree->polygons;
+
+    while(currentPolygon != NULL) {
+        // Sint16 *px = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
+        // Sint16 *py = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
+
+        // for(int i=0; i<currentPolygon->numPoints; i++) {
+
+        //     pxFromLonLat(&dx, &dy, currentPolygon->points[i].lat, currentPolygon->points[i].lon); 
+        //     screenCoords(&x, &y, dx, dy);
+
+        //     px[i] = x;
+        //     py[i] = y;
+        // }
+
+        // double alpha = 1.0;
+
+        pxFromLonLat(&dx, &dy, currentPolygon->lat_min, currentPolygon->lon_min); 
+        screenCoords(&x, &y, dx, dy);
+
+        int top = y;
+        int left = x;
+
+        pxFromLonLat(&dx, &dy, currentPolygon->lat_max, currentPolygon->lon_max); 
+        screenCoords(&x, &y, dx, dy);
+
+        int bottom = y;
+        int right = x;
+  
+        //polygonRGBA (appData.renderer, px, py, currentPolygon->numPoints, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
+        
+        rectangleRGBA(appData.renderer, left, top, right, bottom,  purple.r, purple.g, purple.b, 255);      
+        
+
+        currentPolygon = currentPolygon->next;
+    }
+
+    //drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    //drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    //drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    //drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+}
+
 void drawGeography() {
+
+    double screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
+
+    latLonFromScreenCoords(&screen_lon_min, &screen_lat_min, 0, 0);
+    latLonFromScreenCoords(&screen_lon_max, &screen_lat_max, appData.screen_width, appData.screen_height);
+
+    drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+
+
+    return; 
     int x1, y1, x2, y2;
 
     int skip = (int)(appData.maxDist / 25.0f);
@@ -376,11 +456,11 @@ void drawGeography() {
         dx = 1;
         dy = 1;
         for(int j = 0; j < skip; j++) {
-            if(!mapPoints_relative[(i - skip + j) * 2]) {
+            if(!mapPoints[(i - skip + j) * 2]) {
                 dx = 0;
             }
 
-            if(!mapPoints_relative[(i - skip + j) * 2 + 1]) {
+            if(!mapPoints[(i - skip + j) * 2 + 1]) {
                 dy = 0;
             }
         }
@@ -389,7 +469,7 @@ void drawGeography() {
             continue;
         }
 
-        pxFromLonLat(&dx, &dy, mapPoints_relative[(i - skip) * 2], mapPoints_relative[(i - skip) * 2 + 1]);   
+        pxFromLonLat(&dx, &dy, mapPoints[(i - skip) * 2], mapPoints[(i - skip) * 2 + 1]);   
 
         if(!dx || !dy) {
             continue;
@@ -403,7 +483,7 @@ void drawGeography() {
 
         double d1 = sqrt(dx * dx + dy * dy);
 
-        pxFromLonLat(&dx, &dy, mapPoints_relative[i * 2], mapPoints_relative[i * 2 + 1]);   
+        pxFromLonLat(&dx, &dy, mapPoints[i * 2], mapPoints[i * 2 + 1]);   
         
         if(!dx || !dy) {
             continue;
@@ -752,7 +832,7 @@ void drawMap() {
                 if((int)(now - p->seen) > DISPLAY_ACTIVE) {
                     planeColor = grey;
                 } else {
-                    planeColor = white;
+                    planeColor = green;
                     //srand(p->addr);
                     // planeColor = hsv2SDLColor(255.0 * (double)rand()/(double)RAND_MAX, 255.0, 200.0);
                     //planeColor = signalToColor((int)(255.0f * (float)rand()/(float)RAND_MAX));
