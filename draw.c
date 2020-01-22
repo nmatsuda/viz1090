@@ -373,13 +373,6 @@ void drawGrid()
 
 void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, double screen_lon_min, double screen_lon_max) {
 
-    // int skip = (int)(appData.maxDist / 25.0f);
-    // if(skip < 2) {
-    //     skip = 2;
-    // }
-    int skip = 1;
-
-
     if(tree == NULL) {
         return;
     }
@@ -429,57 +422,82 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
     while(currentPolygon != NULL) {
 
 
-        Sint16 *px = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
-        Sint16 *py = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
+        ////polygon mode
+        // Sint16 *px = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
+        // Sint16 *py = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
 
-        Point *currentPoint = currentPolygon->points;
+        // Point *currentPoint = currentPolygon->points;
 
-        int i = 0;
-        while(currentPoint != NULL){
-            pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
-            screenCoords(&x, &y, dx, dy);
+        // int i = 0;
+        // while(currentPoint != NULL){
+        //     pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
+        //     screenCoords(&x, &y, dx, dy);
     
-            px[i] = x;
-            py[i] = y;
+        //     px[i] = x;
+        //     py[i] = y;
 
-            i++;
+        //     i++;
 
-            for(int k = 0; k < skip; k++) {
-                currentPoint = currentPoint->next;
-                if(currentPoint == NULL)
-                    break;
-            }
-        }
+        //     for(int k = 0; k < skip; k++) {
+        //         currentPoint = currentPoint->next;
+        //         if(currentPoint == NULL)
+        //             break;
+        //     }
+        // }
 
-        double alpha = 1.0;
-        //filledPolygonRGBA (appData.renderer, px, py, i, 0, 0, 0, 255);      
+        // double alpha = 1.0;
+        // //filledPolygonRGBA (appData.renderer, px, py, i, 0, 0, 0, 255);      
 
-        polygonRGBA (appData.renderer, px, py, i, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
+        // polygonRGBA (appData.renderer, px, py, i, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
         
 
         //// line version
        
-        // int x1,y1,x2,y2;
+        int x1,y1,x2,y2;
 
-        // if(currentPolygon->points == NULL)
-        //     continue;
+        if(currentPolygon->points == NULL)
+            continue;
 
-        // Point *prevPoint = currentPolygon->points;
-        // Point *currentPoint = prevPoint->next;
+        Point *prevPoint = currentPolygon->points;
+        Point *currentPoint = prevPoint->next;
 
-        // while(currentPoint != NULL){
-        //     pxFromLonLat(&dx, &dy, prevPoint->lon, prevPoint->lat); 
-        //     screenCoords(&x1, &y1, dx, dy);
+        while(currentPoint != NULL){
+            pxFromLonLat(&dx, &dy, prevPoint->lon, prevPoint->lat); 
+            screenCoords(&x1, &y1, dx, dy);
+
+            if(outOfBounds(x1,y1)) {
+                prevPoint = currentPoint;
+                currentPoint = currentPoint->next;
+                continue;
+            }
+
+            double d1 = dx* dx + dy * dy;
+
+            pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
+            screenCoords(&x2, &y2, dx, dy);
+
+            if(outOfBounds(x2,y2)) {
+                prevPoint = currentPoint;
+                currentPoint = currentPoint->next;
+                continue;
+            }
+
+
+            if((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1) < 100){
+                currentPoint = currentPoint->next;
+                continue;
+            }
+
+            double d2 = dx* dx + dy * dy;
     
-        //     pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
-        //     screenCoords(&x2, &y2, dx, dy);
+            double alpha = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
 
-        //     double alpha = 1.0;
-        //     thickLineRGBA(appData.renderer, x1, y1, x2, y2, appData.screen_uiscale, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
+            lineRGBA(appData.renderer, x1, y1, x2, y2, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
 
-        //     prevPoint = currentPoint;
-        //     currentPoint = currentPoint->next;
-        // }
+            prevPoint = currentPoint;
+            currentPoint = currentPoint->next;
+  
+        }
 
         ////bounding boxes
 
