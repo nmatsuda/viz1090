@@ -356,23 +356,50 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
     }
 }
 
-void drawGrid()
+void drawScaleBars()
 {
-    int p1km = screenDist(1.0);
-    int p10km = screenDist(10.0);
-    int p100km = screenDist(100.0);
+    int scalePower = 0;
+    int scaleBarDist = screenDist((float)pow(10,scalePower));
 
-    circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p1km, pink.r, pink.g, pink.b, 255);
-    circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p10km, pink.r, pink.g, pink.b, 195);
-    circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
+    char scaleLabel[8] = "";
+        
+    thickLineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
 
-    drawString("1km", (appData.screen_width>>1) + (0.707 * p1km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, appData.mapFont, pink);   
-    drawString("10km", (appData.screen_width>>1) + (0.707 * p10km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p10km) + 5, appData.mapFont, pink);  
-    drawString("100km", (appData.screen_width>>1) + (0.707 * p100km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, appData.mapFont, pink);            
+    while(scaleBarDist < appData.screen_width) {
+        thickLineRGBA(appData.renderer,10+scaleBarDist,10,10+scaleBarDist,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+
+        if (Modes.metric) {
+            snprintf(scaleLabel,8,"%dkm", (int)pow(10,scalePower));
+        } else {
+            snprintf(scaleLabel,8,"%dmi", (int)pow(10,scalePower));
+        }
+
+        drawString(scaleLabel, 10+scaleBarDist, 10*appData.screen_uiscale, appData.mapFont, pink);
+
+        scalePower++;
+        scaleBarDist = screenDist((float)pow(10,scalePower));
+    }
+
+    scalePower--;
+    scaleBarDist = screenDist((float)pow(10,scalePower));
+
+    thickLineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+
+
+    // int p1km = screenDist(1.0);
+    // int p10km = screenDist(10.0);
+    // int p100km = screenDist(100.0);
+
+    // circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p1km, pink.r, pink.g, pink.b, 255);
+    // circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p10km, pink.r, pink.g, pink.b, 195);
+    // circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
+
+    // drawString("1km", (appData.screen_width>>1) + (0.707 * p1km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, appData.mapFont, pink);   
+    // drawString("10km", (appData.screen_width>>1) + (0.707 * p10km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p10km) + 5, appData.mapFont, pink);  
+    // drawString("100km", (appData.screen_width>>1) + (0.707 * p100km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, appData.mapFont, pink);            
 }
 
 void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, double screen_lon_min, double screen_lon_max) {
-
     if(tree == NULL) {
         return;
     }
@@ -381,17 +408,16 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
         return; 
     }
   
-    if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) 
+    if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) {
         return; 
-
-    double dx, dy;
-    int x, y;
+    }
 
     drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
   
+    double dx, dy;
     //  if(!(tree->lat_min > screen_lat_min &&
     //     tree->lat_max < screen_lat_max &&
     //     tree->lon_min > screen_lon_min &&
@@ -401,6 +427,9 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
     // }
 
     //Draw quadtree bounds
+    // 
+    // int x, y;
+
     // pxFromLonLat(&dx, &dy, tree->lon_min, tree->lat_min); 
     // screenCoords(&x, &y, dx, dy);
 
@@ -413,7 +442,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
     // int bottom = y;
     // int right = x;
     
-//    rectangleRGBA(appData.renderer, left, top, right, bottom,  red.r, red.g, red.b, 255);      
+    // rectangleRGBA(appData.renderer, left, top, right, bottom,  red.r, red.g, red.b, 255);      
     
 
 
@@ -522,83 +551,12 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
 }
 
 void drawGeography() {
-
     double screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
-    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0, 0);
-    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height);
-
-    //printf("lat_min: %f, lat_max: %f, lon_min: %f, lon_max: %f\n", screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
+    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height * 1.2);
 
     drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-
-
-    return; 
-    int x1, y1, x2, y2;
-
-    int skip = (int)(appData.maxDist / 25.0f);
-    if(skip < 1) {
-        skip = 1;
-    }
-
-    for(int i=skip; i<mapPoints_count/2; i+=skip) {
-
-        double dx, dy;
-
-        dx = 1;
-        dy = 1;
-        for(int j = 0; j < skip; j++) {
-            if(!mapPoints[(i - skip + j) * 2]) {
-                dx = 0;
-            }
-
-            if(!mapPoints[(i - skip + j) * 2 + 1]) {
-                dy = 0;
-            }
-        }
-
-        if(!dx || !dy) {
-            continue;
-        }
-
-        pxFromLonLat(&dx, &dy, mapPoints[(i - skip) * 2], mapPoints[(i - skip) * 2 + 1]);   
-
-        if(!dx || !dy) {
-            continue;
-        }
-
-        screenCoords(&x1, &y1, dx, dy);
-
-        if(outOfBounds(x1,y1)) {
-            continue;
-        }
-
-        double d1 = sqrt(dx * dx + dy * dy);
-
-        pxFromLonLat(&dx, &dy, mapPoints[i * 2], mapPoints[i * 2 + 1]);   
-        
-        if(!dx || !dy) {
-            continue;
-        }
-        
-        screenCoords(&x2, &y2, dx, dy);
-
-        if(outOfBounds(x2,y2)) {
-            continue;
-        }
-        
-        double d2 = sqrt(dx* dx + dy * dy);
-
-
-        //double alpha = 255.0 * (d1+d2) / 2;
-        //alpha =  255.0 - alpha / appData.maxDist;    
-        double alpha = 1.0 - (d1+d2) / (2 * appData.maxDist);
-
-
-        alpha = (alpha < 0) ? 0 : alpha;
-        thickLineRGBA(appData.renderer, x1, y1, x2, y2, appData.screen_uiscale, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
-        
-    }
 }
 
 void drawSignalMarks(struct planeObj *p, int x, int y) {
@@ -796,6 +754,8 @@ void resolveLabelConflicts() {
 
         //check against plane icons (include self)
 
+        float plane_force = 0.08f;
+
         p_left = p->x - 5 * appData.screen_uiscale;
         p_right = p->x + 5 * appData.screen_uiscale;
         p_top = p->y - 5 * appData.screen_uiscale;
@@ -820,22 +780,22 @@ void resolveLabelConflicts() {
 
             //left collision
             if(check_left > p_left && check_left < p_right) {
-                check_p->ddox -= 0.04f * (float)(check_left - p_right);   
+                check_p->ddox -= plane_force * (float)(check_left - p_right);   
             }
 
             //right collision
             if(check_right > p_left && check_right < p_right) {
-                check_p->ddox -= 0.04f * (float)(check_right - p_left);   
+                check_p->ddox -= plane_force * (float)(check_right - p_left);   
             }
 
             //top collision
             if(check_top > p_top && check_top < p_bottom) {
-                check_p->ddoy -= 0.04f * (float)(check_top - p_bottom);   
+                check_p->ddoy -= plane_force * (float)(check_top - p_bottom);   
             }
 
             //bottom collision
             if(check_bottom > p_top && check_bottom < p_bottom) {
-                check_p->ddoy -= 0.04f * (float)(check_bottom - p_top);   
+                check_p->ddoy -= plane_force * (float)(check_bottom - p_top);   
             }            
         
             check_p = check_p -> next;
@@ -892,7 +852,7 @@ void drawMap() {
     SDL_Color planeColor;
     drawGeography();
 
-    drawGrid();     
+    drawScaleBars();     
 
     for(int i = 0; i < 4; i++) {
         resolveLabelConflicts();
