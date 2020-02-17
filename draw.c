@@ -881,6 +881,7 @@ void drawMap() {
                 pxFromLonLat(&dx, &dy, p->lon, p->lat);
                 screenCoords(&x, &y, dx, dy);
 
+
                 if((int)(now - p->seen) > DISPLAY_ACTIVE) {
                     planeColor = grey;
                 } else {
@@ -945,6 +946,21 @@ void drawMap() {
         }
         p = p->next;
     }
+
+
+    if(appData.touchx && appData.touchy) {
+
+        int radius = (mstime() - appData.touchDownTime);
+        int alpha = 255 - (int)(0.5 * (mstime() - appData.touchDownTime));
+        if(alpha < 0 ) {
+            alpha = 0;
+            appData.touchx = 0;
+            appData.touchy = 0;
+        }
+
+        circleRGBA(appData.renderer, appData.touchx, appData.touchy, radius,  white.r, white.g, white.b, alpha);      
+
+    }    
 }
 
 //

@@ -39,6 +39,10 @@ typedef struct AppData
     double centerLon;
     double centerLat;
 
+    uint64_t touchDownTime;
+    int touchx;
+    int touchy;
+
     uint64_t lastFrameTime;
 } AppData;
 
@@ -115,6 +119,8 @@ void drawList(int top);
 
 //draw.c
 void draw();
+void latLonFromScreenCoords(double *lat, double *lon, int x, int y);
+
 
 //status.c
 void updateStatus();
