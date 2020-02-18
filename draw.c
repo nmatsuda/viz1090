@@ -343,6 +343,9 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
 
         //tick marks
 
+        age = 1.0 - (double) 4.0 * (now - oldSeen[currentIdx]) / TRAIL_TTL;
+        colorVal = (uint8_t)floor(255.0 * age);
+
         double vec[3];
         vec[0] = sin(oldHeading[currentIdx] * M_PI / 180);
         vec[1] = -cos(oldHeading[currentIdx] * M_PI / 180);
@@ -427,6 +430,19 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
         return;
     }
 
+    if(appData.mapContinue && appData.mapContinue != tree) {
+        return;
+    }
+
+    if(appData.mapContinue && appData.mapContinue == tree) {
+        appData.mapContinue = NULL;
+    }
+
+    if(mstime() - appData.lastFrameTime > FRAMETIME) {
+        appData.mapContinue = tree;
+        return;
+    }
+
     if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
         return; 
     }
@@ -438,8 +454,14 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
     drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+
+    //if we didn't make it to the last child then need to set mapContinue to this node to make sure all children get drawn next time
+    if(appData.mapContinue) {
+        appData.mapContinue = tree;
+    }
+
     drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-  
+
     double dx, dy;
     //  if(!(tree->lat_min > screen_lat_min &&
     //     tree->lat_max < screen_lat_max &&
@@ -581,7 +603,11 @@ void drawGeography() {
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height * 1.2);
 
-    drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    if(appData.mapContinue) {
+        drawPolys(appData.mapContinue, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
+    } else {
+        drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
+    }
 }
 
 void drawSignalMarks(struct planeObj *p, int x, int y) {
@@ -935,7 +961,7 @@ void drawPlanes() {
             drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
         }
 
-        if(selectedPlane == NULL) {
+        if(selectedPlane == NULL && appData.touchx && appData.touchy) {
             if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
                 if(selection) {
                     if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 
@@ -1089,12 +1115,16 @@ void draw() {
 
     updateStatus();
 
-    if(appData.mapMoved) {
+    if(appData.mapMoved || appData.mapContinue) {
         SDL_SetRenderTarget(appData.renderer, appData.mapTexture);
-        SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
-        SDL_RenderClear(appData.renderer);
+        
+        if(appData.mapContinue == NULL) {
+            SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
+            SDL_RenderClear(appData.renderer);
+        }
 
         drawGeography();
+
         drawScaleBars();
 
         SDL_SetRenderTarget(appData.renderer, NULL );   
