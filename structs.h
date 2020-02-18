@@ -44,6 +44,7 @@ typedef struct AppData
     int touchy;
 
     int mapMoved;
+    QuadTree *mapContinue;
 
     uint64_t lastFrameTime;
 } AppData;
