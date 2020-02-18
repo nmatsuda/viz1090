@@ -86,6 +86,9 @@ struct planeObj {
 
 struct planeObj *planes;
 
+
+struct planeObj *selectedPlane;
+
 struct {
     double msgRate;
     double avgSig;

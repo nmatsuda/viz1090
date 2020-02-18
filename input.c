@@ -83,17 +83,10 @@ void getInput()
 
 			case SDL_FINGERUP:
 				if(mstime() - appData.touchDownTime < 30) {
-					//latLonFromScreenCoords(&(appData.touchLat), &(appData.touchLon), event.tfinger.x, event.tfinger.y);
-					// double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
-
-	    // 			double dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * appData.screen_width * event.tfinger.x * appData.maxDist / (0.95 * scale_factor * 0.5);
-	    // 			double dy = 1.0 * appData.screen_height * event.tfinger.y * appData.maxDist / (0.95 * scale_factor * 0.5);
-
-	    // 			appData.touchLat = dy * (1.0/6371.0) * (180.0f / M_PI);
-
-	    // 			appData.touchLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
 					appData.touchx = appData.screen_width * event.tfinger.x;
 					appData.touchy = appData.screen_height * event.tfinger.y;
+					selectedPlane = NULL;
+
 				} else {
 					appData.touchx = 0;
 					appData.touchy = 0;
