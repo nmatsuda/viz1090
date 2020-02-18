@@ -47,10 +47,12 @@ void getInput()
 			case SDL_MOUSEWHEEL:
 
 				appData.maxDist *= 1.0 + event.wheel.y / 10.0;
+				appData.mapMoved = 1;
 				break;
 
 			case SDL_MULTIGESTURE:
 				appData.maxDist /=1.0 + 4.0*event.mgesture.dDist;
+				appData.mapMoved = 1;
 				break;
 
 			case SDL_FINGERMOTION:;
@@ -74,6 +76,7 @@ void getInput()
 				appData.centerLon += outLon;
 				appData.centerLat += outLat;
 
+				appData.mapMoved = 1;
 				break;
 
 

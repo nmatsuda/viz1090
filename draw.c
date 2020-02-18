@@ -529,7 +529,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
             }
 
 
-            if((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1) < 100){
+            if((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1) < MIN_MAP_FEATURE){
                 currentPoint = currentPoint->next;
                 continue;
             }
@@ -538,7 +538,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
     
             double factor = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
 
-            SDL_Color lineColor = lerpColor(blue, purple, factor); 
+            SDL_Color lineColor = lerpColor(purple, blue, factor); 
 
             lineRGBA(appData.renderer, x1, y1, x2, y2, lineColor.r, lineColor.g, lineColor.b, 255);
 
@@ -865,17 +865,10 @@ void resolveLabelConflicts() {
 }
 
 
-void drawMap() {
+void drawPlanes() {
     struct planeObj *p = planes;
     time_t now = time(NULL);
     SDL_Color planeColor;
-    drawGeography();
-
-    drawScaleBars();     
-
-    for(int i = 0; i < 4; i++) {
-        resolveLabelConflicts();
-    }
 
     //draw all trails first so they don't cover up planes and text
 
@@ -931,10 +924,14 @@ void drawMap() {
                         }
 
                         if(p == selectedPlane) {
-                            appData.centerLon += 0.1 * (p->lon - appData.centerLon);
-                            appData.centerLat += 0.1 * (p->lat - appData.centerLat);
-                 
 
+                            if(fabs(p->lon - appData.centerLon) > 0.0001 || fabs(p->lat - appData.centerLat) > .0001) {
+                                appData.centerLon += 0.1 * (p->lon - appData.centerLon);
+                                appData.centerLat += 0.1 * (p->lat - appData.centerLat);
+                     
+                                appData.mapMoved = 1;    
+                            }
+                            
                             thickLineRGBA(appData.renderer, x - 40, y - 40, x - 10, y - 40, 4, pink.r, pink.g, pink.b, 255);
                             thickLineRGBA(appData.renderer, x - 40, y - 40, x - 40, y - 10, 4, pink.r, pink.g, pink.b, 255);
 
@@ -1004,26 +1001,54 @@ void drawMap() {
 //
 
 void draw() {
-
-    if ((mstime() - appData.lastFrameTime) < FRAMETIME) {
-        return;
-    }
-
-    appData.lastFrameTime = mstime();
-
+    uint64_t drawStartTime = mstime();
+    
     updatePlanes();
 
     updateStatus();
 
-    SDL_SetRenderDrawColor( appData.renderer, 0, 15, 30, 0);
+    if(appData.mapMoved) {
+        SDL_SetRenderTarget(appData.renderer, appData.mapTexture);
+        SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
+        SDL_RenderClear(appData.renderer);
+
+        drawGeography();
+        drawScaleBars();
+
+        SDL_SetRenderTarget(appData.renderer, NULL );   
+
+        appData.mapMoved = 0; 
+    }
+    
+    for(int i = 0; i < 4; i++) {
+        resolveLabelConflicts();
+    }
+
+    //SDL_SetRenderDrawColor( appData.renderer, 0, 15, 30, 0);
+    SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
 
     SDL_RenderClear(appData.renderer);
 
-    drawMap();  
+    SDL_RenderCopy(appData.renderer, appData.mapTexture, NULL, NULL);
+
+    drawPlanes();  
     drawStatus();
+    
     if(appData.showList) {
        drawList(0);
     }
 
-    SDL_RenderPresent(appData.renderer);    
+    char fps[10] = " ";
+    snprintf(fps,10," %ffps", 1000.0 / (mstime() - appData.lastFrameTime));
+    drawStringBG(fps, 0,0, appData.mapFont, grey, black);  
+
+
+    SDL_RenderPresent(appData.renderer);  
+
+
+    appData.lastFrameTime = mstime(); 
+
+    if ((mstime() - drawStartTime) < FRAMETIME) {
+        usleep(1000 * (FRAMETIME - (mstime() - drawStartTime)));
+    } 
 }

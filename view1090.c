@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
         }
         modesReadFromClient(c,"",decodeBinMessage);
 
-        usleep(10000);
+        //usleep(10000);
     }
     
     // The user has stopped us, so close any socket we opened
