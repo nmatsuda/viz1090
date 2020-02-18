@@ -48,6 +48,23 @@ SDL_Color signalToColor(int signal) {
     return planeColor;
 }
 
+SDL_Color lerpColor(SDL_Color aColor, SDL_Color bColor, float factor) {
+    if(factor > 1.0f) {
+        factor = 1.0f;
+    }
+
+    if(factor < 0.0f) {
+        factor = 0.0f;
+    }
+
+    SDL_Color out;
+    out.r = (1.0f - factor) * aColor.r + factor * bColor.r;
+    out.g = (1.0f - factor) * aColor.g + factor * bColor.g;
+    out.b = (1.0f - factor) * aColor.b + factor * bColor.b;
+
+    return out;
+}
+
 SDL_Color hsv2SDLColor(double h, double s, double v)
 {
     double      hh, p, q, t, ff;
@@ -519,9 +536,11 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
 
             double d2 = dx* dx + dy * dy;
     
-            double alpha = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
+            double factor = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
 
-            lineRGBA(appData.renderer, x1, y1, x2, y2, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);
+            SDL_Color lineColor = lerpColor(blue, purple, factor); 
+
+            lineRGBA(appData.renderer, x1, y1, x2, y2, lineColor.r, lineColor.g, lineColor.b, 255);
 
             prevPoint = currentPoint;
             currentPoint = currentPoint->next;
@@ -881,17 +900,6 @@ void drawMap() {
                 pxFromLonLat(&dx, &dy, p->lon, p->lat);
                 screenCoords(&x, &y, dx, dy);
 
-
-                if((int)(now - p->seen) > DISPLAY_ACTIVE) {
-                    planeColor = grey;
-                } else {
-                    planeColor = green;
-                    //srand(p->addr);
-                    // planeColor = hsv2SDLColor(255.0 * (double)rand()/(double)RAND_MAX, 255.0, 200.0);
-                    //planeColor = signalToColor((int)(255.0f * (float)rand()/(float)RAND_MAX));
-                    //fprintf("%d %d %d\n", planeColor.r, planeColor.g, planeColor.b);
-                }
-
                 if(p->created == 0) {
                     p->created = mstime();
                 }
@@ -901,7 +909,7 @@ void drawMap() {
                     circleRGBA(appData.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
                 } else {
                     if(MODES_ACFLAGS_HEADING_VALID) {
-                        int usex = x;
+                        int usex = x;   
                         int usey = y;
 
                         if(p->seenLatLon > p->oldSeen[p->oldIdx]) {
@@ -918,6 +926,34 @@ void drawMap() {
                             usey = y + (mstime() - p->msSeenLatLon) * vely;
                         } 
 
+                        if((usex - appData.touchx) * (usex - appData.touchx) + (usey - appData.touchy) * (usey - appData.touchy) < 900) {
+                            selectedPlane = p;
+                        }
+
+                        if(p == selectedPlane) {
+                            appData.centerLon += 0.1 * (p->lon - appData.centerLon);
+                            appData.centerLat += 0.1 * (p->lat - appData.centerLat);
+                 
+
+                            thickLineRGBA(appData.renderer, x - 40, y - 40, x - 10, y - 40, 4, pink.r, pink.g, pink.b, 255);
+                            thickLineRGBA(appData.renderer, x - 40, y - 40, x - 40, y - 10, 4, pink.r, pink.g, pink.b, 255);
+
+                            thickLineRGBA(appData.renderer, x + 40, y - 40, x + 10, y - 40, 4, pink.r, pink.g, pink.b, 255);
+                            thickLineRGBA(appData.renderer, x + 40, y - 40, x + 40, y - 10, 4, pink.r, pink.g, pink.b, 255);
+
+                            thickLineRGBA(appData.renderer, x + 40, y + 40, x + 10, y + 40, 4, pink.r, pink.g, pink.b, 255);
+                            thickLineRGBA(appData.renderer, x + 40, y + 40, x + 40, y + 10, 4, pink.r, pink.g, pink.b, 255);
+
+                            thickLineRGBA(appData.renderer, x - 40, y + 40, x - 10, y + 40, 4, pink.r, pink.g, pink.b, 255);
+                            thickLineRGBA(appData.renderer, x - 40, y + 40, x - 40, y + 10, 4, pink.r, pink.g, pink.b, 255);
+                            planeColor = lerpColor(pink, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                        } else {
+                            planeColor = lerpColor(green, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                        }
+                         
+                        // if((int)(now - p->seen) > DISPLAY_ACTIVE) {
+                        //     planeColor = grey;
+                        // }
 
                         if(outOfBounds(x,y)) {
                             drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
@@ -950,15 +986,15 @@ void drawMap() {
 
     if(appData.touchx && appData.touchy) {
 
-        int radius = (mstime() - appData.touchDownTime);
-        int alpha = 255 - (int)(0.5 * (mstime() - appData.touchDownTime));
+        int radius = .25 * (mstime() - appData.touchDownTime);
+        int alpha = 128 - (int)(0.5 * (mstime() - appData.touchDownTime));
         if(alpha < 0 ) {
             alpha = 0;
             appData.touchx = 0;
             appData.touchy = 0;
         }
 
-        circleRGBA(appData.renderer, appData.touchx, appData.touchy, radius,  white.r, white.g, white.b, alpha);      
+        filledCircleRGBA(appData.renderer, appData.touchx, appData.touchy, radius,  white.r, white.g, white.b, alpha);      
 
     }    
 }
