@@ -925,15 +925,36 @@ void drawPlanes() {
     time_t now = time(NULL);
     SDL_Color planeColor;
 
-    //draw all trails first so they don't cover up planes and text
+    // draw all trails first so they don't cover up planes and text
+    // also find closest plane to selection point
+
+    struct planeObj *selection = NULL;
 
     while(p) {
         if ((now - p->seen) < Modes.interactive_display_ttl) {
             drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
         }
 
+        if(selectedPlane == NULL) {
+            if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
+                if(selection) {
+                    if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 
+                        (selection->cx - appData.touchx) * (selection->cx - appData.touchx) + (selection->cy - appData.touchy) * (selection->cy - appData.touchy)) {
+                        selection = p;
+                    }
+                } else {
+                    selection = p;
+                }    
+            }
+        }
+
         p = p->next;
     }
+
+    if(selectedPlane == NULL) {
+        selectedPlane = selection;
+    }
+
 
     p = planes;
 
@@ -982,18 +1003,27 @@ void drawPlanes() {
                      
                                 appData.mapMoved = 1;    
                             }
-                            
-                            lineRGBA(appData.renderer, usex - 20, usey - 20, usex - 5, usey - 20, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex - 20, usey - 20, usex - 20, usey - 5, pink.r, pink.g, pink.b, 255);
 
-                            lineRGBA(appData.renderer, usex + 20, usey - 20, usex + 5, usey - 20, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex + 20, usey - 20, usex + 20, usey - 5, pink.r, pink.g, pink.b, 255);
+                            float elapsed  = mstime() - appData.touchDownTime;
 
-                            lineRGBA(appData.renderer, usex + 20, usey + 20, usex + 5, usey + 20, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex + 20, usey + 20, usex + 20, usey + 5, pink.r, pink.g, pink.b, 255);
+                            int boxSize;
+                            if(elapsed < 300) {
+                                boxSize = (int)(20.0 * (1.0 - (1.0 - elapsed / 300.0) * cos(sqrt(elapsed)))); 
+                            } else {
+                                boxSize = 20;
+                            }
+                            //rectangleRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex + boxSize, usey + boxSize, pink.r, pink.g, pink.b, 255);                            
+                            lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
 
-                            lineRGBA(appData.renderer, usex - 20, usey + 20, usex - 5, usey + 20, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex - 20, usey + 20, usex - 20, usey + 5, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
+
+                            lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
+
+                            lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
                             planeColor = lerpColor(pink, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
                         } else {
                             planeColor = lerpColor(green, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
@@ -1016,10 +1046,6 @@ void drawPlanes() {
                     
                             //lineRGBA(appData.renderer, usex, usey, p->x+(p->w/2), p->y, 200,200,200, SDL_ALPHA_OPAQUE);
                             
-                        }
-
-                        if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
-                            selectedPlane = p;
                         }
                           
                         if(p != selectedPlane) {
