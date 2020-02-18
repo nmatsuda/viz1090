@@ -15,6 +15,8 @@
 #define DISPLAY_ACTIVE   30 
 #define TRAIL_TTL_STEP   2
 
+#define	MIN_MAP_FEATURE 2
+
 #define	FRAMETIME 33
 
 #define PAD 5

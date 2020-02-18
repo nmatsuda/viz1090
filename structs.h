@@ -7,7 +7,7 @@ typedef struct AppData
 {
 	SDL_Window		*window;
 	SDL_Renderer	*renderer;
-	SDL_Texture 	*texture;
+	SDL_Texture 	*mapTexture;
 
 	TTF_Font		*mapFont;
 	TTF_Font		*mapBoldFont;	
@@ -42,6 +42,8 @@ typedef struct AppData
     uint64_t touchDownTime;
     int touchx;
     int touchy;
+
+    int mapMoved;
 
     uint64_t lastFrameTime;
 } AppData;

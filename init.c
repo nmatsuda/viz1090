@@ -37,10 +37,12 @@ void init(char *title) {
 
     appData.window =  SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, appData.screen_width, appData.screen_height, flags);		
 	appData.renderer = SDL_CreateRenderer(appData.window, -1, 0);
-	appData.texture = SDL_CreateTexture(appData.renderer,
+	appData.mapTexture = SDL_CreateTexture(appData.renderer,
                                SDL_PIXELFORMAT_ARGB8888,
-                               SDL_TEXTUREACCESS_STREAMING,
+                               SDL_TEXTUREACCESS_TARGET,
                                appData.screen_width, appData.screen_height);
+
+	appData.mapMoved = 1;
 
 	if(appData.fullscreen) {
 		//\SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.
