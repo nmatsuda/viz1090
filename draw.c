@@ -17,6 +17,10 @@ static uint64_t mstime(void) {
     return mst;
 }
 
+float sign(float x) {
+    return (x > 0) - (x < 0);
+}
+
 void CROSSVP(double *v, double *u, double *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
@@ -380,10 +384,12 @@ void drawScaleBars()
 
     char scaleLabel[8] = "";
         
-    thickLineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+    // thickLineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+    lineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
 
     while(scaleBarDist < appData.screen_width) {
-        thickLineRGBA(appData.renderer,10+scaleBarDist,10,10+scaleBarDist,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+        // thickLineRGBA(appData.renderer,10+scaleBarDist,10,10+scaleBarDist,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+        lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
 
         if (Modes.metric) {
             snprintf(scaleLabel,8,"%dkm", (int)pow(10,scalePower));
@@ -391,7 +397,7 @@ void drawScaleBars()
             snprintf(scaleLabel,8,"%dmi", (int)pow(10,scalePower));
         }
 
-        drawString(scaleLabel, 10+scaleBarDist, 10*appData.screen_uiscale, appData.mapFont, pink);
+        drawString(scaleLabel, 10+scaleBarDist, 15*appData.screen_uiscale, appData.mapFont, pink);
 
         scalePower++;
         scaleBarDist = screenDist((float)pow(10,scalePower));
@@ -400,8 +406,8 @@ void drawScaleBars()
     scalePower--;
     scaleBarDist = screenDist((float)pow(10,scalePower));
 
-    thickLineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
-
+    // thickLineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
+    lineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
 
     // int p1km = screenDist(1.0);
     // int p10km = screenDist(10.0);
@@ -608,7 +614,7 @@ void drawPlaneText(struct planeObj *p) {
         char flight[10] = " ";
         maxCharCount = snprintf(flight,10," %s", p->flight);
 
-        if(maxCharCount > 0) {
+        if(maxCharCount > 1) {
             drawStringBG(flight, p->x, p->y, appData.mapBoldFont, white, black); 
             //roundedRectangleRGBA(appData.renderer, p->x, p->y, p->x + maxCharCount * appData.mapFontWidth, p->y + appData.mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
             //drawString(flight, p->x, p->y, appData.mapBoldFont, white); 
@@ -624,7 +630,7 @@ void drawPlaneText(struct planeObj *p) {
             currentCharCount = snprintf(alt,10," %d'", p->altitude); 
         }
 
-        if(currentCharCount > 0) {
+        if(currentCharCount > 1) {
             drawStringBG(alt, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
             currentLine++;                              
         }
@@ -640,7 +646,7 @@ void drawPlaneText(struct planeObj *p) {
             currentCharCount = snprintf(speed,10," %dmph", p->speed);
         }
 
-        if(currentCharCount > 0) {
+        if(currentCharCount > 1) {
             drawStringBG(speed, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
             currentLine++;               
         }
@@ -650,7 +656,7 @@ void drawPlaneText(struct planeObj *p) {
         }
     }
 
-    if(maxCharCount > 0) {
+    if(maxCharCount > 1) {
 
         Sint16 vx[4] = {p->cx, p->cx + (p->x - p->cx) / 2, p->x, p->x};
         Sint16 vy[4] = {p->cy, p->cy + (p->y - p->cy) / 2, p->y - appData.mapFontHeight, p->y};
@@ -670,10 +676,59 @@ void drawPlaneText(struct planeObj *p) {
     p->h = currentLine * appData.mapFontHeight;         
 }
 
-float sign(float x) {
-    return (x > 0) - (x < 0);
-}
+void drawSelectedPlaneText(struct planeObj *p) {
+    if(p == NULL) {
+        return;
+    }
 
+    int x = p->cx - 20;
+    int y = p->cy + 22;
+
+    int maxCharCount = 0;
+    int currentCharCount;
+
+    int currentLine = 0;
+
+    drawSignalMarks(p, x, y);
+
+    char flight[10] = " ";
+    maxCharCount = snprintf(flight,10," %s", p->flight);
+
+    if(maxCharCount > 1) {
+        drawStringBG(flight, x, y, appData.mapBoldFont, white, black); 
+        //roundedRectangleRGBA(appData.renderer, p->x, p->y, p->x + maxCharCount * appData.mapFontWidth, p->y + appData.mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
+        //drawString(flight, p->x, p->y, appData.mapBoldFont, white); 
+        currentLine++;             
+    }
+
+    char alt[10] = " ";
+    if (Modes.metric) {
+        currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
+    } else {
+        currentCharCount = snprintf(alt,10," %d'", p->altitude); 
+    }
+
+    if(currentCharCount > 1) {
+        drawStringBG(alt, x, y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
+        currentLine++;                              
+    }
+
+    if(currentCharCount > maxCharCount) {
+        maxCharCount = currentCharCount;
+    }   
+
+    char speed[10] = " ";
+    if (Modes.metric) {
+        currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
+    } else {
+        currentCharCount = snprintf(speed,10," %dmph", p->speed);
+    }
+
+    if(currentCharCount > 1) {
+        drawStringBG(speed, x, y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
+        currentLine++;               
+    }
+}
 
 void resolveLabelConflicts() {
     struct planeObj *p = planes;
@@ -828,7 +883,7 @@ void resolveLabelConflicts() {
     p = planes;
 
     while(p) {
-            //incorporate accelerate from label conflict resolution
+            //incorporate acceleration from label conflict resolution
       
         p->dox += p->ddox;
         p->doy += p->ddoy;
@@ -919,30 +974,26 @@ void drawPlanes() {
                             usey = y + (mstime() - p->msSeenLatLon) * vely;
                         } 
 
-                        if((usex - appData.touchx) * (usex - appData.touchx) + (usey - appData.touchy) * (usey - appData.touchy) < 900) {
-                            selectedPlane = p;
-                        }
-
                         if(p == selectedPlane) {
 
-                            if(fabs(p->lon - appData.centerLon) > 0.0001 || fabs(p->lat - appData.centerLat) > .0001) {
+                            if(fabs(p->lon - appData.centerLon) > 0.0001 || fabs(p->lat - appData.centerLat) > 0.0001) {
                                 appData.centerLon += 0.1 * (p->lon - appData.centerLon);
                                 appData.centerLat += 0.1 * (p->lat - appData.centerLat);
                      
                                 appData.mapMoved = 1;    
                             }
                             
-                            thickLineRGBA(appData.renderer, x - 40, y - 40, x - 10, y - 40, 4, pink.r, pink.g, pink.b, 255);
-                            thickLineRGBA(appData.renderer, x - 40, y - 40, x - 40, y - 10, 4, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex - 20, usey - 20, usex - 5, usey - 20, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex - 20, usey - 20, usex - 20, usey - 5, pink.r, pink.g, pink.b, 255);
 
-                            thickLineRGBA(appData.renderer, x + 40, y - 40, x + 10, y - 40, 4, pink.r, pink.g, pink.b, 255);
-                            thickLineRGBA(appData.renderer, x + 40, y - 40, x + 40, y - 10, 4, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + 20, usey - 20, usex + 5, usey - 20, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + 20, usey - 20, usex + 20, usey - 5, pink.r, pink.g, pink.b, 255);
 
-                            thickLineRGBA(appData.renderer, x + 40, y + 40, x + 10, y + 40, 4, pink.r, pink.g, pink.b, 255);
-                            thickLineRGBA(appData.renderer, x + 40, y + 40, x + 40, y + 10, 4, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + 20, usey + 20, usex + 5, usey + 20, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex + 20, usey + 20, usex + 20, usey + 5, pink.r, pink.g, pink.b, 255);
 
-                            thickLineRGBA(appData.renderer, x - 40, y + 40, x - 10, y + 40, 4, pink.r, pink.g, pink.b, 255);
-                            thickLineRGBA(appData.renderer, x - 40, y + 40, x - 40, y + 10, 4, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex - 20, usey + 20, usex - 5, usey + 20, pink.r, pink.g, pink.b, 255);
+                            lineRGBA(appData.renderer, usex - 20, usey + 20, usex - 20, usey + 5, pink.r, pink.g, pink.b, 255);
                             planeColor = lerpColor(pink, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
                         } else {
                             planeColor = lerpColor(green, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
@@ -966,11 +1017,15 @@ void drawPlanes() {
                             //lineRGBA(appData.renderer, usex, usey, p->x+(p->w/2), p->y, 200,200,200, SDL_ALPHA_OPAQUE);
                             
                         }
+
+                        if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
+                            selectedPlane = p;
+                        }
                           
+                        if(p != selectedPlane) {
+                            drawPlaneText(p);
+                        }
 
-                        drawPlaneText(p);
-
-                        
                     } else {
                         //drawPlane(x, y, planeColor);
                     }  
@@ -980,6 +1035,7 @@ void drawPlanes() {
         p = p->next;
     }
 
+    drawSelectedPlaneText(selectedPlane);
 
     if(appData.touchx && appData.touchy) {
 
