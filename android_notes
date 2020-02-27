@@ -1,0 +1,21 @@
+Android build notes
+
+This example works:
+https://github.com/pvallet/hello-sdl2-android
+
+the only JDK that seems to work is oracle-java8-installer, discontinued but available as of 2/18/2020 from 
+sudo add-apt-repository ppa:ts.sch.gr/ppa
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+per https://askubuntu.com/questions/1139387/update-to-latest-version-of-java-after-ppa-is-discontinued
+
+SDL2, SDL2_gfx, SDL2_ttf official need to go in external
+
+SDL2_gfx official doesn't have Android.mk, but this one does:
+
+https://github.com/keera-studios/SDL2_gfx
+
+
+App parameters are in android/app/src/main/java/[pvallet/com/github/hellosdl2/helloSDL2Activity.java] (network access, fullscreen immersive mode"
+Resources (fonts etc) need to go in android/app/src/main/res
+build settings (arch, android version) are in android/AndroidManifest.xml AND android/SDL2/src/main/AndroidManifest.xml (not sure if the second one needs to be changed)
