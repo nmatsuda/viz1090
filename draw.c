@@ -21,7 +21,7 @@ float sign(float x) {
     return (x > 0) - (x < 0);
 }
 
-void CROSSVP(double *v, double *u, double *w) 
+void CROSSVP(float *v, float *u, float *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
     v[1] = u[2]*w[0] - u[0]*(w)[2];                             
@@ -69,9 +69,9 @@ SDL_Color lerpColor(SDL_Color aColor, SDL_Color bColor, float factor) {
     return out;
 }
 
-SDL_Color hsv2SDLColor(double h, double s, double v)
+SDL_Color hsv2SDLColor(float h, float s, float v)
 {
-    double      hh, p, q, t, ff;
+    float      hh, p, q, t, ff;
     long        i;
     SDL_Color         out;
 
@@ -127,9 +127,9 @@ SDL_Color hsv2SDLColor(double h, double s, double v)
     return out;     
 }
 
-int screenDist(double d) {
+int screenDist(float d) {
 
-    double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
 
     if(appData.mapLogDist) {
         return round(0.95 * scale_factor * 0.5 * log(1.0+fabs(d)) / log(1.0+appData.maxDist));    
@@ -138,7 +138,7 @@ int screenDist(double d) {
     }
 }
 
-void pxFromLonLat(double *dx, double *dy, double lon, double lat) {
+void pxFromLonLat(float *dx, float *dy, float lon, float lat) {
     if(!lon || !lat) {
         *dx = 0;
         *dy = 0;
@@ -149,18 +149,18 @@ void pxFromLonLat(double *dx, double *dy, double lon, double lat) {
     *dy = 6371.0 * (lat - appData.centerLat) * M_PI / 180.0f;
 }
 
-void latLonFromScreenCoords(double *lat, double *lon, int x, int y) {
-    double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+void latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
+    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
 
-    double dx = appData.maxDist * (x  - (appData.screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
-    double dy = appData.maxDist * (y  - (appData.screen_height * CENTEROFFSET)) / (0.95 * scale_factor * 0.5 );
+    float dx = appData.maxDist * (x  - (appData.screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
+    float dy = appData.maxDist * (y  - (appData.screen_height * CENTEROFFSET)) / (0.95 * scale_factor * 0.5 );
 
     *lat = 180.0f * dy / (6371.0 * M_PI) + appData.centerLat;
     *lon = 180.0 * dx / (cos(((*lat + appData.centerLat)/2.0f) * M_PI / 180.0f) * 6371.0 * M_PI) + appData.centerLon;
 }
 
 
-void screenCoords(int *outX, int *outY, double dx, double dy) {
+void screenCoords(int *outX, int *outY, float dx, float dy) {
     *outX = (appData.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
     *outY = (appData.screen_height * CENTEROFFSET) + ((dy>0) ? -1 : 1) * screenDist(dy);        
 }
@@ -175,7 +175,7 @@ int outOfBounds(int x, int y) {
 
 void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor) {
 
-    double arrowWidth = 6.0 * appData.screen_uiscale;
+    float arrowWidth = 6.0 * appData.screen_uiscale;
 
     float inx = x - (appData.screen_width>>1);
     float iny = y - appData.screen_height * CENTEROFFSET;
@@ -195,15 +195,15 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
     // circleRGBA (appData.renderer,(appData.screen_width>>1) + outx, appData.screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     // thickLineRGBA(appData.renderer,appData.screen_width>>1,appData.screen_height * CENTEROFFSET, (appData.screen_width>>1) + outx, appData.screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
-    double inmag = sqrt(inx *inx + iny*iny);
-    double vec[3];
+    float inmag = sqrt(inx *inx + iny*iny);
+    float vec[3];
     vec[0] = inx / inmag;
     vec[1] = iny /inmag;
     vec[2] = 0;
 
-    double up[] = {0,0,1};
+    float up[] = {0,0,1};
 
-    double out[3];
+    float out[3];
 
     CROSSVP(out,vec,up);
 
@@ -231,21 +231,21 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
     *returny = y3;
 }
 
-void drawPlaneHeading(int x, int y, double heading, SDL_Color planeColor)
+void drawPlaneHeading(int x, int y, float heading, SDL_Color planeColor)
 {
-    double body = 8.0 * appData.screen_uiscale;
-    double wing = 6.0 * appData.screen_uiscale;
-    double tail = 3.0 * appData.screen_uiscale;
-    double bodyWidth = 2.0 * appData.screen_uiscale;
+    float body = 8.0 * appData.screen_uiscale;
+    float wing = 6.0 * appData.screen_uiscale;
+    float tail = 3.0 * appData.screen_uiscale;
+    float bodyWidth = 2.0 * appData.screen_uiscale;
 
-    double vec[3];
+    float vec[3];
     vec[0] = sin(heading * M_PI / 180);
     vec[1] = -cos(heading * M_PI / 180);
     vec[2] = 0;
 
-    double up[] = {0,0,1};
+    float up[] = {0,0,1};
 
-    double out[3];
+    float out[3];
 
     CROSSVP(out,vec,up);
 
@@ -291,7 +291,7 @@ void drawPlane(int x, int y, SDL_Color planeColor)
 }
 
 
-void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSeen, int idx) {
+void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, int idx) {
 
     int currentIdx, prevIdx;
 
@@ -313,7 +313,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
             continue;
         }
 
-        double dx, dy;
+        float dx, dy;
 
         pxFromLonLat(&dx, &dy, oldDx[currentIdx], oldDy[currentIdx]);
 
@@ -331,7 +331,7 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
             continue;
         }
 
-        double age = pow(1.0 - (double)(now - oldSeen[currentIdx]) / TRAIL_TTL, 2.2);
+        float age = pow(1.0 - (float)(now - oldSeen[currentIdx]) / TRAIL_TTL, 2.2);
 
         if(age < 0) {
             age = 0;
@@ -343,17 +343,17 @@ void drawTrail(double *oldDx, double *oldDy, double *oldHeading, time_t * oldSee
 
         //tick marks
 
-        age = 1.0 - (double) 4.0 * (now - oldSeen[currentIdx]) / TRAIL_TTL;
+        age = 1.0 - (float) 4.0 * (now - oldSeen[currentIdx]) / TRAIL_TTL;
         colorVal = (uint8_t)floor(255.0 * age);
 
-        double vec[3];
+        float vec[3];
         vec[0] = sin(oldHeading[currentIdx] * M_PI / 180);
         vec[1] = -cos(oldHeading[currentIdx] * M_PI / 180);
         vec[2] = 0;
 
-        double up[] = {0,0,1};
+        float up[] = {0,0,1};
 
-        double out[3];
+        float out[3];
 
         CROSSVP(out,vec,up);
 
@@ -425,7 +425,7 @@ void drawScaleBars()
     // drawString("100km", (appData.screen_width>>1) + (0.707 * p100km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, appData.mapFont, pink);            
 }
 
-void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, double screen_lon_min, double screen_lon_max) {
+void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
     if(tree == NULL) {
         return;
     }
@@ -462,7 +462,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
 
     drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
-    double dx, dy;
+    float dx, dy;
     //  if(!(tree->lat_min > screen_lat_min &&
     //     tree->lat_max < screen_lat_max &&
     //     tree->lon_min > screen_lon_min &&
@@ -519,7 +519,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
         //     }
         // }
 
-        // double alpha = 1.0;
+        // float alpha = 1.0;
         // //filledPolygonRGBA (appData.renderer, px, py, i, 0, 0, 0, 255);      
 
         // polygonRGBA (appData.renderer, px, py, i, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
@@ -545,7 +545,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
                 continue;
             }
 
-            double d1 = dx* dx + dy * dy;
+            float d1 = dx* dx + dy * dy;
 
             pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
             screenCoords(&x2, &y2, dx, dy);
@@ -562,9 +562,9 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
                 continue;
             }
 
-            double d2 = dx* dx + dy * dy;
+            float d2 = dx* dx + dy * dy;
     
-            double factor = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
+            float factor = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
 
             SDL_Color lineColor = lerpColor(purple, blue, factor); 
 
@@ -598,7 +598,7 @@ void drawPolys(QuadTree *tree, double screen_lat_min, double screen_lat_max, dou
 }
 
 void drawGeography() {
-    double screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
+    float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height * 1.2);
@@ -991,7 +991,7 @@ void drawPlanes() {
 
                 int x, y;
 
-                double dx, dy;
+                float dx, dy;
                 pxFromLonLat(&dx, &dy, p->lon, p->lat);
                 screenCoords(&x, &y, dx, dy);
 
@@ -999,7 +999,7 @@ void drawPlanes() {
                     p->created = mstime();
                 }
 
-                double age_ms = (double)(mstime() - p->created);
+                float age_ms = (float)(mstime() - p->created);
                 if(age_ms < 500) {
                     circleRGBA(appData.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
                 } else {
@@ -1014,8 +1014,8 @@ void drawPlanes() {
                             pxFromLonLat(&dx, &dy, p->oldLon[idx], p->oldLat[idx]);
                             screenCoords(&oldx, &oldy, dx, dy);
 
-                            double velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
-                            double vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+                            float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+                            float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
 
                             usex = x + (mstime() - p->msSeenLatLon) * velx;
                             usey = y + (mstime() - p->msSeenLatLon) * vely;

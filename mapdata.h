@@ -1,22 +1,24 @@
 #ifndef MAPPOINTS_H
 #define MAPPOINTS_H
 
-double *mapPoints_relative;
+float *mapPoints_relative;
 int mapPoints_count;
 
-extern double mapPoints[];
+//extern float mapPoints[];
+
+float *mapPoints;
 
 typedef struct Point{
-	double lat;
-	double lon;
+	float lat;
+	float lon;
 	struct Point *next;
 } Point;
 
 typedef struct Polygon{
-	double lat_min;
-  	double lat_max;
-  	double lon_min;
-  	double lon_max;
+	float lat_min;
+  	float lat_max;
+  	float lon_min;
+  	float lon_max;
 
 	Point *points;
 	int numPoints;
@@ -25,10 +27,10 @@ typedef struct Polygon{
 } Polygon;
 
 typedef struct QuadTree{
-  	double lat_min;
-  	double lat_max;
-  	double lon_min;
-  	double lon_max;
+  	float lat_min;
+  	float lat_max;
+  	float lon_min;
+  	float lon_max;
 
 	Polygon *polygons;
 

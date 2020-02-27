@@ -36,8 +36,8 @@ typedef struct AppData
     int screen_depth;
     int fullscreen;
 
-    double centerLon;
-    double centerLat;
+    float centerLon;
+    float centerLat;
 
     uint64_t touchDownTime;
     int touchx;
@@ -68,9 +68,9 @@ struct planeObj {
     double        	lat, lon;       // Coordinated obtained from CPR encoded data
     
 	//history
-    double        	oldLon[TRAIL_LENGTH];
-    double			oldLat[TRAIL_LENGTH];
-    double			oldHeading[TRAIL_LENGTH];
+    float        	oldLon[TRAIL_LENGTH];
+    float			oldLat[TRAIL_LENGTH];
+    float			oldHeading[TRAIL_LENGTH];
     time_t        	oldSeen[TRAIL_LENGTH];
     uint8_t         oldIdx; 
     uint64_t      	created;
@@ -125,7 +125,7 @@ void drawList(int top);
 
 //draw.c
 void draw();
-void latLonFromScreenCoords(double *lat, double *lon, int x, int y);
+void latLonFromScreenCoords(float *lat, float *lon, int x, int y);
 
 
 //status.c

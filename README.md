@@ -52,6 +52,10 @@ cd spidr
 
 ###HARDWARE
 
+Right now, Pixel 2 is $109 on Amazon (https://www.amazon.com/Google-Pixel-64-Black-Refurbished/dp/B0787V183F).
+This significantly outperforms a rpi4.
+
+
 best option seems to be pi4 + pijuice zero (w/ rewired  i2c) + hyperpixel 4. RTLSDR  (stratux) sticks down or needs u shaped adapter.
 For future tuner, need to test audio phat w/ little speaker, i2c knob, etc.
 
