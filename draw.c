@@ -128,14 +128,8 @@ SDL_Color hsv2SDLColor(float h, float s, float v)
 }
 
 int screenDist(float d) {
-
     float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
-
-    if(appData.mapLogDist) {
-        return round(0.95 * scale_factor * 0.5 * log(1.0+fabs(d)) / log(1.0+appData.maxDist));    
-    } else {
-        return round(0.95 * scale_factor * 0.5 * fabs(d) / appData.maxDist);    
-    }
+    return round(0.95 * scale_factor * 0.5 * fabs(d) / appData.maxDist);        
 }
 
 void pxFromLonLat(float *dx, float *dy, float lon, float lat) {
@@ -385,7 +379,7 @@ void drawScaleBars()
     int scalePower = 0;
     int scaleBarDist = screenDist((float)pow(10,scalePower));
 
-    char scaleLabel[8] = "";
+    char scaleLabel[13] = "";
         
     // thickLineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
     lineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
@@ -395,9 +389,9 @@ void drawScaleBars()
         lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
 
         if (Modes.metric) {
-            snprintf(scaleLabel,8,"%dkm", (int)pow(10,scalePower));
+            snprintf(scaleLabel,13,"%dkm", (int)pow(10,scalePower));
         } else {
-            snprintf(scaleLabel,8,"%dmi", (int)pow(10,scalePower));
+            snprintf(scaleLabel,13,"%dmi", (int)pow(10,scalePower));
         }
 
         drawString(scaleLabel, 10+scaleBarDist, 15*appData.screen_uiscale, appData.mapFont, pink);
@@ -1102,12 +1096,8 @@ void draw() {
     drawPlanes();  
     drawStatus();
     
-    if(appData.showList) {
-       drawList(0);
-    }
-
-    char fps[10] = " ";
-    snprintf(fps,10," %ffps", 1000.0 / (mstime() - appData.lastFrameTime));
+    char fps[13] = " ";
+    snprintf(fps,13," %ffps", 1000.0 / (mstime() - appData.lastFrameTime));
     drawStringBG(fps, 0,0, appData.mapFont, grey, black);  
 
 

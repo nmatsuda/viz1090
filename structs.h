@@ -24,8 +24,6 @@ typedef struct AppData
 	int messageFontHeight;		
 
 	// map options
-    int   showList;
-    int   mapLogDist;
     float maxDist;
 
     //display options

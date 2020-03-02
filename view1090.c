@@ -64,8 +64,6 @@ void view1090InitConfig(void) {
     Modes.quiet                   = 1;
 
     // Map options
-    appData.showList                = 0;
-    appData.mapLogDist              = 0;
     appData.maxDist                 = 25.0;
     appData.centerLon               = Modes.fUserLon;
     appData.centerLat               = Modes.fUserLat;

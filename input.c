@@ -30,14 +30,6 @@ void getInput()
 						exit(0);
 					break;
 
-					case SDLK_l:
-						appData.mapLogDist = !appData.mapLogDist;
-					break;
-
-					case SDLK_m:
-						appData.showList = !appData.showList;
-					break;		
-
 					default:
 					break;
 				}
