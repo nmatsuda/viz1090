@@ -521,12 +521,12 @@ void interactiveShowData(void) {
                 if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
 
                     double dLon = a->lon+87.6651033;
-                    double dLat = a->lat-***REMOVED***;
+                    double dLat = a->lat-41.9809263;
 
                     snprintf(strLat, 8,"%7.03f", dLat);
                     snprintf(strLon, 9,"%8.03f", dLon);
 
-                    double x = dLon * M_PI / 180.0f * cos(((a->lat+***REMOVED***)/2.0f) * M_PI / 180.0f);
+                    double x = dLon * M_PI / 180.0f * cos(((a->lat+41.9809263)/2.0f) * M_PI / 180.0f);
                     double y = dLat * M_PI / 180.0f;
                     d = sqrt(x*x + y*y) * 6371.0;
 
