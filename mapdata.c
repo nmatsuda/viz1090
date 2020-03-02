@@ -103,16 +103,18 @@ void initMaps() {
 
   FILE *fileptr;
 
-fileptr = fopen("mapdata.bin", "rb");  // Open the file in binary mode
-fseek(fileptr, 0, SEEK_END);          // Jump to the end of the file
-mapPoints_count = ftell(fileptr) / sizeof(float);             // Get the current byte offset in the file
-rewind(fileptr);                      // Jump back to the beginning of the file
+  fileptr = fopen("mapdata.bin", "rb");  // Open the file in binary mode
+  fseek(fileptr, 0, SEEK_END);          // Jump to the end of the file
+  mapPoints_count = ftell(fileptr) / sizeof(float);             // Get the current byte offset in the file
 
-mapPoints = (float *)malloc(mapPoints_count * sizeof(float)); // Enough memory for the file
-fread(mapPoints, sizeof(float), mapPoints_count, fileptr); // Read in the entire file
-fclose(fileptr); // Close the fileptr
+  rewind(fileptr);                      // Jump back to the beginning of the file
 
-printf("%d points read\n",mapPoints_count);
+  mapPoints = (float *)malloc(mapPoints_count * sizeof(float)); // Enough memory for the file
+  fread(mapPoints, sizeof(float), mapPoints_count, fileptr); // Read in the entire file
+  fclose(fileptr); // Close the fileptr
+
+  printf("Read %d map points.\n",mapPoints_count);
+
 
   //mapPoints_relative = (float *) malloc(sizeof(mapPoints));
 
