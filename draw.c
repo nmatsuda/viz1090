@@ -463,13 +463,6 @@ void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float
     drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
     float dx, dy;
-    //  if(!(tree->lat_min > screen_lat_min &&
-    //     tree->lat_max < screen_lat_max &&
-    //     tree->lon_min > screen_lon_min &&
-    //     tree->lon_max < screen_lon_max)){
-    //     //printf("%f %f\n", tree->lat_min, screen_lat_min);
-    //     return;
-    // }
 
     //Draw quadtree bounds
     // 
@@ -488,45 +481,10 @@ void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float
     // int right = x;
     
     // rectangleRGBA(appData.renderer, left, top, right, bottom,  red.r, red.g, red.b, 255);      
-    
-
 
     Polygon *currentPolygon = tree->polygons;
 
     while(currentPolygon != NULL) {
-
-
-        ////polygon mode
-        // Sint16 *px = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
-        // Sint16 *py = (Sint16*)malloc(sizeof(Sint16*)*currentPolygon->numPoints);
-
-        // Point *currentPoint = currentPolygon->points;
-
-        // int i = 0;
-        // while(currentPoint != NULL){
-        //     pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
-        //     screenCoords(&x, &y, dx, dy);
-    
-        //     px[i] = x;
-        //     py[i] = y;
-
-        //     i++;
-
-        //     for(int k = 0; k < skip; k++) {
-        //         currentPoint = currentPoint->next;
-        //         if(currentPoint == NULL)
-        //             break;
-        //     }
-        // }
-
-        // float alpha = 1.0;
-        // //filledPolygonRGBA (appData.renderer, px, py, i, 0, 0, 0, 255);      
-
-        // polygonRGBA (appData.renderer, px, py, i, alpha * purple.r + (1.0-alpha) * blue.r, alpha * purple.g + (1.0-alpha) * blue.g, alpha * purple.b + (1.0-alpha) * blue.b, 255 * alpha);      
-        
-
-        //// line version
-       
         int x1,y1,x2,y2;
 
         if(currentPolygon->points == NULL)
@@ -588,10 +546,8 @@ void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float
 
         // int bottom = y;
         // int right = x;
-  
-        
+          
         // rectangleRGBA(appData.renderer, left, top, right, bottom,  purple.r, purple.g, purple.b, 255);      
-        
 
         currentPolygon = currentPolygon->next;
     }

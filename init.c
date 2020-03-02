@@ -69,7 +69,6 @@ void init(char *title) {
     appData.labelFontHeight = 12 * appData.screen_uiscale; 
 
 	initMaps();
-
 }
 
 void cleanup() {

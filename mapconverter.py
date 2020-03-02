@@ -17,8 +17,11 @@ bin_file = open("mapdata.bin", "wt")
 outlist = []
 
 for p in polys:
-	currentPoints = p.attrib['points']
-	outlist.extend((currentPoints.replace(","," ") + " 0 0").split())
+	currentPoints = (p.attrib['points']).replace(","," ").split()
+
+	if(len(currentPoints) > 12): #remove little circles in the McCurley maps
+		outlist.extend(currentPoints)
+		outlist.extend(["0","0"])
 
 np.asarray(outlist).astype(np.single).tofile(bin_file)
 bin_file.close()

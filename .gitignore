@@ -1,4 +1,7 @@
 *.o
+*.bin
+*.svg
+
 view1090
 
 *.swp
