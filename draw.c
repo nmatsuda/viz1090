@@ -225,7 +225,7 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
     *returny = y3;
 }
 
-void drawPlaneHeading(int x, int y, float heading, SDL_Color planeColor)
+void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 {
     float body = 8.0 * appData.screen_uiscale;
     float wing = 6.0 * appData.screen_uiscale;
@@ -244,11 +244,6 @@ void drawPlaneHeading(int x, int y, float heading, SDL_Color planeColor)
     CROSSVP(out,vec,up);
 
     int x1, x2, y1, y2;
-
-
-    // tempCenter
-
-    // circleRGBA(appData.renderer, x, y, 10, 255, 0, 0, 255);   
 
     //body
     x1 = x + round(-body*vec[0]);
@@ -276,14 +271,6 @@ void drawPlaneHeading(int x, int y, float heading, SDL_Color planeColor)
 
     filledTrigonRGBA (appData.renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
-
-void drawPlane(int x, int y, SDL_Color planeColor)
-{
-    int length = 3.0;
-
-    rectangleRGBA (appData.renderer, x - length, y - length, x+length, y + length, planeColor.r, planeColor.g, planeColor.b, SDL_ALPHA_OPAQUE);   
-}
-
 
 void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, int idx) {
 
@@ -333,7 +320,14 @@ void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, 
 
         uint8_t colorVal = (uint8_t)floor(255.0 * age);
                    
-        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, colorVal, colorVal, colorVal, 64);                    
+        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, colorVal, colorVal, colorVal, 64); 
+
+        //most recent reported location                  
+
+        if(i == 0) {
+            boxRGBA(appData.renderer,currentX - 2 * appData.screen_uiscale, currentY - 2 * appData.screen_uiscale, currentX + 2 * appData.screen_uiscale, currentY - 2 * appData.screen_uiscale,
+                orange.r, orange.g, orange.b, 255);
+        }
 
         //tick marks
 
@@ -381,11 +375,9 @@ void drawScaleBars()
 
     char scaleLabel[13] = "";
         
-    // thickLineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
     lineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
 
     while(scaleBarDist < appData.screen_width) {
-        // thickLineRGBA(appData.renderer,10+scaleBarDist,10,10+scaleBarDist,10*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
         lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
 
         if (Modes.metric) {
@@ -403,37 +395,11 @@ void drawScaleBars()
     scalePower--;
     scaleBarDist = screenDist((float)pow(10,scalePower));
 
-    // thickLineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,2,pink.r, pink.g, pink.b, 255);
     lineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
-
-    // int p1km = screenDist(1.0);
-    // int p10km = screenDist(10.0);
-    // int p100km = screenDist(100.0);
-
-    // circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p1km, pink.r, pink.g, pink.b, 255);
-    // circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p10km, pink.r, pink.g, pink.b, 195);
-    // circleRGBA (appData.renderer, appData.screen_width>>1, appData.screen_height * CENTEROFFSET, p100km, pink.r, pink.g, pink.b, 127);
-
-    // drawString("1km", (appData.screen_width>>1) + (0.707 * p1km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p1km) + 5, appData.mapFont, pink);   
-    // drawString("10km", (appData.screen_width>>1) + (0.707 * p10km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p10km) + 5, appData.mapFont, pink);  
-    // drawString("100km", (appData.screen_width>>1) + (0.707 * p100km) + 5, (appData.screen_height * CENTEROFFSET) + (0.707 * p100km) + 5, appData.mapFont, pink);            
 }
 
 void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
     if(tree == NULL) {
-        return;
-    }
-
-    if(appData.mapContinue && appData.mapContinue != tree) {
-        return;
-    }
-
-    if(appData.mapContinue && appData.mapContinue == tree) {
-        appData.mapContinue = NULL;
-    }
-
-    if(mstime() - appData.lastFrameTime > FRAMETIME) {
-        appData.mapContinue = tree;
         return;
     }
 
@@ -448,33 +414,9 @@ void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float
     drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-
-    //if we didn't make it to the last child then need to set mapContinue to this node to make sure all children get drawn next time
-    if(appData.mapContinue) {
-        appData.mapContinue = tree;
-    }
-
     drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
     float dx, dy;
-
-    //Draw quadtree bounds
-    // 
-    // int x, y;
-
-    // pxFromLonLat(&dx, &dy, tree->lon_min, tree->lat_min); 
-    // screenCoords(&x, &y, dx, dy);
-
-    // int top = y;
-    // int left = x;
-
-    // pxFromLonLat(&dx, &dy, tree->lon_max, tree->lat_max); 
-    // screenCoords(&x, &y, dx, dy);
-
-    // int bottom = y;
-    // int right = x;
-    
-    // rectangleRGBA(appData.renderer, left, top, right, bottom,  red.r, red.g, red.b, 255);      
 
     Polygon *currentPolygon = tree->polygons;
 
@@ -553,11 +495,7 @@ void drawGeography() {
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height * 1.2);
 
-    if(appData.mapContinue) {
-        drawPolys(appData.mapContinue, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
-    } else {
-        drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
-    }
+    drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
 }
 
 void drawSignalMarks(struct planeObj *p, int x, int y) {
@@ -1004,33 +942,20 @@ void drawPlanes() {
                         } else {
                             planeColor = lerpColor(green, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
                         }
-                         
-                        // if((int)(now - p->seen) > DISPLAY_ACTIVE) {
-                        //     planeColor = grey;
-                        // }
 
                         if(outOfBounds(x,y)) {
                             drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
-
-                            //lineRGBA(appData.renderer, p->cx, p->cy, p->x+(p->w/2), p->y, 200,200,200,SDL_ALPHA_OPAQUE);
-                            
                         } else {
-                            drawPlaneHeading(usex, usey, p->track, planeColor);
-
-                            p->cx = usex;// + 5;
-                            p->cy = usey;// + 10 * appData.screen_uiscale;
-                    
-                            //lineRGBA(appData.renderer, usex, usey, p->x+(p->w/2), p->y, 200,200,200, SDL_ALPHA_OPAQUE);
-                            
+                            drawPlaneIcon(usex, usey, p->track, planeColor);
+                            p->cx = usex;
+                            p->cy = usey;
                         }
                           
                         if(p != selectedPlane) {
                             drawPlaneText(p);
                         }
 
-                    } else {
-                        //drawPlane(x, y, planeColor);
-                    }  
+                    }
                 }
             }
         }
@@ -1065,14 +990,12 @@ void draw() {
 
     updateStatus();
 
-    if(appData.mapMoved || appData.mapContinue) {
+    if(appData.mapMoved) {
         SDL_SetRenderTarget(appData.renderer, appData.mapTexture);
         
-        if(appData.mapContinue == NULL) {
-            SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
-            SDL_RenderClear(appData.renderer);
-        }
-
+        SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
+        SDL_RenderClear(appData.renderer);
+        
         drawGeography();
 
         drawScaleBars();

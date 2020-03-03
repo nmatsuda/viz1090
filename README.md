@@ -35,6 +35,7 @@ cd spidr
 ### Runtime Options
 
 --server [domain name or ip]	Specify a dump1090 server. Renamed from the view1090 "--net-bo-ip-addr" argument
+--port [port number]			Specify dump1090 server port. Renamed from the view1090 "--net-bo-port" argument
 --metric						Display metric units rather than imperial.
 
 --screensize [width] [height]	Specify a specific resolution to pass to SDL_RenderSetLogicalSize, otherwise use resolution of display
