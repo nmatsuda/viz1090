@@ -324,10 +324,10 @@ void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, 
 
         //most recent reported location                  
 
-        if(i == 0) {
-            boxRGBA(appData.renderer,currentX - 2 * appData.screen_uiscale, currentY - 2 * appData.screen_uiscale, currentX + 2 * appData.screen_uiscale, currentY - 2 * appData.screen_uiscale,
-                orange.r, orange.g, orange.b, 255);
-        }
+        // if(i == 0) {
+        //     boxRGBA(appData.renderer,currentX - 2 * appData.screen_uiscale, currentY - 2 * appData.screen_uiscale, currentX + 2 * appData.screen_uiscale, currentY + 2 * appData.screen_uiscale,
+        //         orange.r, orange.g, orange.b, 255);
+        // }
 
         //tick marks
 
@@ -1025,7 +1025,6 @@ void draw() {
 
 
     SDL_RenderPresent(appData.renderer);  
-
 
     appData.lastFrameTime = mstime(); 
 

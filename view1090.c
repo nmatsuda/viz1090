@@ -54,6 +54,9 @@ void view1090InitConfig(void) {
     Modes.check_crc               = 1;
     strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
+    Modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
+    Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
+    Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
     Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
 
