@@ -36,7 +36,7 @@ void init(char *title) {
     }
 
     appData.window =  SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, appData.screen_width, appData.screen_height, flags);		
-	appData.renderer = SDL_CreateRenderer(appData.window, -1, 0);
+	appData.renderer = SDL_CreateRenderer(appData.window, -1, SDL_RENDERER_ACCELERATED);
 	appData.mapTexture = SDL_CreateTexture(appData.renderer,
                                SDL_PIXELFORMAT_ARGB8888,
                                SDL_TEXTUREACCESS_TARGET,

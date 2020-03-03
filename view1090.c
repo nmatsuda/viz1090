@@ -54,9 +54,6 @@ void view1090InitConfig(void) {
     Modes.check_crc               = 1;
     strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
-    Modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
-    Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
-    Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
     Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
 
@@ -170,15 +167,15 @@ void showHelp(void) {
 "-----------------------------------------------------------------------------\n"
 "|                        view1090 dump1090 Viewer        Ver : "MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
-  "--server <IPv4/hosname>   TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
-  "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
-  "--lat <latitude>         Reference/receiver latitide for surface posn (opt)\n"
-  "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
-  "--metric                 Use metric units (meters, km/h, ...)\n"
-  "--help                   Show this help\n"
-  "--uiscale <factor>       UI global scaling\n"  
-  "--screensize <width> <height>\n"
-  "--fullscreen             Start fullscreen\n"
+  "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
+  "--port <port>                    TCP Beast output listen port (default: 30005)\n"
+  "--lat <latitude>                 Reference/receiver latitide for surface posn (opt)\n"
+  "--lon <longitude>                Reference/receiver longitude for surface posn (opt)\n"
+  "--metric                         Use metric units (meters, km/h, ...)\n"
+  "--help                           Show this help\n"
+  "--uiscale <factor>               UI global scaling (default: 1)\n"  
+  "--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
+  "--fullscreen                     Start fullscreen\n"
     );
 }
 
@@ -193,6 +190,7 @@ void showCopyright(void) {
 "\n"
 " Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>\n"
 " Copyright (C) 2014 by Malcolm Robb <support@attavionics.com>\n"
+" Copyright (C) 2020 by Nathan Matsuda <info@nathanmatsuda.com>\n"
 "\n"
 " All rights reserved.\n"
 "\n"
@@ -236,21 +234,12 @@ int main(int argc, char **argv) {
 
         if        (!strcmp(argv[j],"--net-bo-port") && more) {
             Modes.net_input_beast_port = atoi(argv[++j]);
+        } else if (!strcmp(argv[j],"--port") && more) {
+            Modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             strcpy(View1090.net_input_beast_ipaddr, argv[++j]);
         } else if (!strcmp(argv[j],"--server") && more) {
             strcpy(View1090.net_input_beast_ipaddr, argv[++j]);            
-        } else if (!strcmp(argv[j],"--modeac")) {
-            Modes.mode_ac = 1;
-        } else if (!strcmp(argv[j],"--interactive-rows") && more) {
-            Modes.interactive_rows = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--interactive")) {
-            Modes.interactive = 1;
-        } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
-            Modes.interactive_display_ttl = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
-            Modes.interactive = 1;
-            Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--lat") && more) {
             Modes.fUserLat = atof(argv[++j]);
             appData.centerLat = Modes.fUserLat;
@@ -259,14 +248,6 @@ int main(int argc, char **argv) {
             appData.centerLon = Modes.fUserLon;
         } else if (!strcmp(argv[j],"--metric")) {
             Modes.metric = 1;
-        } else if (!strcmp(argv[j],"--no-crc-check")) {
-            Modes.check_crc = 0;
-        } else if (!strcmp(argv[j],"--fix")) {
-            Modes.nfix_crc = 1;
-        } else if (!strcmp(argv[j],"--no-fix")) {
-            Modes.nfix_crc = 0;
-        } else if (!strcmp(argv[j],"--aggressive")) {
-            Modes.nfix_crc = MODES_MAX_BITERRORS;
         } else if (!strcmp(argv[j],"--fullscreen")) {
             appData.fullscreen = 1;         
         } else if (!strcmp(argv[j],"--uiscale") && more) {
@@ -298,35 +279,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    /*
-    // Keep going till the user does something that stops us
-    while (!Modes.exit) {
-        interactiveRemoveStaleAircrafts();
-        interactiveShowData();
-        if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
-			free(c);
-			usleep(1000000);
-			c = (struct client *) malloc(sizeof(*c));
-			fd = setupConnection(c);
-			continue;
-        }
-        modesReadFromClient(c,"",decodeBinMessage);
-		usleep(100000);
-    }
-    */
-
-
     int go;
-
-#ifdef RPI
-	fprintf(stderr,"RPI\n");
-#endif
-    
-    /* Start up SDL */
     
     init("sdl1090");
-    
-    /* Call the cleanup function when the program exits */
     
     atexit(cleanup);
         
@@ -337,8 +292,7 @@ int main(int argc, char **argv) {
         getInput();
     
         interactiveRemoveStaleAircrafts();
-        // interactiveShowData();
-
+    
         draw();
 
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {

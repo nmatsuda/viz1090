@@ -4,8 +4,6 @@
 float *mapPoints_relative;
 int mapPoints_count;
 
-//extern float mapPoints[];
-
 float *mapPoints;
 
 typedef struct Point{

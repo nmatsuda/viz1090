@@ -64,21 +64,8 @@ void updateStatus() {
 		sigAccumulate += signalAverage;
 		
 		if (p->lon && p->lat) {
-
-
-			//distance measurements got borked during refactor - need to redo here
-			/*
-		    double d = sqrt(p->dx * a->dx + a->dy * a->dy);
-
-		    if(d < appData.maxDist) {
-		        if(d > maxDist) {
-		        	maxDist = d;
-		        }
-			*/
 		        numVisiblePlanes++;
-		    //}
-		}
-		
+		}	
 
 		totalCount++;
 
@@ -95,22 +82,10 @@ void updateStatus() {
 }
 
 void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color) {
-	//int labelWidth = ((strlen(label) > 0 ) ? 1.5 : 0) * appData.labelFont;
 	int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * appData.labelFontWidth;
 	int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * appData.messageFontWidth;
 
-	//newline if no message or label
-	// if(strlen(label) == 0 && strlen(message) == 0 ) {
-	// 	boxRGBA(appData.renderer, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight,0, 0, 0, 0);
-	// 	*left = PAD;
-	// 	*top = *top - appData.messageFontHeight - PAD;		
-	// 	return;
-	// }	
-
 	if(*left + labelWidth + messageWidth + PAD > appData.screen_width) {
-		// if(*left + PAD < appData.screen_width) {
-		// 	boxRGBA(appData.screen, *left, *top, appData.screen_width - PAD, *top + appData.messageFontHeight, darkGrey.r, darkGrey.g, darkGrey.b, SDL_ALPHA_OPAQUE);
-		// }
 		*left = PAD;
 		*top = *top - appData.messageFontHeight - PAD;
 	}
@@ -130,9 +105,6 @@ void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color co
 		roundedRectangleRGBA(appData.renderer, *left, *top, *left + labelWidth + messageWidth, *top + appData.messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
 	}
 
-	// label
-	//drawString90(label, *left, *top + appData.labelFontWidth/2, appData.labelFont, black);
-	
 	drawString(label, *left + appData.labelFontWidth/2, *top, appData.labelFont, black);
 
 	//message
@@ -205,17 +177,9 @@ void drawStatus() {
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", appData.centerLat, fabs(appData.centerLon),(appData.centerLon > 0) ? 'E' : 'W');
 	drawStatusBox(&left, &top, "loc", strLoc, pink);	
 
-	// drawBattery(&left, &top, 0.85);
-
     char strPlaneCount[10] = " ";
     snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
 	drawStatusBox(&left, &top, "disp", strPlaneCount, yellow);
-
-	//distance measurements got borked during refactor - need to redo here
-
- //    char strDMax[5] = " ";
- //    snprintf(strDMax, 5, "%.0fkm", Status.maxDist);
-	// drawStatusBox(&left, &top, "mDst", strDMax, blue);
 
     char strMsgRate[18] = " ";
     snprintf(strMsgRate, 18,"%.0f/s", Status.msgRate);
@@ -224,15 +188,4 @@ void drawStatus() {
     char strSig[18] = " ";
     snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
   	drawStatusBox(&left, &top, "sAvg", strSig, green);
-
-	//drawStatusBox(&left, &top, "x", "exit", grey);
-
-	// if(Status.closeCall != NULL) {
-	// 	drawStatusBox(&left, &top, "", "", black);	//this is effectively a newline						
-	// 	if(strlen(Status.closeCall->flight)) {	
-	// 		drawStatusBox(&left, &top, "near", Status.closeCall->flight, white);		
-	// 	} else {
-	// 		drawStatusBox(&left, &top, "near", "", white);				
-	// 	}
-	// }
 }

@@ -16,7 +16,7 @@ battery level (need separate linux/win/android)
 
 
 Utility stuff
-zipped map load (and write from python) --> start by reducing lat/lon precision to 4 or 5 decimal places and change storage to float instead of double
+	+map load (and write from python) --> start by reducing lat/lon precision to 4 or 5 decimal places and change storage to float instead of double
 libconfig load settings
 
 Platforms

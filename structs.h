@@ -74,7 +74,7 @@ struct planeObj {
     uint64_t      	created;
     uint64_t		msSeen;
     uint64_t		msSeenLatLon;
-    int			live;
+    int			      live;
 
     struct planeObj *next;        // Next aircraft in our linked list
 

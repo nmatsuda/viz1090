@@ -3,7 +3,6 @@
 
 TTF_Font *loadFont(char *name, int size)
 {
-	/* Use SDL_TTF to load the font at the specified size */
 	TTF_Font *font = TTF_OpenFont(name, size);
 
 	if (font == NULL)
@@ -17,9 +16,7 @@ TTF_Font *loadFont(char *name, int size)
 }
 
 void closeFont(TTF_Font *font)
-{
-	/* Close the font once we're done with it */
-	
+{	
 	if (font != NULL)
 	{
 		TTF_CloseFont(font);
@@ -44,8 +41,6 @@ void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
 		return;
 	}
 	
-	/* Blit the entire surface to the screen */
-
 	dest.x = x;
 	dest.y = y;
 	dest.w = surface->w;
