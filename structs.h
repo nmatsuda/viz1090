@@ -41,6 +41,10 @@ typedef struct AppData
     int touchx;
     int touchy;
 
+    uint64_t mouseMovedTime;
+    int mousex;
+    int mousey;
+
     int mapMoved;
 
     uint64_t lastFrameTime;
@@ -123,7 +127,8 @@ void drawList(int top);
 //draw.c
 void draw();
 void latLonFromScreenCoords(float *lat, float *lon, int x, int y);
-
+void moveCenterAbsolute(float x, float y);
+void moveCenterRelative(float dx, float dy);
 
 //status.c
 void updateStatus();

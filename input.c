@@ -48,29 +48,8 @@ void getInput()
 				break;
 
 			case SDL_FINGERMOTION:;
-
-				//
-				// need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
-				//
-					
-	    		double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
-
-	    		double dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * appData.screen_width * event.tfinger.dx * appData.maxDist / (0.95 * scale_factor * 0.5);
-	    		double dy = 1.0 * appData.screen_height * event.tfinger.dy * appData.maxDist / (0.95 * scale_factor * 0.5);
-
-	    		double outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
-
-	    		double outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
-
-				//double outLon, outLat;
-				//latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
-
-				appData.centerLon += outLon;
-				appData.centerLat += outLat;
-
-				appData.mapMoved = 1;
+				moveCenterRelative(appData.screen_width * event.tfinger.dx, appData.screen_height * event.tfinger.dy);
 				break;
-
 
 			case SDL_FINGERDOWN:
 				appData.touchDownTime = mstime();
@@ -87,6 +66,22 @@ void getInput()
 					appData.touchy = 0;
 				}
 				break;
+
+			case SDL_MOUSEBUTTONUP:;
+				appData.touchx = event.motion.x;
+				appData.touchy = event.motion.y;
+				selectedPlane = NULL;
+				break;
+				
+			case SDL_MOUSEMOTION:;
+				appData.mouseMovedTime = mstime();
+				appData.mousex = event.motion.x;
+				appData.mousey = event.motion.y;
+				
+				if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+					moveCenterRelative(event.motion.xrel, event.motion.yrel);
+				}
+				break;				
 		}
 	}
 }

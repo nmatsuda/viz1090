@@ -918,6 +918,7 @@ void drawPlanes() {
                                 appData.mapMoved = 1;    
                             }
 
+                            // this logic should be in input, register a callback for click?
                             float elapsed  = mstime() - appData.touchDownTime;
 
                             int boxSize;
@@ -979,6 +980,41 @@ void drawPlanes() {
     }    
 }
 
+void moveCenterAbsolute(float x, float y);
+void moveCenterRelative(float dx, float dy) {
+    //
+    // need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
+    //
+        
+    double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+
+    dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * dx * appData.maxDist / (0.95 * scale_factor * 0.5);
+    dy = 1.0 * dy * appData.maxDist / (0.95 * scale_factor * 0.5);
+
+    double outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
+
+    double outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+
+    //double outLon, outLat;
+    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
+
+    appData.centerLon += outLon;
+    appData.centerLat += outLat;
+
+    appData.mapMoved = 1;
+}
+
+void drawMouse() {
+    if((mstime() - appData.mouseMovedTime) > 1000) {
+        return;
+    }
+
+    int alpha =  (int)(255.0f - 255.0f * (float)(mstime() - appData.mouseMovedTime) / 1000.0f);
+
+    lineRGBA(appData.renderer, appData.mousex - 10 * appData.screen_uiscale, appData.mousey,  appData.mousex + 10 * appData.screen_uiscale, appData.mousey, white.r, white.g, white.b, alpha);
+    lineRGBA(appData.renderer, appData.mousex,  appData.mousey - 10 * appData.screen_uiscale,  appData.mousex,  appData.mousey + 10 * appData.screen_uiscale, white.r, white.g, white.b, alpha);
+}
+
 //
 // 
 //
@@ -1018,7 +1054,8 @@ void draw() {
 
     drawPlanes();  
     drawStatus();
-    
+    drawMouse();
+
     char fps[13] = " ";
     snprintf(fps,13," %ffps", 1000.0 / (mstime() - appData.lastFrameTime));
     drawStringBG(fps, 0,0, appData.mapFont, grey, black);  
