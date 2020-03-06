@@ -43,6 +43,9 @@ void init(char *title) {
                                appData.screen_width, appData.screen_height);
 
 	appData.mapMoved = 1;
+	appData.mapTargetLon = 0;
+	appData.mapTargetLat = 0;
+	appData.mapTargetMaxDist = 0;
 	selectedPlane = NULL;
 
 	if(appData.fullscreen) {

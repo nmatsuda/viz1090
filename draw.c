@@ -841,42 +841,24 @@ void drawPlanes() {
 
     // draw all trails first so they don't cover up planes and text
     // also find closest plane to selection point
-
-    struct planeObj *selection = NULL;
-
     while(p) {
         if ((now - p->seen) < Modes.interactive_display_ttl) {
             drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
         }
 
-        if(selectedPlane == NULL && appData.touchx && appData.touchy) {
-            if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
-                if(selection) {
-                    if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 
-                        (selection->cx - appData.touchx) * (selection->cx - appData.touchx) + (selection->cy - appData.touchy) * (selection->cy - appData.touchy)) {
-                        selection = p;
-                    }
-                } else {
-                    selection = p;
-                }    
-            }
-        }
-
         p = p->next;
     }
 
-    if(selectedPlane == NULL) {
-        selectedPlane = selection;
+    if(selectedPlane) {
+        appData.mapTargetLon = selectedPlane->lon;
+        appData.mapTargetLat = selectedPlane->lat;             
     }
-
 
     p = planes;
 
     while(p) {
         if ((now - p->seen) < Modes.interactive_display_ttl) {
             if (p->lon && p->lat) {
-
-
                 int x, y;
 
                 float dx, dy;
@@ -910,14 +892,6 @@ void drawPlanes() {
                         } 
 
                         if(p == selectedPlane) {
-
-                            if(fabs(p->lon - appData.centerLon) > 0.0001 || fabs(p->lat - appData.centerLat) > 0.0001) {
-                                appData.centerLon += 0.1 * (p->lon - appData.centerLon);
-                                appData.centerLat += 0.1 * (p->lat - appData.centerLat);
-                     
-                                appData.mapMoved = 1;    
-                            }
-
                             // this logic should be in input, register a callback for click?
                             float elapsed  = mstime() - appData.touchDownTime;
 
@@ -980,20 +954,37 @@ void drawPlanes() {
     }    
 }
 
-void moveCenterAbsolute(float x, float y);
-void moveCenterRelative(float dx, float dy) {
-    //
-    // need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
-    //
-        
-    double scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+void animateCenterAbsolute(float x, float y) {
+    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
 
-    dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * dx * appData.maxDist / (0.95 * scale_factor * 0.5);
-    dy = 1.0 * dy * appData.maxDist / (0.95 * scale_factor * 0.5);
+    float dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * (x - appData.screen_width/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
+    float dy = 1.0 * (y - appData.screen_height/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
 
-    double outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
+    float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
-    double outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+
+    //double outLon, outLat;
+    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
+
+    appData.mapTargetLon = appData.centerLon - outLon;
+    appData.mapTargetLat = appData.centerLat - outLat;
+
+    appData.mapTargetMaxDist = 0.25 * appData.maxDist;
+
+    appData.mapMoved = 1;
+}
+
+
+void moveCenterAbsolute(float x, float y) {
+    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+
+    float dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * (x - appData.screen_width/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
+    float dy = 1.0 * (y - appData.screen_height/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
+
+    float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
+
+    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
     //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
@@ -1001,11 +992,65 @@ void moveCenterRelative(float dx, float dy) {
     appData.centerLon += outLon;
     appData.centerLat += outLat;
 
+    appData.mapTargetLon = 0;
+    appData.mapTargetLat = 0;
+
     appData.mapMoved = 1;
 }
 
+void moveCenterRelative(float dx, float dy) {
+    //
+    // need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
+    //
+        
+    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+
+    dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * dx * appData.maxDist / (0.95 * scale_factor * 0.5);
+    dy = 1.0 * dy * appData.maxDist / (0.95 * scale_factor * 0.5);
+
+    float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
+
+    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+
+    //double outLon, outLat;
+    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
+
+    appData.centerLon += outLon;
+    appData.centerLat += outLat;
+
+    appData.mapTargetLon = 0;
+    appData.mapTargetLat = 0;
+
+    appData.mapMoved = 1;
+}
+
+void zoomMapToTarget() {
+    if(appData.mapTargetMaxDist) {
+        if(fabs(appData.mapTargetMaxDist - appData.maxDist) > 0.0001) {
+            appData.maxDist += 0.1 * (appData.mapTargetMaxDist - appData.maxDist);
+        } else {
+            appData.mapTargetMaxDist = 0;
+        }
+    }
+}
+
+void moveMapToTarget() {
+    if(appData.mapTargetLon && appData.mapTargetLat) {
+        if(fabs(appData.mapTargetLon - appData.centerLon) > 0.0001 || fabs(appData.mapTargetLat - appData.centerLat) > 0.0001) {
+            appData.centerLon += 0.1 * (appData.mapTargetLon- appData.centerLon);
+            appData.centerLat += 0.1 * (appData.mapTargetLat - appData.centerLat);
+
+            appData.mapMoved = 1;    
+        } else {
+            appData.mapTargetLon = 0;
+            appData.mapTargetLat = 0;
+        }     
+    }
+}
+
 void drawMouse() {
-    if((mstime() - appData.mouseMovedTime) > 1000) {
+    if(appData.mouseMovedTime == 0  || (mstime() - appData.mouseMovedTime) > 1000) {
+        appData.mouseMovedTime = 0;
         return;
     }
 
@@ -1015,6 +1060,37 @@ void drawMouse() {
     lineRGBA(appData.renderer, appData.mousex,  appData.mousey - 10 * appData.screen_uiscale,  appData.mousex,  appData.mousey + 10 * appData.screen_uiscale, white.r, white.g, white.b, alpha);
 }
 
+void registerClick() {
+    if(appData.tapCount == 1) {
+        struct planeObj *p = planes;
+        struct planeObj *selection = NULL;
+
+        while(p) {
+            if(appData.touchx && appData.touchy) {
+                if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
+                    if(selection) {
+                        if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 
+                            (selection->cx - appData.touchx) * (selection->cx - appData.touchx) + (selection->cy - appData.touchy) * (selection->cy - appData.touchy)) {
+                            selection = p;
+                        }
+                    } else {
+                        selection = p;
+                    }    
+                }
+            }
+
+            p = p->next;
+        }
+
+        //if(selectedPlane == NULL) {
+            selectedPlane = selection;
+        //}
+    } else if(appData.tapCount == 2) {
+        appData.mapTargetMaxDist = 0.25 * appData.maxDist;
+        animateCenterAbsolute(appData.touchx, appData.touchy);
+    }
+}
+
 //
 // 
 //
@@ -1022,6 +1098,9 @@ void drawMouse() {
 void draw() {
     uint64_t drawStartTime = mstime();
     
+    moveMapToTarget();
+    zoomMapToTarget();
+
     updatePlanes();
 
     updateStatus();
@@ -1059,7 +1138,6 @@ void draw() {
     char fps[13] = " ";
     snprintf(fps,13," %ffps", 1000.0 / (mstime() - appData.lastFrameTime));
     drawStringBG(fps, 0,0, appData.mapFont, grey, black);  
-
 
     SDL_RenderPresent(appData.renderer);  
 
