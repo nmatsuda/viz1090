@@ -11,8 +11,8 @@ static uint64_t mstime(void) {
     return mst;
 }
 
-struct planeObj *findPlaneObj(uint32_t addr) {
-    struct planeObj *p = planes;
+PlaneObj *findPlaneObj(uint32_t addr) {
+    PlaneObj *p = appData.planes;
 
     while(p) {
         if (p->addr == addr) return (p);
@@ -21,8 +21,8 @@ struct planeObj *findPlaneObj(uint32_t addr) {
     return (NULL);
 }
 
-struct planeObj *createPlaneObj(struct aircraft *a) {
-    struct planeObj *p = (struct planeObj *) malloc(sizeof(*p));
+PlaneObj *createPlaneObj(struct aircraft *a) {
+    PlaneObj *p = (PlaneObj *) malloc(sizeof(*p));
 
     memset(p, 0, sizeof(*p));
 
@@ -51,9 +51,9 @@ struct planeObj *createPlaneObj(struct aircraft *a) {
 }
 
 void updatePlanes() {
-    struct aircraft *a = Modes.aircrafts;
+    struct aircraft *a = modes.aircrafts;
 
-    struct planeObj *p = planes;
+    PlaneObj *p = appData.planes;
 
     while(p) {
         p->live = 0;
@@ -65,8 +65,8 @@ void updatePlanes() {
         p = findPlaneObj(a->addr);
         if (!p) {
             p = createPlaneObj(a);
-            p->next = planes;       
-            planes = p;      
+            p->next = appData.planes;       
+            appData.planes = p;      
         } else {
             p->prev_seen = p->seen;
         }
@@ -113,15 +113,15 @@ void updatePlanes() {
         a = a->next;
     }
 
-    p = planes;
-    struct planeObj *prev = NULL;
+    p = appData.planes;
+    PlaneObj *prev = NULL;
 
     while(p) {
         if(!p->live) {
             if (!prev) {
-                planes = p->next; 
+                appData.planes = p->next; 
                 free(p); 
-                p = planes; 
+                p = appData.planes; 
             } else {
                 prev->next = p->next; 
                 free(p); 

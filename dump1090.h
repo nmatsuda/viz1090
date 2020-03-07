@@ -227,7 +227,7 @@ struct aircraft {
     struct aircraft *next;        // Next aircraft in our linked list
 };
 
-struct stDF {
+typedef struct stDF {
     struct stDF     *pNext;                      // Pointer to next item in the linked list
     struct stDF     *pPrev;                      // Pointer to previous item in the linked list
     struct aircraft *pAircraft;                  // Pointer to the Aircraft structure for this DF
@@ -238,7 +238,7 @@ struct stDF {
 } tDF;
 
 // Program global state
-struct {                             // Internal state
+typedef struct Modes{                             // Internal state
     pthread_t       reader_thread;
 
     pthread_mutex_t data_mutex;      // Mutex to synchronize buffer access
@@ -371,6 +371,8 @@ struct {                             // Internal state
     unsigned int stat_blocks_processed;
     unsigned int stat_blocks_dropped;
 } Modes;
+
+extern Modes modes;
 
 // The struct we use to store information about a decoded message.
 struct modesMessage {

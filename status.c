@@ -54,7 +54,7 @@ void updateStatus() {
         a = a->next;
     }
 */
-    struct planeObj *p = planes;
+    PlaneObj *p = appData.planes;
 
     while(p) {
 		unsigned char * pSig       = p->signalLevel;

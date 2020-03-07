@@ -1,11 +1,6 @@
 #ifndef MAPPOINTS_H
 #define MAPPOINTS_H
 
-float *mapPoints_relative;
-int mapPoints_count;
-
-float *mapPoints;
-
 typedef struct Point{
 	float lat;
 	float lon;
@@ -37,7 +32,5 @@ typedef struct QuadTree{
 	struct QuadTree *ne;
 	struct QuadTree *se;
 } QuadTree;
-
-QuadTree root;
 
 #endif

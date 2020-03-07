@@ -3,6 +3,44 @@
 
 #include "defs.h"
 
+
+// mirrors aircraft struct in dump1090, separating for refactoring 
+
+typedef struct PlaneObj {   
+    uint32_t        addr;           // ICAO address
+    char            flight[16];     // Flight number
+    unsigned char   signalLevel[8]; // Last 8 Signal Amplitudes
+    double          messageRate;
+    int             altitude;       // Altitude
+    int             speed;          // Velocity
+    int             track;          // Angle of flight
+    int             vert_rate;      // Vertical rate.
+    time_t          seen;           // Time at which the last packet was received
+    time_t          seenLatLon;           // Time at which the last packet was received
+    time_t          prev_seen;
+    double          lat, lon;       // Coordinated obtained from CPR encoded data
+    
+    //history
+    float           oldLon[TRAIL_LENGTH];
+    float           oldLat[TRAIL_LENGTH];
+    float           oldHeading[TRAIL_LENGTH];
+    time_t          oldSeen[TRAIL_LENGTH];
+    uint8_t         oldIdx; 
+    uint64_t        created;
+    uint64_t        msSeen;
+    uint64_t        msSeenLatLon;
+    int               live;
+
+    struct PlaneObj *next;        // Next aircraft in our linked list
+
+//// label stuff
+
+    int             x, y, cx, cy, w, h;
+    float           ox, oy, dox, doy, ddox, ddoy;
+    float           pressure;
+} PlaneObj;
+
+
 typedef struct AppData
 {
 	SDL_Window		*window;
@@ -53,51 +91,14 @@ typedef struct AppData
 
     int mapMoved;
 
+    QuadTree root;
+
+    PlaneObj *planes;
+    PlaneObj *selectedPlane;
+
     uint64_t lastFrameTime;
 } AppData;
 
-AppData appData;
-
-// mirrors aircraft struct in dump1090, separating for refactoring 
-
-struct planeObj {	
-    uint32_t      	addr;           // ICAO address
-    char          	flight[16];     // Flight number
-    unsigned char 	signalLevel[8]; // Last 8 Signal Amplitudes
-    double        	messageRate;
-    int           	altitude;       // Altitude
-    int           	speed;          // Velocity
-    int           	track;          // Angle of flight
-    int           	vert_rate;      // Vertical rate.
-    time_t        	seen;           // Time at which the last packet was received
-    time_t        	seenLatLon;           // Time at which the last packet was received
-    time_t			prev_seen;
-    double        	lat, lon;       // Coordinated obtained from CPR encoded data
-    
-	//history
-    float        	oldLon[TRAIL_LENGTH];
-    float			oldLat[TRAIL_LENGTH];
-    float			oldHeading[TRAIL_LENGTH];
-    time_t        	oldSeen[TRAIL_LENGTH];
-    uint8_t         oldIdx; 
-    uint64_t      	created;
-    uint64_t		msSeen;
-    uint64_t		msSeenLatLon;
-    int			      live;
-
-    struct planeObj *next;        // Next aircraft in our linked list
-
-//// label stuff
-
-    int 			x, y, cx, cy, w, h;
-    float			ox, oy, dox, doy, ddox, ddoy;
-    float			pressure;
-};
-
-struct planeObj *planes;
-
-
-struct planeObj *selectedPlane;
 
 struct {
     double msgRate;
@@ -121,9 +122,14 @@ typedef struct Style {
     SDL_Color buttonColor;
 } Style;
 
-Style style;
+// globals
+extern AppData appData;
+extern Style style;
 
 // functions
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //font.c
 TTF_Font *loadFont(char *, int);
@@ -158,6 +164,8 @@ void drawStatus();
 
 //planeObj.c
 void updatePlanes();
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -33,13 +33,19 @@
 
 int go = 1;
 
+
+AppData appData;
+Style style;
+
+Modes modes;
+
 //
 // ============================= Utility functions ==========================
 //
 void sigintHandler(int dummy) {
     NOTUSED(dummy);
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
-    Modes.exit = 1;           // Signal to threads that we are done
+    modes.exit = 1;           // Signal to threads that we are done
 }
 
 //
@@ -47,26 +53,26 @@ void sigintHandler(int dummy) {
 //
 void view1090InitConfig(void) {
     // Default everything to zero/NULL
-    memset(&Modes,    0, sizeof(Modes));
+    memset(&modes,    0, sizeof(Modes));
     memset(&View1090, 0, sizeof(View1090));
 
     // Now initialise things that should not be 0/NULL to their defaults
-    Modes.check_crc               = 1;
+    modes.check_crc               = 1;
     strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
-    Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
-    Modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
-    Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
-    Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
-    Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
+    modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
+    modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
+    modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
+    modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
+    modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
+    modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
 
-    Modes.interactive             = 0;
-    Modes.quiet                   = 1;
+    modes.interactive             = 0;
+    modes.quiet                   = 1;
 
     // Map options
     appData.maxDist                 = 25.0;
-    appData.centerLon               = Modes.fUserLon;
-    appData.centerLat               = Modes.fUserLat;
+    appData.centerLon               = modes.fUserLon;
+    appData.centerLat               = modes.fUserLat;
 
     // Display options
     appData.screen_uiscale          = 1;
@@ -87,15 +93,15 @@ void view1090InitConfig(void) {
 //
 void view1090Init(void) {
 
-    // pthread_mutex_init(&Modes.pDF_mutex,NULL);
-    // pthread_mutex_init(&Modes.data_mutex,NULL);
-    // pthread_cond_init(&Modes.data_cond,NULL);
+    // pthread_mutex_init(&modes.pDF_mutex,NULL);
+    // pthread_mutex_init(&modes.data_mutex,NULL);
+    // pthread_cond_init(&modes.data_cond,NULL);
 
 #ifdef _WIN32
-    if ( (!Modes.wsaData.wVersion) 
-      && (!Modes.wsaData.wHighVersion) ) {
+    if ( (!modes.wsaData.wVersion) 
+      && (!modes.wsaData.wHighVersion) ) {
       // Try to start the windows socket support
-      if (WSAStartup(MAKEWORD(2,1),&Modes.wsaData) != 0) 
+      if (WSAStartup(MAKEWORD(2,1),&modes.wsaData) != 0) 
         {
         fprintf(stderr, "WSAStartup returned Error\n");
         }
@@ -103,32 +109,32 @@ void view1090Init(void) {
 #endif
 
     // Allocate the various buffers used by Modes
-    if ( NULL == (Modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)))
+    if ( NULL == (modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)))
     {
         fprintf(stderr, "Out of memory allocating data buffer.\n");
         exit(1);
     }
 
     // Clear the buffers that have just been allocated, just in-case
-    memset(Modes.icao_cache, 0,   sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2);
+    memset(modes.icao_cache, 0,   sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2);
 
     // Validate the users Lat/Lon home location inputs
-    if ( (Modes.fUserLat >   90.0)  // Latitude must be -90 to +90
-      || (Modes.fUserLat <  -90.0)  // and 
-      || (Modes.fUserLon >  360.0)  // Longitude must be -180 to +360
-      || (Modes.fUserLon < -180.0) ) {
-        Modes.fUserLat = Modes.fUserLon = 0.0;
-    } else if (Modes.fUserLon > 180.0) { // If Longitude is +180 to +360, make it -180 to 0
-        Modes.fUserLon -= 360.0;
+    if ( (modes.fUserLat >   90.0)  // Latitude must be -90 to +90
+      || (modes.fUserLat <  -90.0)  // and 
+      || (modes.fUserLon >  360.0)  // Longitude must be -180 to +360
+      || (modes.fUserLon < -180.0) ) {
+        modes.fUserLat = modes.fUserLon = 0.0;
+    } else if (modes.fUserLon > 180.0) { // If Longitude is +180 to +360, make it -180 to 0
+        modes.fUserLon -= 360.0;
     }
     // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the 
     // Atlantic ocean off the west coast of Africa. This is unlikely to be correct. 
     // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian 
     // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both. 
     // Testing the flag at runtime will be much quicker than ((fLon != 0.0) || (fLat != 0.0))
-    Modes.bUserFlags &= ~MODES_USER_LATLON_VALID;
-    if ((Modes.fUserLat != 0.0) || (Modes.fUserLon != 0.0)) {
-        Modes.bUserFlags |= MODES_USER_LATLON_VALID;
+    modes.bUserFlags &= ~MODES_USER_LATLON_VALID;
+    if ((modes.fUserLat != 0.0) || (modes.fUserLon != 0.0)) {
+        modes.bUserFlags |= MODES_USER_LATLON_VALID;
     }
 
     // Prepare error correction tables
@@ -140,8 +146,8 @@ int setupConnection(struct client *c) {
     int fd;
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
-    if ((fd = anetTcpConnect(Modes.aneterr, View1090.net_input_beast_ipaddr, Modes.net_input_beast_port)) != ANET_ERR) {
-		anetNonBlock(Modes.aneterr, fd);
+    if ((fd = anetTcpConnect(modes.aneterr, View1090.net_input_beast_ipaddr, modes.net_input_beast_port)) != ANET_ERR) {
+		anetNonBlock(modes.aneterr, fd);
 		//
 		// Setup a service callback client structure for a beast binary input (from dump1090)
 		// This is a bit dodgy under Windows. The fd parameter is a handle to the internet
@@ -157,8 +163,8 @@ int setupConnection(struct client *c) {
 		c->buflen  = 0;
 		c->fd      = 
 		c->service =
-		Modes.bis  = fd;
-		Modes.clients = c;
+		modes.bis  = fd;
+		modes.clients = c;
     }
     return fd;
 }
@@ -236,21 +242,21 @@ int main(int argc, char **argv) {
         int more = ((j + 1) < argc); // There are more arguments
 
         if        (!strcmp(argv[j],"--net-bo-port") && more) {
-            Modes.net_input_beast_port = atoi(argv[++j]);
+            modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--port") && more) {
-            Modes.net_input_beast_port = atoi(argv[++j]);
+            modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             strcpy(View1090.net_input_beast_ipaddr, argv[++j]);
         } else if (!strcmp(argv[j],"--server") && more) {
             strcpy(View1090.net_input_beast_ipaddr, argv[++j]);            
         } else if (!strcmp(argv[j],"--lat") && more) {
-            Modes.fUserLat = atof(argv[++j]);
-            appData.centerLat = Modes.fUserLat;
+            modes.fUserLat = atof(argv[++j]);
+            appData.centerLat = modes.fUserLat;
         } else if (!strcmp(argv[j],"--lon") && more) {
-            Modes.fUserLon = atof(argv[++j]);
-            appData.centerLon = Modes.fUserLon;
+            modes.fUserLon = atof(argv[++j]);
+            appData.centerLon = modes.fUserLon;
         } else if (!strcmp(argv[j],"--metric")) {
-            Modes.metric = 1;
+            modes.metric = 1;
         } else if (!strcmp(argv[j],"--fullscreen")) {
             appData.fullscreen = 1;         
         } else if (!strcmp(argv[j],"--uiscale") && more) {
@@ -275,7 +281,7 @@ int main(int argc, char **argv) {
     c = (struct client *) malloc(sizeof(*c));
     while(1) {
         if ((fd = setupConnection(c)) == ANET_ERR) {
-            fprintf(stderr, "Waiting on %s:%d\n", View1090.net_input_beast_ipaddr, Modes.net_input_beast_port);     
+            fprintf(stderr, "Waiting on %s:%d\n", View1090.net_input_beast_ipaddr, modes.net_input_beast_port);     
             sleep(1);      
         } else {
             break;
@@ -283,6 +289,7 @@ int main(int argc, char **argv) {
     }
 
     int go;
+
     
     init("sdl1090");
     
@@ -295,9 +302,7 @@ int main(int argc, char **argv) {
         getInput();
     
         interactiveRemoveStaleAircrafts();
-    
         draw();
-
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
             free(c);
             usleep(1000000);
@@ -306,7 +311,6 @@ int main(int argc, char **argv) {
             continue;
         }
         modesReadFromClient(c,"",decodeBinMessage);
-
         //usleep(10000);
     }
     

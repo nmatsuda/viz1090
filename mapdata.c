@@ -1,6 +1,10 @@
 #include "dump1090.h"
 #include "mapdata.h"
+#include "structs.h"
 #include <stdbool.h>
+
+int mapPoints_count;
+float *mapPoints;
 
 void initQuadTree(QuadTree *tree) {
   if(tree == NULL) {
@@ -126,30 +130,30 @@ void initMaps() {
 
   // load quad tree
 
-	root.lat_min = 180;
-	root.lon_min = 180;
-	root.lat_max = -180;
-	root.lon_max = -180;
+	appData.root.lat_min = 180;
+	appData.root.lon_min = 180;
+	appData.root.lat_max = -180;
+	appData.root.lon_max = -180;
 
-	root.nw = NULL;
-	root.ne = NULL;
-	root.sw = NULL;
-	root.se = NULL;
+	appData.root.nw = NULL;
+	appData.root.ne = NULL;
+	appData.root.sw = NULL;
+	appData.root.se = NULL;
 
 	for(int i = 0; i < mapPoints_count; i+=2) {
 		if(mapPoints[i] == 0)
 			continue;
 
-		if(mapPoints[i] < root.lon_min) {
-			root.lon_min = mapPoints[i];
-		} else if(mapPoints[i] > root.lon_max) {
-			root.lon_max = mapPoints[i];
+		if(mapPoints[i] < appData.root.lon_min) {
+			appData.root.lon_min = mapPoints[i];
+		} else if(mapPoints[i] > appData.root.lon_max) {
+			appData.root.lon_max = mapPoints[i];
 		} 
 
-		if(mapPoints[i+1] < root.lat_min) {
-			root.lat_min = mapPoints[i+1];
-		} else if(mapPoints[i+1] > root.lat_max) {
-			root.lat_max = mapPoints[i+1];
+		if(mapPoints[i+1] < appData.root.lat_min) {
+			appData.root.lat_min = mapPoints[i+1];
+		} else if(mapPoints[i+1] > appData.root.lat_max) {
+			appData.root.lat_max = mapPoints[i+1];
 		} 
 	}
 
@@ -159,7 +163,7 @@ void initMaps() {
   for(int i = 0; i < mapPoints_count; i+=2) {
 
     if(mapPoints[i] == 0) {
-        QTInsert(&root, currentPolygon);
+        QTInsert(&appData.root, currentPolygon);
         currentPolygon = (Polygon*)malloc(sizeof(Polygon));
         initPolygon(currentPolygon);
         continue;

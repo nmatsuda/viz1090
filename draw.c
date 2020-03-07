@@ -389,7 +389,7 @@ void drawScaleBars()
     while(scaleBarDist < appData.screen_width) {
         lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
-        if (Modes.metric) {
+        if (modes.metric) {
             snprintf(scaleLabel,13,"%dkm", (int)pow(10,scalePower));
         } else {
             snprintf(scaleLabel,13,"%dmi", (int)pow(10,scalePower));
@@ -504,10 +504,10 @@ void drawGeography() {
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height * 1.2);
 
-    drawPolys(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
+    drawPolys(&(appData.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
 }
 
-void drawSignalMarks(struct planeObj *p, int x, int y) {
+void drawSignalMarks(PlaneObj *p, int x, int y) {
     unsigned char * pSig       = p->signalLevel;
     unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
                                               pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
@@ -525,7 +525,7 @@ void drawSignalMarks(struct planeObj *p, int x, int y) {
 }
 
 
-void drawPlaneText(struct planeObj *p) {
+void drawPlaneText(PlaneObj *p) {
     int maxCharCount = 0;
     int currentCharCount;
 
@@ -547,7 +547,7 @@ void drawPlaneText(struct planeObj *p) {
 
   if(p->pressure * appData.screen_width < 0.2f) {
         char alt[10] = " ";
-        if (Modes.metric) {
+        if (modes.metric) {
             currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
         } else {
             currentCharCount = snprintf(alt,10," %d'", p->altitude); 
@@ -563,7 +563,7 @@ void drawPlaneText(struct planeObj *p) {
         }   
 
         char speed[10] = " ";
-        if (Modes.metric) {
+        if (modes.metric) {
             currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
         } else {
             currentCharCount = snprintf(speed,10," %dmph", p->speed);
@@ -599,7 +599,7 @@ void drawPlaneText(struct planeObj *p) {
     p->h = currentLine * appData.mapFontHeight;         
 }
 
-void drawSelectedPlaneText(struct planeObj *p) {
+void drawSelectedPlaneText(PlaneObj *p) {
     if(p == NULL) {
         return;
     }
@@ -625,7 +625,7 @@ void drawSelectedPlaneText(struct planeObj *p) {
     }
 
     char alt[10] = " ";
-    if (Modes.metric) {
+    if (modes.metric) {
         currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
     } else {
         currentCharCount = snprintf(alt,10," %d'", p->altitude); 
@@ -641,7 +641,7 @@ void drawSelectedPlaneText(struct planeObj *p) {
     }   
 
     char speed[10] = " ";
-    if (Modes.metric) {
+    if (modes.metric) {
         currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
     } else {
         currentCharCount = snprintf(speed,10," %dmph", p->speed);
@@ -654,11 +654,11 @@ void drawSelectedPlaneText(struct planeObj *p) {
 }
 
 void resolveLabelConflicts() {
-    struct planeObj *p = planes;
+    PlaneObj *p = appData.planes;
 
     while(p) {
 
-        struct planeObj *check_p = planes;
+        PlaneObj *check_p = appData.planes;
 
         int p_left = p->x - 10 * appData.screen_uiscale;
         int p_right = p->x + p->w + 10 * appData.screen_uiscale;
@@ -747,7 +747,7 @@ void resolveLabelConflicts() {
             check_p = check_p -> next;
         }
 
-        check_p = planes;
+        check_p = appData.planes;
 
         //check against plane icons (include self)
 
@@ -803,7 +803,7 @@ void resolveLabelConflicts() {
 
     //update 
 
-    p = planes;
+    p = appData.planes;
 
     while(p) {
             //incorporate acceleration from label conflict resolution
@@ -844,29 +844,29 @@ void resolveLabelConflicts() {
 
 
 void drawPlanes() {
-    struct planeObj *p = planes;
+    PlaneObj *p = appData.planes;
     time_t now = time(NULL);
     SDL_Color planeColor;
 
     // draw all trails first so they don't cover up planes and text
     // also find closest plane to selection point
     while(p) {
-        if ((now - p->seen) < Modes.interactive_display_ttl) {
+        if ((now - p->seen) < modes.interactive_display_ttl) {
             drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
         }
 
         p = p->next;
     }
 
-    if(selectedPlane) {
-        appData.mapTargetLon = selectedPlane->lon;
-        appData.mapTargetLat = selectedPlane->lat;             
+    if(appData.selectedPlane) {
+        appData.mapTargetLon = appData.selectedPlane->lon;
+        appData.mapTargetLat = appData.selectedPlane->lat;             
     }
 
-    p = planes;
+    p = appData.planes;
 
     while(p) {
-        if ((now - p->seen) < Modes.interactive_display_ttl) {
+        if ((now - p->seen) < modes.interactive_display_ttl) {
             if (p->lon && p->lat) {
                 int x, y;
 
@@ -900,7 +900,7 @@ void drawPlanes() {
                             usey = y + (mstime() - p->msSeenLatLon) * vely;
                         } 
 
-                        if(p == selectedPlane) {
+                        if(p == appData.selectedPlane) {
                             // this logic should be in input, register a callback for click?
                             float elapsed  = mstime() - appData.touchDownTime;
 
@@ -935,7 +935,7 @@ void drawPlanes() {
                             p->cy = usey;
                         }
                           
-                        if(p != selectedPlane) {
+                        if(p != appData.selectedPlane) {
                             drawPlaneText(p);
                         }
 
@@ -946,7 +946,7 @@ void drawPlanes() {
         p = p->next;
     }
 
-    drawSelectedPlaneText(selectedPlane);
+    drawSelectedPlaneText(appData.selectedPlane);
 
     if(appData.touchx && appData.touchy) {
 
@@ -1071,8 +1071,8 @@ void drawMouse() {
 
 void registerClick() {
     if(appData.tapCount == 1 && appData.isDragging  == 0) {
-        struct planeObj *p = planes;
-        struct planeObj *selection = NULL;
+        PlaneObj *p = appData.planes;
+        PlaneObj *selection = NULL;
 
         while(p) {
             if(appData.touchx && appData.touchy) {
@@ -1091,8 +1091,8 @@ void registerClick() {
             p = p->next;
         }
 
-        //if(selectedPlane == NULL) {
-            selectedPlane = selection;
+        //if(appData.selectedPlane == NULL) {
+            appData.selectedPlane = selection;
         //}
     } else if(appData.tapCount == 2) {
         appData.mapTargetMaxDist = 0.25 * appData.maxDist;

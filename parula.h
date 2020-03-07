@@ -1,1 +1,1 @@
-int parula[128][3];
+extern int parula[128][3];
