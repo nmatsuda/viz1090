@@ -175,17 +175,18 @@ void drawStatus() {
 
 	char strLoc[20] = " ";
     snprintf(strLoc, 20, "%3.3fN %3.3f%c", appData.centerLat, fabs(appData.centerLon),(appData.centerLon > 0) ? 'E' : 'W');
-	drawStatusBox(&left, &top, "loc", strLoc, pink);	
+	drawStatusBox(&left, &top, "loc", strLoc, style.buttonColor);	
 
     char strPlaneCount[10] = " ";
     snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
-	drawStatusBox(&left, &top, "disp", strPlaneCount, yellow);
+	drawStatusBox(&left, &top, "disp", strPlaneCount, style.buttonColor);
 
     char strMsgRate[18] = " ";
     snprintf(strMsgRate, 18,"%.0f/s", Status.msgRate);
-  	drawStatusBox(&left, &top, "rate", strMsgRate, orange);
+  	drawStatusBox(&left, &top, "rate", strMsgRate, style.buttonColor);
 
     char strSig[18] = " ";
     snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
-  	drawStatusBox(&left, &top, "sAvg", strSig, green);
+  	drawStatusBox(&left, &top, "sAvg", strSig, style.buttonColor);
+
 }

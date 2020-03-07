@@ -21,6 +21,20 @@ float sign(float x) {
     return (x > 0) - (x < 0);
 }
 
+float clamp(float in, float min, float max) {
+    float out = in;
+
+    if(in < min) {
+        out = min;
+    }
+
+    if(in > max)  {
+        out = max;
+    }
+
+    return out;
+}
+
 void CROSSVP(float *v, float *u, float *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
@@ -314,11 +328,7 @@ void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, 
 
         float age = pow(1.0 - (float)(now - oldSeen[currentIdx]) / TRAIL_TTL, 2.2);
 
-        if(age < 0) {
-            age = 0;
-        }
-
-        uint8_t colorVal = (uint8_t)floor(255.0 * age);
+        uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,1));
                    
         thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, colorVal, colorVal, colorVal, 64); 
 
@@ -332,7 +342,7 @@ void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, 
         //tick marks
 
         age = 1.0 - (float) 4.0 * (now - oldSeen[currentIdx]) / TRAIL_TTL;
-        colorVal = (uint8_t)floor(255.0 * age);
+        colorVal = (uint8_t)floor(255.0 * clamp(age,0,1));
 
         float vec[3];
         vec[0] = sin(oldHeading[currentIdx] * M_PI / 180);
@@ -344,7 +354,6 @@ void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, 
         float out[3];
 
         CROSSVP(out,vec,up);
-
 
         int x1, y1, x2, y2;
 
@@ -375,10 +384,10 @@ void drawScaleBars()
 
     char scaleLabel[13] = "";
         
-    lineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
+    lineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
     while(scaleBarDist < appData.screen_width) {
-        lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
+        lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
         if (Modes.metric) {
             snprintf(scaleLabel,13,"%dkm", (int)pow(10,scalePower));
@@ -386,7 +395,7 @@ void drawScaleBars()
             snprintf(scaleLabel,13,"%dmi", (int)pow(10,scalePower));
         }
 
-        drawString(scaleLabel, 10+scaleBarDist, 15*appData.screen_uiscale, appData.mapFont, pink);
+        drawString(scaleLabel, 10+scaleBarDist, 15*appData.screen_uiscale, appData.mapFont, style.scaleBarColor);
 
         scalePower++;
         scaleBarDist = screenDist((float)pow(10,scalePower));
@@ -395,7 +404,7 @@ void drawScaleBars()
     scalePower--;
     scaleBarDist = screenDist((float)pow(10,scalePower));
 
-    lineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale,pink.r, pink.g, pink.b, 255);
+    lineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
 }
 
 void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
@@ -460,7 +469,7 @@ void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float
     
             float factor = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
 
-            SDL_Color lineColor = lerpColor(purple, blue, factor); 
+            SDL_Color lineColor = lerpColor(style.mapOuterColor, style.mapInnerColor, factor); 
 
             lineRGBA(appData.renderer, x1, y1, x2, y2, lineColor.r, lineColor.g, lineColor.b, 255);
 
@@ -913,9 +922,9 @@ void drawPlanes() {
 
                             lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
                             lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
-                            planeColor = lerpColor(pink, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                            planeColor = lerpColor(style.selectedColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
                         } else {
-                            planeColor = lerpColor(green, grey, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                            planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
                         }
 
                         if(outOfBounds(x,y)) {
@@ -1061,7 +1070,7 @@ void drawMouse() {
 }
 
 void registerClick() {
-    if(appData.tapCount == 1) {
+    if(appData.tapCount == 1 && appData.isDragging  == 0) {
         struct planeObj *p = planes;
         struct planeObj *selection = NULL;
 
@@ -1108,7 +1117,8 @@ void draw() {
     if(appData.mapMoved) {
         SDL_SetRenderTarget(appData.renderer, appData.mapTexture);
         
-        SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
+        SDL_SetRenderDrawColor(appData.renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+
         SDL_RenderClear(appData.renderer);
         
         drawGeography();
@@ -1125,7 +1135,7 @@ void draw() {
     }
 
     //SDL_SetRenderDrawColor( appData.renderer, 0, 15, 30, 0);
-    SDL_SetRenderDrawColor(appData.renderer, 0, 0, 0, 0);
+    SDL_SetRenderDrawColor(appData.renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
 
     SDL_RenderClear(appData.renderer);
 
@@ -1136,7 +1146,7 @@ void draw() {
     drawMouse();
 
     char fps[13] = " ";
-    snprintf(fps,13," %ffps", 1000.0 / (mstime() - appData.lastFrameTime));
+    snprintf(fps,13," %.1ffps", 1000.0 / (mstime() - appData.lastFrameTime));
     drawStringBG(fps, 0,0, appData.mapFont, grey, black);  
 
     SDL_RenderPresent(appData.renderer);  

@@ -41,6 +41,7 @@ typedef struct AppData
     int touchx;
     int touchy;
     int tapCount;
+    int isDragging;
 
     uint64_t mouseMovedTime;
     int mousex;
@@ -106,6 +107,21 @@ struct {
     double maxDist;
     struct aircraft *closeCall;
 } Status;
+typedef struct Style {
+    SDL_Color backgroundColor;
+
+    SDL_Color selectedColor;
+    SDL_Color planeColor;
+    SDL_Color planeGoneColor;
+
+    SDL_Color mapInnerColor;
+    SDL_Color mapOuterColor;
+    SDL_Color scaleBarColor;
+
+    SDL_Color buttonColor;
+} Style;
+
+Style style;
 
 // functions
 

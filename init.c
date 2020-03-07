@@ -1,5 +1,6 @@
 #include "dump1090.h"
 #include "structs.h"
+#include "monokai.h"
 
 void init(char *title) {
 
@@ -46,6 +47,7 @@ void init(char *title) {
 	appData.mapTargetLon = 0;
 	appData.mapTargetLat = 0;
 	appData.mapTargetMaxDist = 0;
+	appData.isDragging = 0;
 	selectedPlane = NULL;
 
 	if(appData.fullscreen) {
@@ -69,6 +71,21 @@ void init(char *title) {
 
     appData.labelFontWidth = 6 * appData.screen_uiscale;
     appData.labelFontHeight = 12 * appData.screen_uiscale; 
+
+    SDL_Color bgcolor = {10,20,30,255};
+    SDL_Color greenblue = {236,192,68,255};
+    SDL_Color lightblue = {211,208,203,255};
+    SDL_Color mediumblue ={110,136,152,255};
+    SDL_Color darkblue =  {46,82,102,255};
+
+    style.backgroundColor = bgcolor;
+    style.selectedColor = pink;
+    style.planeColor = greenblue;
+    style.planeGoneColor = grey;
+    style.mapInnerColor = mediumblue;
+    style.mapOuterColor = darkblue;
+    style.scaleBarColor = lightGrey;
+    style.buttonColor =  lightblue;
 
 	initMaps();
 }
