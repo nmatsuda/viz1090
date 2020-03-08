@@ -1,5 +1,6 @@
  #include <stdint.h>
 #include "defs.h"
+#include "dump1090.h"
 #include <ctime>
 
 class Aircraft {

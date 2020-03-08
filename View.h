@@ -34,6 +34,8 @@ public:
 	void draw();
 	
 	View(AircraftData *aircraftData);
+
+	bool metric;
 };
 
 #endif

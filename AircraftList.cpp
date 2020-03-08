@@ -21,10 +21,9 @@ Aircraft *AircraftList::find(uint32_t addr) {
     return (NULL);
 }
     
-void AircraftList::update
-() {
 	//instead of this, net_io should call this class directly to update info
-    struct aircraft *a = modes.aircrafts;
+void AircraftList::update(Modes *modes) {
+    struct aircraft *a = modes->aircrafts;
 
     Aircraft *p = head;
 

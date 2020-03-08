@@ -86,7 +86,7 @@ void AircraftData::update() {
 
     interactiveRemoveStaleAircrafts(&modes);
 
-    aircraftList.update();
+    aircraftList.update(&modes);
 }
 
 AircraftData::AircraftData(){

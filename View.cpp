@@ -148,7 +148,7 @@ int View::screenDist(float d) {
     return round(0.95 * scale_factor * 0.5 * fabs(d) / appData.maxDist);        
 }
 
-void pxFromLonLat(float *dx, float *dy, float lon, float lat) {
+void View::pxFromLonLat(float *dx, float *dy, float lon, float lat) {
     if(!lon || !lat) {
         *dx = 0;
         *dy = 0;
@@ -391,7 +391,7 @@ void View::drawScaleBars()
     while(scaleBarDist < appData.screen_width) {
         lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
-        if (modes.metric) {
+        if (aircraftData->modes.metric) {
             snprintf(scaleLabel,13,"%dkm", (int)pow(10,scalePower));
         } else {
             snprintf(scaleLabel,13,"%dmi", (int)pow(10,scalePower));
@@ -549,7 +549,7 @@ void View::drawPlaneText(Aircraft *p) {
 
   if(p->pressure * appData.screen_width < 0.2f) {
         char alt[10] = " ";
-        if (modes.metric) {
+        if (aircraftData->modes.metric) {
             currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
         } else {
             currentCharCount = snprintf(alt,10," %d'", p->altitude); 
@@ -565,7 +565,7 @@ void View::drawPlaneText(Aircraft *p) {
         }   
 
         char speed[10] = " ";
-        if (modes.metric) {
+        if (aircraftData->modes.metric) {
             currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
         } else {
             currentCharCount = snprintf(speed,10," %dmph", p->speed);
@@ -627,7 +627,7 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     }
 
     char alt[10] = " ";
-    if (modes.metric) {
+    if (aircraftData->modes.metric) {
         currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
     } else {
         currentCharCount = snprintf(alt,10," %d'", p->altitude); 
@@ -643,7 +643,7 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     }   
 
     char speed[10] = " ";
-    if (modes.metric) {
+    if (aircraftData->modes.metric) {
         currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
     } else {
         currentCharCount = snprintf(speed,10," %dmph", p->speed);
@@ -853,10 +853,7 @@ void View::drawPlanes() {
     // draw all trails first so they don't cover up planes and text
     // also find closest plane to selection point
     while(p) {
-        if ((now - p->seen) < modes.interactive_display_ttl) {
-            drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
-        }
-
+        drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
         p = p->next;
     }
 
@@ -868,80 +865,78 @@ void View::drawPlanes() {
     p = aircraftData->aircraftList.head;
 
     while(p) {
-        if ((now - p->seen) < modes.interactive_display_ttl) {
-            if (p->lon && p->lat) {
-                int x, y;
+        if (p->lon && p->lat) {
+            int x, y;
 
-                float dx, dy;
-                pxFromLonLat(&dx, &dy, p->lon, p->lat);
-                screenCoords(&x, &y, dx, dy);
+            float dx, dy;
+            pxFromLonLat(&dx, &dy, p->lon, p->lat);
+            screenCoords(&x, &y, dx, dy);
 
-                if(p->created == 0) {
-                    p->created = mstime();
-                }
+            if(p->created == 0) {
+                p->created = mstime();
+            }
 
-                float age_ms = (float)(mstime() - p->created);
-                if(age_ms < 500) {
-                    circleRGBA(appData.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
-                } else {
-                    if(MODES_ACFLAGS_HEADING_VALID) {
-                        int usex = x;   
-                        int usey = y;
+            float age_ms = (float)(mstime() - p->created);
+            if(age_ms < 500) {
+                circleRGBA(appData.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
+            } else {
+                if(MODES_ACFLAGS_HEADING_VALID) {
+                    int usex = x;   
+                    int usey = y;
 
-                        if(p->seenLatLon > p->oldSeen[p->oldIdx]) {
-                            int oldx, oldy;
-                            int idx = (p->oldIdx - 1) % TRAIL_LENGTH;
+                    if(p->seenLatLon > p->oldSeen[p->oldIdx]) {
+                        int oldx, oldy;
+                        int idx = (p->oldIdx - 1) % TRAIL_LENGTH;
 
-                            pxFromLonLat(&dx, &dy, p->oldLon[idx], p->oldLat[idx]);
-                            screenCoords(&oldx, &oldy, dx, dy);
+                        pxFromLonLat(&dx, &dy, p->oldLon[idx], p->oldLat[idx]);
+                        screenCoords(&oldx, &oldy, dx, dy);
 
-                            float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
-                            float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+                        float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+                        float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
 
-                            usex = x + (mstime() - p->msSeenLatLon) * velx;
-                            usey = y + (mstime() - p->msSeenLatLon) * vely;
-                        } 
+                        usex = x + (mstime() - p->msSeenLatLon) * velx;
+                        usey = y + (mstime() - p->msSeenLatLon) * vely;
+                    } 
 
-                        if(p == aircraftData->selectedAircraft) {
-                            // this logic should be in input, register a callback for click?
-                            float elapsed  = mstime() - appData.touchDownTime;
+                    if(p == aircraftData->selectedAircraft) {
+                        // this logic should be in input, register a callback for click?
+                        float elapsed  = mstime() - appData.touchDownTime;
 
-                            int boxSize;
-                            if(elapsed < 300) {
-                                boxSize = (int)(20.0 * (1.0 - (1.0 - elapsed / 300.0) * cos(sqrt(elapsed)))); 
-                            } else {
-                                boxSize = 20;
-                            }
-                            //rectangleRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex + boxSize, usey + boxSize, pink.r, pink.g, pink.b, 255);                            
-                            lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
-
-                            lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
-
-                            lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
-
-                            lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
-                            lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
-                            planeColor = lerpColor(style.selectedColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                        int boxSize;
+                        if(elapsed < 300) {
+                            boxSize = (int)(20.0 * (1.0 - (1.0 - elapsed / 300.0) * cos(sqrt(elapsed)))); 
                         } else {
-                            planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                            boxSize = 20;
                         }
+                        //rectangleRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex + boxSize, usey + boxSize, pink.r, pink.g, pink.b, 255);                            
+                        lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
 
-                        if(outOfBounds(x,y)) {
-                            drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
-                        } else {
-                            drawPlaneIcon(usex, usey, p->track, planeColor);
-                            p->cx = usex;
-                            p->cy = usey;
-                        }
-                          
-                        if(p != aircraftData->selectedAircraft) {
-                            drawPlaneText(p);
-                        }
+                        lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
 
+                        lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
+
+                        lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
+                        planeColor = lerpColor(style.selectedColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                    } else {
+                        planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
                     }
+
+                    if(outOfBounds(x,y)) {
+                        drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
+                    } else {
+                        drawPlaneIcon(usex, usey, p->track, planeColor);
+                        p->cx = usex;
+                        p->cy = usey;
+                    }
+                      
+                    if(p != aircraftData->selectedAircraft) {
+                        drawPlaneText(p);
+                    }
+
                 }
             }
         }

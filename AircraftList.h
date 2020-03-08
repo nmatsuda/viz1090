@@ -5,7 +5,7 @@ class AircraftList {
 		Aircraft *head;
 
 		Aircraft *find(uint32_t addr);
-		void update();
+		void update(Modes *modes);
 
 		AircraftList();
 		~AircraftList();
