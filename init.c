@@ -48,7 +48,6 @@ void init(char *title) {
 	appData.mapTargetLat = 0;
 	appData.mapTargetMaxDist = 0;
 	appData.isDragging = 0;
-	appData.selectedPlane = NULL;
 
 	if(appData.fullscreen) {
 		//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.

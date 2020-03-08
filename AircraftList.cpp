@@ -1,4 +1,4 @@
-#include "structs.h"
+#include "AircraftList.h"
 #include "dump1090.h"
 
 static uint64_t mstime(void) {
@@ -11,8 +11,8 @@ static uint64_t mstime(void) {
     return mst;
 }
 
-PlaneObj *findPlaneObj(uint32_t addr) {
-    PlaneObj *p = appData.planes;
+Aircraft *AircraftList::find(uint32_t addr) {
+    Aircraft *p = head;
 
     while(p) {
         if (p->addr == addr) return (p);
@@ -20,40 +20,13 @@ PlaneObj *findPlaneObj(uint32_t addr) {
     }
     return (NULL);
 }
-
-PlaneObj *createPlaneObj(struct aircraft *a) {
-    PlaneObj *p = (PlaneObj *) malloc(sizeof(*p));
-
-    memset(p, 0, sizeof(*p));
-
-    p->addr = a->addr;
-    p->created = 0;
-    p->oldIdx = 0;
-    p->prev_seen = 0;
-
-    p->x = 0;
-    p->y = 0;
-    p->cx = 0;
-    p->cy = 0;
-
-    p->ox = 0;
-    p->oy = 0;
-    p->dox = 0;
-    p->doy  = 0;
-    p->ddox = 0;
-    p->ddoy = 0;
-
-    memset(p->oldLon, 0, sizeof(p->oldLon));
-    memset(p->oldLat, 0, sizeof(p->oldLat));    
-    memset(p->oldHeading, 0, sizeof(p->oldHeading));    
-
-    return (p);
-}
-
-void updatePlanes() {
+    
+void AircraftList::update
+() {
+	//instead of this, net_io should call this class directly to update info
     struct aircraft *a = modes.aircrafts;
 
-    PlaneObj *p = appData.planes;
+    Aircraft *p = head;
 
     while(p) {
         p->live = 0;
@@ -62,11 +35,12 @@ void updatePlanes() {
 
     while(a) {
 
-        p = findPlaneObj(a->addr);
+        p = find(a->addr);
         if (!p) {
-            p = createPlaneObj(a);
-            p->next = appData.planes;       
-            appData.planes = p;      
+            //p = createPlaneObj(a);
+            p = new Aircraft(a);
+            p->next = head;       
+            head = p;      
         } else {
             p->prev_seen = p->seen;
         }
@@ -113,23 +87,35 @@ void updatePlanes() {
         a = a->next;
     }
 
-    p = appData.planes;
-    PlaneObj *prev = NULL;
+    p = head;
+    Aircraft *prev = NULL;
 
     while(p) {
         if(!p->live) {
             if (!prev) {
-                appData.planes = p->next; 
-                free(p); 
-                p = appData.planes; 
+                head = p->next; 
+                delete(p); 
+                p = head; 
             } else {
                 prev->next = p->next; 
-                free(p); 
+                delete(p); 
                 p = prev->next;
             }
         } else {
             prev = p;
             p = p->next;
         }
+    }
+}
+
+AircraftList::AircraftList() {
+    head = NULL;
+}
+
+AircraftList::~AircraftList() {
+    while(head != NULL) {
+        Aircraft *temp = head;
+        head  = head->next;
+        delete(temp);
     }
 }

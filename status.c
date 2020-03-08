@@ -13,66 +13,26 @@ void updateStatus() {
     double sigAccumulate = 0.0;
     double msgRateAccumulate = 0.0;    
 
-/*
-    while(a) {
-        int flags = a->modeACflags;
-        int msgs  = a->messages;
 
-        if ( (((flags & (MODEAC_MSG_FLAG                             )) == 0                    )                 )
-           || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEA_ONLY)) == MODEAC_MSG_MODEA_ONLY) && (msgs > 4  ) ) 
-           || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD )) == 0                    ) && (msgs > 127) ) 
-           ) {
+  //   PlaneObj *p = appData.planes;
 
-            unsigned char * pSig       = a->signalLevel;
-            unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                          pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
+  //   while(p) {
+		// unsigned char * pSig       = p->signalLevel;
+		// unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+		//                               pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
 
-			sigAccumulate += signalAverage;
-
-            if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
-                double d = sqrt(a->dx * a->dx + a->dy * a->dy);
-
-                if(d < appData.maxDist) {
-	                if(d > maxDist) {
-	                	maxDist = d;
-	                }
-
-	                if(d < 4.0) {
-	                	Status.closeCall = a;
-	                }
-
-	                numVisiblePlanes++;
-	            }
-            }
-            totalCount++;
-        }
-
-
-         msgRateAccumulate += (a->messageRate[0] + a->messageRate[1] + a->messageRate[2] + a->messageRate[3] + 
-                                           a->messageRate[4] + a->messageRate[5] + a->messageRate[6] + a->messageRate[7]);   
-
-        a = a->next;
-    }
-*/
-    PlaneObj *p = appData.planes;
-
-    while(p) {
-		unsigned char * pSig       = p->signalLevel;
-		unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-		                              pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
-
-		sigAccumulate += signalAverage;
+		// sigAccumulate += signalAverage;
 		
-		if (p->lon && p->lat) {
-		        numVisiblePlanes++;
-		}	
+		// if (p->lon && p->lat) {
+		//         numVisiblePlanes++;
+		// }	
 
-		totalCount++;
+		// totalCount++;
 
-        msgRateAccumulate += p->messageRate; 
+  //       msgRateAccumulate += p->messageRate; 
 
-        p = p->next;
-    }
+  //       p = p->next;
+  //   }
 
     Status.msgRate                = msgRateAccumulate;
     Status.avgSig                 = sigAccumulate / (double) totalCount;

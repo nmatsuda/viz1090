@@ -55,102 +55,18 @@ struct service {
 
 struct service services[MODES_NET_SERVICES_NUM];
 
-void modesInitNet(void) {
-    int j;
-
-	struct service svc[MODES_NET_SERVICES_NUM] = {
-		{"Raw TCP output", &modes.ros, modes.net_output_raw_port, 1},
-		{"Raw TCP input", &modes.ris, modes.net_input_raw_port, 1},
-		{"Beast TCP output", &modes.bos, modes.net_output_beast_port, 1},
-		{"Beast TCP input", &modes.bis, modes.net_input_beast_port, 1},
-		{"HTTP server", &modes.https, modes.net_http_port, 1},
-		{"Basestation TCP output", &modes.sbsos, modes.net_output_sbs_port, 1}
-	};
-
-	memcpy(&services, &svc, sizeof(svc));//services = svc;
-
-    modes.clients = NULL;
-
-#ifdef _WIN32
-    if ( (!modes.wsaData.wVersion) 
-      && (!modes.wsaData.wHighVersion) ) {
-      // Try to start the windows socket support
-      if (WSAStartup(MAKEWORD(2,1),&modes.wsaData) != 0) 
-        {
-        fprintf(stderr, "WSAStartup returned Error\n");
-        }
-      }
-#endif
-
-    for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
-		services[j].enabled = (services[j].port != 0);
-		if (services[j].enabled) {
-			int s = anetTcpServer(modes.aneterr, services[j].port, modes.net_bind_address);
-			if (s == -1) {
-				fprintf(stderr, "Error opening the listening port %d (%s): %s\n",
-					services[j].port, services[j].descr, modes.aneterr);
-				exit(1);
-			}
-			anetNonBlock(modes.aneterr, s);
-			*services[j].socket = s;
-		} else {
-			if (modes.debug & MODES_DEBUG_NET) printf("%s port is disabled\n", services[j].descr);
-		}
-    }
-
-#ifndef _WIN32
-    signal(SIGPIPE, SIG_IGN);
-#endif
-}
-//
-//=========================================================================
-//
-// This function gets called from time to time when the decoding thread is
-// awakened by new data arriving. This usually happens a few times every second
-//
-struct client * modesAcceptClients(void) {
-    int fd, port;
-    unsigned int j;
-    struct client *c;
-
-    for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
-		if (services[j].enabled) {
-			fd = anetTcpAccept(modes.aneterr, *services[j].socket, NULL, &port);
-			if (fd == -1) continue;
-
-			anetNonBlock(modes.aneterr, fd);
-			c = (struct client *) malloc(sizeof(*c));
-			c->service    = *services[j].socket;
-			c->next       = modes.clients;
-			c->fd         = fd;
-			c->buflen     = 0;
-			modes.clients = c;
-			anetSetSendBuffer(modes.aneterr,fd, (MODES_NET_SNDBUF_SIZE << modes.net_sndbuf_size));
-
-			if (*services[j].socket == modes.sbsos) modes.stat_sbs_connections++;
-			if (*services[j].socket == modes.ros)   modes.stat_raw_connections++;
-			if (*services[j].socket == modes.bos)   modes.stat_beast_connections++;
-
-			j--; // Try again with the same listening port
-
-			if (modes.debug & MODES_DEBUG_NET)
-				printf("Created new client %d\n", fd);
-		}
-    }
-    return modes.clients;
-}
 //
 //=========================================================================
 //
 // On error free the client, collect the structure, adjust maxfd if needed.
 //
-void modesFreeClient(struct client *c) {
+void modesFreeClient(Modes * modes, struct client *c) {
 
     // Unhook this client from the linked list of clients
-    struct client *p = modes.clients;
+    struct client *p = modes->clients;
     if (p) {
         if (p == c) {
-            modes.clients = c->next;
+            modes->clients = c->next;
         } else {
             while ((p) && (p->next != c)) {
                 p = p->next;
@@ -168,17 +84,17 @@ void modesFreeClient(struct client *c) {
 //
 // Close the client connection and mark it as closed
 //
-void modesCloseClient(struct client *c) {
+void modesCloseClient(Modes *modes, struct client *c) {
 	close(c->fd);
-    if (c->service == modes.sbsos) {
-        if (modes.stat_sbs_connections) modes.stat_sbs_connections--;
-    } else if (c->service == modes.ros) {
-        if (modes.stat_raw_connections) modes.stat_raw_connections--;
-    } else if (c->service == modes.bos) {
-        if (modes.stat_beast_connections) modes.stat_beast_connections--;
+    if (c->service == modes->sbsos) {
+        if (modes->stat_sbs_connections) modes->stat_sbs_connections--;
+    } else if (c->service == modes->ros) {
+        if (modes->stat_raw_connections) modes->stat_raw_connections--;
+    } else if (c->service == modes->bos) {
+        if (modes->stat_beast_connections) modes->stat_beast_connections--;
     }
 
-    if (modes.debug & MODES_DEBUG_NET)
+    if (modes->debug & MODES_DEBUG_NET)
         printf("Closing client %d\n", c->fd);
 
     c->fd = -1;
@@ -196,7 +112,7 @@ void modesCloseClient(struct client *c) {
 // The function always returns 0 (success) to the caller as there is no
 // case where we want broken messages here to close the client connection.
 //
-int decodeBinMessage(struct client *c, char *p) {
+int decodeBinMessage(Modes *modes, struct client *c, char *p) {
     int msgLen = 0;
     int  j;
     char ch;
@@ -209,7 +125,7 @@ int decodeBinMessage(struct client *c, char *p) {
     ch = *p++; /// Get the message type
     if (0x1A == ch) {p++;} 
 
-    if       ((ch == '1') && (modes.mode_ac)) { // skip ModeA/C unless user enables --modes-ac
+    if       ((ch == '1') && (modes->mode_ac)) { // skip ModeA/C unless user enables --modes-ac
         msgLen = MODEAC_MSG_BYTES;
     } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
@@ -236,13 +152,13 @@ int decodeBinMessage(struct client *c, char *p) {
             if (0x1A == ch) {p++;}
         }
 
-        if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
-            decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
-        } else {
-            decodeModesMessage(&mm, msg);
-        }
+        // if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
+        //     decodeModeAMessage(modes, &mm, ((msg[0] << 8) | msg[1]));
+        // } else {
+            decodeModesMessage(modes, &mm, msg);
+        //}
 
-        useModesMessage(&mm);
+        useModesMessage(modes, &mm);
     }
     return (0);
 }
@@ -259,91 +175,6 @@ int hexDigitVal(int c) {
     else return -1;
 }
 //
-//=========================================================================
-//
-// This function decodes a string representing message in raw hex format
-// like: *8D4B969699155600E87406F5B69F; The string is null-terminated.
-// 
-// The message is passed to the higher level layers, so it feeds
-// the selected screen output, the network output and so forth.
-// 
-// If the message looks invalid it is silently discarded.
-//
-// The function always returns 0 (success) to the caller as there is no 
-// case where we want broken messages here to close the client connection.
-//
-int decodeHexMessage(struct client *c, char *hex) {
-    int l = strlen(hex), j;
-    unsigned char msg[MODES_LONG_MSG_BYTES];
-    struct modesMessage mm;
-    MODES_NOTUSED(c);
-    memset(&mm, 0, sizeof(mm));
-
-    // Mark messages received over the internet as remote so that we don't try to
-    // pass them off as being received by this instance when forwarding them
-    mm.remote      =    1;
-    mm.signalLevel = 0xFF;
-
-    // Remove spaces on the left and on the right
-    while(l && isspace(hex[l-1])) {
-        hex[l-1] = '\0'; l--;
-    }
-    while(isspace(*hex)) {
-        hex++; l--;
-    }
-
-    // Turn the message into binary.
-    // Accept *-AVR raw @-AVR/BEAST timeS+raw %-AVR timeS+raw (CRC good) <-BEAST timeS+sigL+raw
-    // and some AVR records that we can understand
-    if (hex[l-1] != ';') {return (0);} // not complete - abort
-
-    switch(hex[0]) {
-        case '<': {
-            mm.signalLevel = (hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14]);
-            hex += 15; l -= 16; // Skip <, timestamp and siglevel, and ;
-            break;}
-
-        case '@':     // No CRC check
-        case '%': {   // CRC is OK
-            hex += 13; l -= 14; // Skip @,%, and timestamp, and ;
-            break;}
-
-        case '*':
-        case ':': {
-            hex++; l-=2; // Skip * and ;
-            break;}
-
-        default: {
-            return (0); // We don't know what this is, so abort
-            break;}
-    }
-
-    if ( (l != (MODEAC_MSG_BYTES      * 2)) 
-      && (l != (MODES_SHORT_MSG_BYTES * 2)) 
-      && (l != (MODES_LONG_MSG_BYTES  * 2)) )
-        {return (0);} // Too short or long message... broken
-
-    if ( (0 == modes.mode_ac) 
-      && (l == (MODEAC_MSG_BYTES * 2)) ) 
-        {return (0);} // Right length for ModeA/C, but not enabled
-
-    for (j = 0; j < l; j += 2) {
-        int high = hexDigitVal(hex[j]);
-        int low  = hexDigitVal(hex[j+1]);
-
-        if (high == -1 || low == -1) return 0;
-        msg[j/2] = (high << 4) | low;
-    }
-
-    if (l == (MODEAC_MSG_BYTES * 2)) {  // ModeA or ModeC
-        decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
-    } else {       // Assume ModeS
-        decodeModesMessage(&mm, msg);
-    }
-
-    useModesMessage(&mm);
-    return (0);
-}
 //
 //=========================================================================
 //
@@ -359,8 +190,8 @@ int decodeHexMessage(struct client *c, char *hex) {
 // The handler returns 0 on success, or 1 to signal this function we should
 // close the connection with the client in case of non-recoverable errors.
 //
-void modesReadFromClient(struct client *c, char *sep,
-                         int(*handler)(struct client *, char *)) {
+void modesReadFromClient(Modes *modes, struct client *c, char *sep,
+                         int(*handler)(Modes *modes, struct client *, char *)) {
     int left;
     int nread;
     int fullmsg;
@@ -384,7 +215,7 @@ void modesReadFromClient(struct client *c, char *sep,
         if (nread < 0) {errno = WSAGetLastError();}
 #endif
         if (nread == 0) {
-			modesCloseClient(c);
+			modesCloseClient(modes, c);
 			return;
 		}
 
@@ -397,7 +228,7 @@ void modesReadFromClient(struct client *c, char *sep,
 #else
         if ( (nread < 0) && (errno != EWOULDBLOCK)) { // Error, or end of file
 #endif
-            modesCloseClient(c);
+            modesCloseClient(modes, c);
             return;
         }
         if (nread <= 0) {
@@ -412,7 +243,7 @@ void modesReadFromClient(struct client *c, char *sep,
 
 
 
-        if (c->service == modes.bis) {
+        if (c->service == modes->bis) {
             // This is the Beast Binary scanning case.
             // If there is a complete message still in the buffer, there must be the separator 'sep'
             // in the buffer, note that we full-scan the buffer at every read for simplicity.
@@ -446,8 +277,8 @@ void modesReadFromClient(struct client *c, char *sep,
                     break;
                 }
                 // Have a 0x1a followed by 1, 2 or 3 - pass message less 0x1a to handler.
-                if (handler(c, s)) {
-                    modesCloseClient(c);
+                if (handler(modes, c, s)) {
+                    modesCloseClient(modes, c);
                     return;
                 }
                 fullmsg = 1;
@@ -462,8 +293,8 @@ void modesReadFromClient(struct client *c, char *sep,
             //
             while ((e = strstr(s, sep)) != NULL) { // end of first message if found
                 *e = '\0';                         // The handler expects null terminated strings
-                if (handler(c, s)) {               // Pass message to handler.
-                    modesCloseClient(c);           // Handler returns 1 on error to signal we .
+                if (handler(modes, c, s)) {               // Pass message to handler.
+                    modesCloseClient(modes, c);           // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
                 s = e + strlen(sep);               // Move to start of next message
@@ -479,28 +310,3 @@ void modesReadFromClient(struct client *c, char *sep,
         }
     }
 }
-//
-//=========================================================================
-//
-// Read data from clients. This function actually delegates a lower-level
-// function that depends on the kind of service (raw, http, ...).
-//
-void modesReadFromClients(void) {
-
-    struct client *c = modesAcceptClients();
-
-    while (c) {
-            // Read next before servicing client incase the service routine deletes the client! 
-            struct client *next = c->next;
-
-        if (c->fd >= 0) {
-                modesReadFromClient(c,"",decodeBinMessage);
-        } else {
-            modesFreeClient(c);
-        }
-        c = next;
-    }
-}
-//
-// =============================== Network IO ===========================
-//

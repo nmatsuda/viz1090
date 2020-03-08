@@ -46,7 +46,7 @@ static uint64_t mstime(void) {
 //
 // Add a new DF structure to the interactive mode linked list
 //
-void interactiveCreateDF(struct aircraft *a, struct modesMessage *mm) {
+void interactiveCreateDF(Modes *modes, struct aircraft *a, struct modesMessage *mm) {
     struct stDF *pDF = (struct stDF *) malloc(sizeof(*pDF));
 
     if (pDF) {
@@ -60,60 +60,34 @@ void interactiveCreateDF(struct aircraft *a, struct modesMessage *mm) {
         pDF->pAircraft   = a;
         memcpy(pDF->msg, mm->msg, MODES_LONG_MSG_BYTES);
 
-        // if (!pthread_mutex_lock(&modes.pDF_mutex)) {
-        //     if ((pDF->pNext = modes.pDF)) {
-        //         modes.pDF->pPrev = pDF;
+        // if (!pthread_mutex_lock(&modes->pDF_mutex)) {
+        //     if ((pDF->pNext = modes->pDF)) {
+        //         modes->pDF->pPrev = pDF;
         //     }
-        //     modes.pDF = pDF;
-        //     pthread_mutex_unlock(&modes.pDF_mutex);
+        //     modes->pDF = pDF;
+        //     pthread_mutex_unlock(&modes->pDF_mutex);
         // } else {
         //     free(pDF);
         // }
-        if ((pDF->pNext = modes.pDF)) {
-            modes.pDF->pPrev = pDF;
+        if ((pDF->pNext = modes->pDF)) {
+            modes->pDF->pPrev = pDF;
         }
-        modes.pDF = pDF;
+        modes->pDF = pDF;
 
     }
 }
 //
 // Remove stale DF's from the interactive mode linked list
 //
-void interactiveRemoveStaleDF(time_t now) {
+void interactiveRemoveStaleDF( Modes *modes, time_t now) {
     struct stDF *pDF  = NULL;
     struct stDF *prev = NULL;
 
-    // Only fiddle with the DF list if we gain possession of the mutex
-    // If we fail to get the mutex we'll get another chance to tidy the
-    // DF list in a second or so.
-    // if (!pthread_mutex_trylock(&modes.pDF_mutex)) {
-    //     pDF  = modes.pDF;
-    //     while(pDF) {
-    //         if ((now - pDF->seen) > modes.interactive_delete_ttl) {
-    //             if (modes.pDF == pDF) {
-    //                 modes.pDF = NULL;
-    //             } else {
-    //                 prev->pNext = NULL;
-    //             }
-
-    //             // All DF's in the list from here onwards will be time
-    //             // expired, so delete them all
-    //             while (pDF) {
-    //                 prev = pDF; pDF = pDF->pNext;
-    //                 free(prev);
-    //             }
-
-    //         } else {
-    //             prev = pDF; pDF = pDF->pNext;
-    //         }
-    //     }
-    //     pthread_mutex_unlock (&modes.pDF_mutex);
-    // }
-    pDF  = modes.pDF;
+    pDF  = modes->pDF;
     while(pDF) {
-        if ((now - pDF->seen) > modes.interactive_delete_ttl) {
-            if (modes.pDF == pDF) {
-                modes.pDF = NULL;
+        if ((now - pDF->seen) > modes->interactive_delete_ttl) {
+            if (modes->pDF == pDF) {
+                modes->pDF = NULL;
             } else {
                 prev->pNext = NULL;
             }
@@ -131,32 +105,20 @@ void interactiveRemoveStaleDF(time_t now) {
     }
 }
 
-struct stDF *interactiveFindDF(uint32_t addr) {
-    struct stDF *pDF = NULL;
+// struct stDF *interactiveFindDF(Modes *modes, uint32_t addr) {
+//     struct stDF *pDF = NULL;
 
-    // if (!pthread_mutex_lock(&modes.pDF_mutex)) {
-    //     pDF = modes.pDF;
-    //     while(pDF) {
-    //         if (pDF->addr == addr) {
-    //             pthread_mutex_unlock (&modes.pDF_mutex);
-    //             return (pDF);
-    //         }
-    //         pDF = pDF->pNext;
-    //     }
-    //     pthread_mutex_unlock (&modes.pDF_mutex);
-    // }
-
-    pDF = modes.pDF;
-    while(pDF) {
-        if (pDF->addr == addr) {
-            return (pDF);
-        }
-        pDF = pDF->pNext;
-    }
+//     pDF = modes->pDF;
+//     while(pDF) {
+//         if (pDF->addr == addr) {
+//             return (pDF);
+//         }
+//         pDF = pDF->pNext;
+//     }
 
 
-    return (NULL);
-}
+//     return (NULL);
+// }
 //
 //========================= Interactive mode ===============================
 //
@@ -196,8 +158,8 @@ struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
 // Return the aircraft with the specified address, or NULL if no aircraft
 // exists with this address.
 //
-struct aircraft *interactiveFindAircraft(uint32_t addr) {
-    struct aircraft *a = modes.aircrafts;
+struct aircraft *interactiveFindAircraft(Modes *modes, uint32_t addr) {
+    struct aircraft *a = modes->aircrafts;
 
     while(a) {
         if (a->addr == addr) return (a);
@@ -205,105 +167,25 @@ struct aircraft *interactiveFindAircraft(uint32_t addr) {
     }
     return (NULL);
 }
-//
-//=========================================================================
-//
-// We have received a Mode A or C response. 
-//
-// Search through the list of known Mode-S aircraft and tag them if this Mode A/C 
-// matches their known Mode S Squawks or Altitudes(+/- 50feet).
-//
-// A Mode S equipped aircraft may also respond to Mode A and Mode C SSR interrogations.
-// We can't tell if this is a Mode A or C, so scan through the entire aircraft list
-// looking for matches on Mode A (squawk) and Mode C (altitude). Flag in the Mode S
-// records that we have had a potential Mode A or Mode C response from this aircraft. 
-//
-// If an aircraft responds to Mode A then it's highly likely to be responding to mode C 
-// too, and vice verca. Therefore, once the mode S record is tagged with both a Mode A
-// and a Mode C flag, we can be fairly confident that this Mode A/C frame relates to that
-// Mode S aircraft.
-//
-// Mode C's are more likely to clash than Mode A's; There could be several aircraft 
-// cruising at FL370, but it's less likely (though not impossible) that there are two 
-// aircraft on the same squawk. Therefore, give precidence to Mode A record matches
-//
-// Note : It's theoretically possible for an aircraft to have the same value for Mode A 
-// and Mode C. Therefore we have to check BOTH A AND C for EVERY S.
-//
-void interactiveUpdateAircraftModeA(struct aircraft *a) {
-    struct aircraft *b = modes.aircrafts;
 
-    while(b) {
-        if ((b->modeACflags & MODEAC_MSG_FLAG) == 0) {// skip any fudged ICAO records 
-
-            // If both (a) and (b) have valid squawks...
-            if ((a->bFlags & b->bFlags) & MODES_ACFLAGS_SQUAWK_VALID) {
-                // ...check for Mode-A == Mode-S Squawk matches
-                if (a->modeA == b->modeA) { // If a 'real' Mode-S ICAO exists using this Mode-A Squawk
-                    b->modeAcount   = a->messages;
-                    b->modeACflags |= MODEAC_MSG_MODEA_HIT;
-                    a->modeACflags |= MODEAC_MSG_MODEA_HIT;
-                    if ( (b->modeAcount > 0) &&
-                       ( (b->modeCcount > 1)
-                      || (a->modeACflags & MODEAC_MSG_MODEA_ONLY)) ) // Allow Mode-A only matches if this Mode-A is invalid Mode-C
-                        {a->modeACflags |= MODEAC_MSG_MODES_HIT;}    // flag this ModeA/C probably belongs to a known Mode S                    
-                }
-            }
-
-            // If both (a) and (b) have valid altitudes...
-            if ((a->bFlags & b->bFlags) & MODES_ACFLAGS_ALTITUDE_VALID) {
-                // ... check for Mode-C == Mode-S Altitude matches
-                if (  (a->modeC     == b->modeC    )     // If a 'real' Mode-S ICAO exists at this Mode-C Altitude
-                   || (a->modeC     == b->modeC + 1)     //          or this Mode-C - 100 ft
-                   || (a->modeC + 1 == b->modeC    ) ) { //          or this Mode-C + 100 ft
-                    b->modeCcount   = a->messages;
-                    b->modeACflags |= MODEAC_MSG_MODEC_HIT;
-                    a->modeACflags |= MODEAC_MSG_MODEC_HIT;
-                    if ( (b->modeAcount > 0) &&
-                         (b->modeCcount > 1) )
-                        {a->modeACflags |= (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD);} // flag this ModeA/C probably belongs to a known Mode S                    
-                }
-            }
-        }
-        b = b->next;
-    }
-}
-//
-//=========================================================================
-//
-void interactiveUpdateAircraftModeS() {
-    struct aircraft *a = modes.aircrafts;
-
-    while(a) {
-        int flags = a->modeACflags;
-        if (flags & MODEAC_MSG_FLAG) { // find any fudged ICAO records
-
-            // clear the current A,C and S hit bits ready for this attempt
-            a->modeACflags = flags & ~(MODEAC_MSG_MODEA_HIT | MODEAC_MSG_MODEC_HIT | MODEAC_MSG_MODES_HIT);
-
-            interactiveUpdateAircraftModeA(a);  // and attempt to match them with Mode-S
-        }
-        a = a->next;
-    }
-}
 //
 //=========================================================================
 //
 // Receive new messages and populate the interactive mode with more info
 //
-struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
+struct aircraft *interactiveReceiveData(Modes *modes, struct modesMessage *mm) {
     struct aircraft *a, *aux;
 
     // Return if (checking crc) AND (not crcok) AND (not fixed)
-    if (modes.check_crc && (mm->crcok == 0) && (mm->correctedbits == 0))
+    if (modes->check_crc && (mm->crcok == 0) && (mm->correctedbits == 0))
         return NULL;
 
     // Lookup our aircraft or create a new one
-    a = interactiveFindAircraft(mm->addr);
+    a = interactiveFindAircraft(modes, mm->addr);
     if (!a) {                              // If it's a currently unknown aircraft....
         a = interactiveCreateAircraft(mm); // ., create a new record for it,
-        a->next = modes.aircrafts;         // .. and put it at the head of the list
-        modes.aircrafts = a;
+        a->next = modes->aircrafts;         // .. and put it at the head of the list
+        modes->aircrafts = a;
     } else {
         /* If it is an already known aircraft, move it on head
          * so we keep aircrafts ordered by received message time.
@@ -312,14 +194,14 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
          * since the aircraft that is currently on head sent a message,
          * othewise with multiple aircrafts at the same time we have an
          * useless shuffle of positions on the screen. */
-        if (0 && modes.aircrafts != a && (time(NULL) - a->seen) >= 1) {
-            aux = modes.aircrafts;
+        if (0 && modes->aircrafts != a && (time(NULL) - a->seen) >= 1) {
+            aux = modes->aircrafts;
             while(aux->next != a) aux = aux->next;
             /* Now we are a node before the aircraft to remove. */
             aux->next = aux->next->next; /* removed. */
             /* Add on head */
-            a->next = modes.aircrafts;
-            modes.aircrafts = a;
+            a->next = modes->aircrafts;
+            modes->aircrafts = a;
         }
     }
 
@@ -392,13 +274,13 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
 
         // If we have enough recent data, try global CPR
         if (((mm->bFlags | a->bFlags) & MODES_ACFLAGS_LLEITHER_VALID) == MODES_ACFLAGS_LLBOTH_VALID && abs((int)(a->even_cprtime - a->odd_cprtime)) <= 10000) {
-            if (decodeCPR(a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG)) == 0) {
+            if (decodeCPR(modes, a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG)) == 0) {
                 location_ok = 1;
             }
         }
 
         // Otherwise try relative CPR.
-        if (!location_ok && decodeCPRrelative(a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG)) == 0) {
+        if (!location_ok && decodeCPRrelative(modes, a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG)) == 0) {
             location_ok = 1;
         }
 
@@ -432,8 +314,8 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
     }
 
     // If we are Logging DF's, and it's not a Mode A/C
-    if ((modes.bEnableDFLogging) && (mm->msgtype < 32)) {
-        interactiveCreateDF(a,mm);
+    if ((modes->bEnableDFLogging) && (mm->msgtype < 32)) {
+        interactiveCreateDF(modes,a,mm);
     }
 
     return (a);
@@ -445,23 +327,23 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
 // When in interactive mode If we don't receive new nessages within
 // MODES_INTERACTIVE_DELETE_TTL seconds we remove the aircraft from the list.
 //
-void interactiveRemoveStaleAircrafts(void) {
-    struct aircraft *a = modes.aircrafts;
+void interactiveRemoveStaleAircrafts(Modes *modes) {
+    struct aircraft *a = modes->aircrafts;
     struct aircraft *prev = NULL;
     time_t now = time(NULL);
 
     // Only do cleanup once per second
-    if (modes.last_cleanup_time != now) {
-        modes.last_cleanup_time = now;
+    if (modes->last_cleanup_time != now) {
+        modes->last_cleanup_time = now;
 
-        interactiveRemoveStaleDF(now);
+        interactiveRemoveStaleDF(modes,now);
 
         while(a) {
-            if ((now - a->seen) > modes.interactive_delete_ttl) {
+            if ((now - a->seen) > modes->interactive_delete_ttl) {
                 // Remove the element from the linked list, with care
                 // if we are removing the first element
                 if (!prev) {
-                    modes.aircrafts = a->next; free(a); a = modes.aircrafts;
+                    modes->aircrafts = a->next; free(a); a = modes->aircrafts;
                 } else {
                     prev->next = a->next; free(a); a = prev->next;
                 }

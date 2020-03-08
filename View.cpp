@@ -7,6 +7,8 @@
 #include "parula.h"
 #include "monokai.h"
 
+#include "View.h"
+
 static uint64_t mstime(void) {
     struct timeval tv;
     uint64_t mst;
@@ -17,11 +19,11 @@ static uint64_t mstime(void) {
     return mst;
 }
 
-float sign(float x) {
+static float sign(float x) {
     return (x > 0) - (x < 0);
 }
 
-float clamp(float in, float min, float max) {
+static float clamp(float in, float min, float max) {
     float out = in;
 
     if(in < min) {
@@ -35,7 +37,7 @@ float clamp(float in, float min, float max) {
     return out;
 }
 
-void CROSSVP(float *v, float *u, float *w) 
+static void CROSSVP(float *v, float *u, float *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
     v[1] = u[2]*w[0] - u[0]*(w)[2];                             
@@ -141,7 +143,7 @@ SDL_Color hsv2SDLColor(float h, float s, float v)
     return out;     
 }
 
-int screenDist(float d) {
+int View::screenDist(float d) {
     float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
     return round(0.95 * scale_factor * 0.5 * fabs(d) / appData.maxDist);        
 }
@@ -157,7 +159,7 @@ void pxFromLonLat(float *dx, float *dy, float lon, float lat) {
     *dy = 6371.0 * (lat - appData.centerLat) * M_PI / 180.0f;
 }
 
-void latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
+void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
     float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
 
     float dx = appData.maxDist * (x  - (appData.screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
@@ -168,12 +170,12 @@ void latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
 }
 
 
-void screenCoords(int *outX, int *outY, float dx, float dy) {
+void View::screenCoords(int *outX, int *outY, float dx, float dy) {
     *outX = (appData.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
     *outY = (appData.screen_height * CENTEROFFSET) + ((dy>0) ? -1 : 1) * screenDist(dy);        
 }
 
-int outOfBounds(int x, int y) {
+int View::outOfBounds(int x, int y) {
     if(x < 0 || x >= appData.screen_width || y < 0 || y >= appData.screen_height ) {
         return 1;
     } else {
@@ -181,7 +183,7 @@ int outOfBounds(int x, int y) {
     }
 }
 
-void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor) {
+void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor) {
 
     float arrowWidth = 6.0 * appData.screen_uiscale;
 
@@ -239,7 +241,7 @@ void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeCo
     *returny = y3;
 }
 
-void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
+void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 {
     float body = 8.0 * appData.screen_uiscale;
     float wing = 6.0 * appData.screen_uiscale;
@@ -286,7 +288,7 @@ void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     filledTrigonRGBA (appData.renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
 
-void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, int idx) {
+void View::drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, int idx) {
 
     int currentIdx, prevIdx;
 
@@ -377,7 +379,7 @@ void drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, 
     }
 }
 
-void drawScaleBars()
+void View::drawScaleBars()
 {
     int scalePower = 0;
     int scaleBarDist = screenDist((float)pow(10,scalePower));
@@ -407,7 +409,7 @@ void drawScaleBars()
     lineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
 }
 
-void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+void View::drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
     if(tree == NULL) {
         return;
     }
@@ -498,7 +500,7 @@ void drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float
     }
 }
 
-void drawGeography() {
+void View::drawGeography() {
     float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
@@ -507,7 +509,7 @@ void drawGeography() {
     drawPolys(&(appData.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
 }
 
-void drawSignalMarks(PlaneObj *p, int x, int y) {
+void View::drawSignalMarks(Aircraft *p, int x, int y) {
     unsigned char * pSig       = p->signalLevel;
     unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
                                               pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
@@ -525,7 +527,7 @@ void drawSignalMarks(PlaneObj *p, int x, int y) {
 }
 
 
-void drawPlaneText(PlaneObj *p) {
+void View::drawPlaneText(Aircraft *p) {
     int maxCharCount = 0;
     int currentCharCount;
 
@@ -599,7 +601,7 @@ void drawPlaneText(PlaneObj *p) {
     p->h = currentLine * appData.mapFontHeight;         
 }
 
-void drawSelectedPlaneText(PlaneObj *p) {
+void View::drawSelectedAircraftText(Aircraft *p) {
     if(p == NULL) {
         return;
     }
@@ -653,12 +655,12 @@ void drawSelectedPlaneText(PlaneObj *p) {
     }
 }
 
-void resolveLabelConflicts() {
-    PlaneObj *p = appData.planes;
+void View::resolveLabelConflicts() {
+    Aircraft *p = aircraftData->aircraftList.head;
 
     while(p) {
 
-        PlaneObj *check_p = appData.planes;
+        Aircraft *check_p = aircraftData->aircraftList.head;
 
         int p_left = p->x - 10 * appData.screen_uiscale;
         int p_right = p->x + p->w + 10 * appData.screen_uiscale;
@@ -747,7 +749,7 @@ void resolveLabelConflicts() {
             check_p = check_p -> next;
         }
 
-        check_p = appData.planes;
+        check_p = aircraftData->aircraftList.head;
 
         //check against plane icons (include self)
 
@@ -803,7 +805,7 @@ void resolveLabelConflicts() {
 
     //update 
 
-    p = appData.planes;
+    p = aircraftData->aircraftList.head;
 
     while(p) {
             //incorporate acceleration from label conflict resolution
@@ -843,8 +845,8 @@ void resolveLabelConflicts() {
 }
 
 
-void drawPlanes() {
-    PlaneObj *p = appData.planes;
+void View::drawPlanes() {
+    Aircraft *p = aircraftData->aircraftList.head;
     time_t now = time(NULL);
     SDL_Color planeColor;
 
@@ -858,12 +860,12 @@ void drawPlanes() {
         p = p->next;
     }
 
-    if(appData.selectedPlane) {
-        appData.mapTargetLon = appData.selectedPlane->lon;
-        appData.mapTargetLat = appData.selectedPlane->lat;             
+    if(aircraftData->selectedAircraft) {
+        appData.mapTargetLon = aircraftData->selectedAircraft->lon;
+        appData.mapTargetLat = aircraftData->selectedAircraft->lat;             
     }
 
-    p = appData.planes;
+    p = aircraftData->aircraftList.head;
 
     while(p) {
         if ((now - p->seen) < modes.interactive_display_ttl) {
@@ -900,7 +902,7 @@ void drawPlanes() {
                             usey = y + (mstime() - p->msSeenLatLon) * vely;
                         } 
 
-                        if(p == appData.selectedPlane) {
+                        if(p == aircraftData->selectedAircraft) {
                             // this logic should be in input, register a callback for click?
                             float elapsed  = mstime() - appData.touchDownTime;
 
@@ -935,7 +937,7 @@ void drawPlanes() {
                             p->cy = usey;
                         }
                           
-                        if(p != appData.selectedPlane) {
+                        if(p != aircraftData->selectedAircraft) {
                             drawPlaneText(p);
                         }
 
@@ -946,7 +948,7 @@ void drawPlanes() {
         p = p->next;
     }
 
-    drawSelectedPlaneText(appData.selectedPlane);
+    drawSelectedAircraftText(aircraftData->selectedAircraft);
 
     if(appData.touchx && appData.touchy) {
 
@@ -963,7 +965,7 @@ void drawPlanes() {
     }    
 }
 
-void animateCenterAbsolute(float x, float y) {
+void View::animateCenterAbsolute(float x, float y) {
     float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
 
     float dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * (x - appData.screen_width/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
@@ -985,7 +987,7 @@ void animateCenterAbsolute(float x, float y) {
 }
 
 
-void moveCenterAbsolute(float x, float y) {
+void View::moveCenterAbsolute(float x, float y) {
     float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
 
     float dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * (x - appData.screen_width/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
@@ -1007,7 +1009,7 @@ void moveCenterAbsolute(float x, float y) {
     appData.mapMoved = 1;
 }
 
-void moveCenterRelative(float dx, float dy) {
+void View::moveCenterRelative(float dx, float dy) {
     //
     // need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
     //
@@ -1033,7 +1035,7 @@ void moveCenterRelative(float dx, float dy) {
     appData.mapMoved = 1;
 }
 
-void zoomMapToTarget() {
+void View::zoomMapToTarget() {
     if(appData.mapTargetMaxDist) {
         if(fabs(appData.mapTargetMaxDist - appData.maxDist) > 0.0001) {
             appData.maxDist += 0.1 * (appData.mapTargetMaxDist - appData.maxDist);
@@ -1043,7 +1045,7 @@ void zoomMapToTarget() {
     }
 }
 
-void moveMapToTarget() {
+void View::moveMapToTarget() {
     if(appData.mapTargetLon && appData.mapTargetLat) {
         if(fabs(appData.mapTargetLon - appData.centerLon) > 0.0001 || fabs(appData.mapTargetLat - appData.centerLat) > 0.0001) {
             appData.centerLon += 0.1 * (appData.mapTargetLon- appData.centerLon);
@@ -1057,7 +1059,7 @@ void moveMapToTarget() {
     }
 }
 
-void drawMouse() {
+void View::drawMouse() {
     if(appData.mouseMovedTime == 0  || (mstime() - appData.mouseMovedTime) > 1000) {
         appData.mouseMovedTime = 0;
         return;
@@ -1069,10 +1071,10 @@ void drawMouse() {
     lineRGBA(appData.renderer, appData.mousex,  appData.mousey - 10 * appData.screen_uiscale,  appData.mousex,  appData.mousey + 10 * appData.screen_uiscale, white.r, white.g, white.b, alpha);
 }
 
-void registerClick() {
+void View::registerClick() {
     if(appData.tapCount == 1 && appData.isDragging  == 0) {
-        PlaneObj *p = appData.planes;
-        PlaneObj *selection = NULL;
+        Aircraft *p = aircraftData->aircraftList.head;
+        Aircraft *selection = NULL;
 
         while(p) {
             if(appData.touchx && appData.touchy) {
@@ -1091,8 +1093,8 @@ void registerClick() {
             p = p->next;
         }
 
-        //if(appData.selectedPlane == NULL) {
-            appData.selectedPlane = selection;
+        //if(aircraftData->selectedAircraft == NULL) {
+            aircraftData->selectedAircraft = selection;
         //}
     } else if(appData.tapCount == 2) {
         appData.mapTargetMaxDist = 0.25 * appData.maxDist;
@@ -1104,13 +1106,13 @@ void registerClick() {
 // 
 //
 
-void draw() {
+void View::draw() {
     uint64_t drawStartTime = mstime();
     
     moveMapToTarget();
     zoomMapToTarget();
 
-    updatePlanes();
+    //updatePlanes();
 
     updateStatus();
 
@@ -1156,4 +1158,8 @@ void draw() {
     if ((mstime() - drawStartTime) < FRAMETIME) {
         usleep(1000 * (FRAMETIME - (mstime() - drawStartTime)));
     } 
+}
+
+View::View(AircraftData *aircraftData){
+    this->aircraftData = aircraftData;
 }

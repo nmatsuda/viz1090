@@ -1,6 +1,8 @@
 #include "structs.h"
 #include "view1090.h"
 
+#include "Input.h"
+
 static uint64_t mstime(void) {
     struct timeval tv;
     uint64_t mst;
@@ -11,7 +13,7 @@ static uint64_t mstime(void) {
     return mst;
 }
 
-void getInput()
+void Input::getInput()
 {
 	SDL_Event event;
 		
@@ -60,7 +62,7 @@ void getInput()
 				appData.touchy = event.motion.y;
 				appData.tapCount = event.button.clicks;
 
-				registerClick();
+				view->registerClick();
 
 				appData.isDragging = 0;
 				break;
@@ -72,9 +74,13 @@ void getInput()
 				
 				if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
 					appData.isDragging = 1;
-					moveCenterRelative(event.motion.xrel, event.motion.yrel);
+					view->moveCenterRelative(event.motion.xrel, event.motion.yrel);
 				}
 				break;				
 		}
 	}
+}
+
+Input::Input(View *view) {
+	this->view = view;
 }

@@ -428,27 +428,27 @@ extern "C" {
 // Functions exported from mode_ac.c
 //
 int  detectModeA       (uint16_t *m, struct modesMessage *mm);
-void decodeModeAMessage(struct modesMessage *mm, int ModeA);
+void decodeModeAMessage(Modes *modes, struct modesMessage *mm, int ModeA);
 int  ModeAToModeC      (unsigned int ModeA);
 
 //
 // Functions exported from mode_s.c
 //
 void detectModeS        (uint16_t *m, uint32_t mlen);
-void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
+void decodeModesMessage (Modes *modes, struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
-void useModesMessage    (struct modesMessage *mm);
+void useModesMessage    (Modes* modes, struct modesMessage *mm);
 void computeMagnitudeVector(uint16_t *pData);
-int  decodeCPR          (struct aircraft *a, int fflag, int surface);
-int  decodeCPRrelative  (struct aircraft *a, int fflag, int surface);
-void modesInitErrorInfo ();
+int  decodeCPR          (Modes *modes, struct aircraft *a, int fflag, int surface);
+int  decodeCPRrelative  (Modes *modes, struct aircraft *a, int fflag, int surface);
+void modesInitErrorInfo (Modes *modes);
 //
 // Functions exported from interactive.c
 //
-struct aircraft* interactiveReceiveData(struct modesMessage *mm);
+struct aircraft* interactiveReceiveData(Modes *modes, struct modesMessage *mm);
 void  interactiveShowData(void);
-void  interactiveRemoveStaleAircrafts(void);
-int   decodeBinMessage   (struct client *c, char *p);
+void  interactiveRemoveStaleAircrafts(Modes *modes);
+int   decodeBinMessage   (Modes *modes, struct client *c, char *p);
 struct aircraft *interactiveFindAircraft(uint32_t addr);
 struct stDF     *interactiveFindDF      (uint32_t addr);
 
@@ -456,10 +456,10 @@ struct stDF     *interactiveFindDF      (uint32_t addr);
 // Functions exported from net_io.c
 //
 void modesInitNet         (void);
-void modesReadFromClients (void);
-void modesSendAllClients  (int service, void *msg, int len);
-void modesQueueOutput     (struct modesMessage *mm);
-void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
+//void modesReadFromClients (void);
+//void modesSendAllClients  (int service, void *msg, int len);
+//void modesQueueOutput     (struct modesMessage *mm);
+void modesReadFromClient  (Modes *modes, struct client *c, char *sep, int(*handler)(Modes *modes, struct client *, char *));
 
 #ifdef __cplusplus
 }
