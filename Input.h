@@ -1,5 +1,5 @@
 #ifndef INPUT_H
-#define INPUT
+#define INPUT_H
 
 #include "AircraftData.h"
 #include "View.h"

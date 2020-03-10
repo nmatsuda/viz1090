@@ -29,6 +29,8 @@ class AircraftData {
 		AircraftList aircraftList;
 		Aircraft *selectedAircraft;
 		Modes modes;
+
+		char server[32];
 };
 
 #endif

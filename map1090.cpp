@@ -34,6 +34,8 @@
 #include "View.h"
 #include "Input.h"
 
+#include <cstring> 
+
 //time utility, might change to std::chrono
 uint64_t mstime(void) {
     struct timeval tv;
@@ -96,10 +98,8 @@ int main(int argc, char **argv) {
             aircraftData.modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--port") && more) {
             aircraftData.modes.net_input_beast_port = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
-            strcpy(View1090.net_input_beast_ipaddr, argv[++j]);
         } else if (!strcmp(argv[j],"--server") && more) {
-            strcpy(View1090.net_input_beast_ipaddr, argv[++j]);            
+            std::strcpy(aircraftData.server, argv[++j]);            
         } else if (!strcmp(argv[j],"--lat") && more) {
             aircraftData.modes.fUserLat = atof(argv[++j]);
             appData.centerLat = aircraftData.modes.fUserLat;

@@ -1,2 +1,2 @@
 #!/bin/bash
-./view1090 --screensize 640 360 --fullscreen --server adsb --lat 47.6 --lon -122.3
+./map1090 --screensize 640 360 --fullscreen --server adsb --lat 47.6 --lon -122.3

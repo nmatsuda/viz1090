@@ -9,7 +9,7 @@ int AircraftData::setupConnection(struct client *c) {
     int fd;
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
-    if ((fd = anetTcpConnect(modes.aneterr, View1090.net_input_beast_ipaddr, modes.net_input_beast_port)) != ANET_ERR) {
+    if ((fd = anetTcpConnect(modes.aneterr, server, modes.net_input_beast_port)) != ANET_ERR) {
 		anetNonBlock(modes.aneterr, fd);
 		//
 		// Setup a service callback client structure for a beast binary input (from dump1090)
@@ -58,7 +58,7 @@ void AircraftData::connect() {
     c = (struct client *) malloc(sizeof(*c));
     while(1) {
         if ((fd = setupConnection(c)) == ANET_ERR) {
-            fprintf(stderr, "Waiting on %s:%d\n", View1090.net_input_beast_ipaddr, modes.net_input_beast_port);     
+            fprintf(stderr, "Waiting on %s:%d\n", server, modes.net_input_beast_port);     
             sleep(1);      
         } else {
             break;
@@ -92,11 +92,10 @@ void AircraftData::update() {
 AircraftData::AircraftData(){
     // Default everything to zero/NULL
     memset(&modes,    0, sizeof(Modes));
-    memset(&View1090, 0, sizeof(View1090));
 
     // Now initialise things that should not be 0/NULL to their defaults
     modes.check_crc               = 1;
-    strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
+    strcpy(server,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
     modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
     modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
     modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
