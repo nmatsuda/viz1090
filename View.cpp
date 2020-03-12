@@ -288,35 +288,24 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     filledTrigonRGBA (appData.renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
 
-void View::drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * oldSeen, int idx) {
-
-    int currentIdx, prevIdx;
-
+void View::drawTrail(Aircraft *p) {
     int currentX, currentY, prevX, prevY;
 
-    time_t now = time(NULL);
+    std::list<float>::iterator lon_idx = std::next(p->lonHistory.begin());
+    std::list<float>::iterator lat_idx = std::next(p->latHistory.begin());
+    std::list<float>::iterator heading_idx = std::next(p->headingHistory.begin());
 
-    for(int i=0; i < (TRAIL_LENGTH - 1); i++) {
-        currentIdx = (idx - i) % TRAIL_LENGTH;
-        currentIdx = currentIdx < 0 ? currentIdx + TRAIL_LENGTH : currentIdx;     
-        prevIdx = (idx - (i + 1)) % TRAIL_LENGTH;
-        prevIdx = prevIdx < 0 ? prevIdx + TRAIL_LENGTH : prevIdx;         
+    int idx = p->lonHistory.size();
 
-        if(oldDx[currentIdx] == 0 || oldDy[currentIdx] == 0) {
-            continue;
-        }
-
-        if(oldDx[prevIdx] == 0 || oldDy[prevIdx] == 0) {
-            continue;
-        }
+    for(; lon_idx != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
 
         float dx, dy;
 
-        pxFromLonLat(&dx, &dy, oldDx[currentIdx], oldDy[currentIdx]);
+        pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
 
         screenCoords(&currentX, &currentY, dx, dy);
 
-        pxFromLonLat(&dx, &dy, oldDx[prevIdx], oldDy[prevIdx]);
+        pxFromLonLat(&dx, &dy, *(std::prev(lon_idx)), *(std::prev(lat_idx)));
 
         screenCoords(&prevX, &prevY, dx, dy);
 
@@ -328,54 +317,49 @@ void View::drawTrail(float *oldDx, float *oldDy, float *oldHeading, time_t * old
             continue;
         }
 
-        float age = pow(1.0 - (float)(now - oldSeen[currentIdx]) / TRAIL_TTL, 2.2);
+        // float age = pow(1.0 - (float)idx / (float)p->lonHistory.size(), 2.2);
+        float age = 1.0 - (float)idx / (float)p->lonHistory.size();
 
-        uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,1));
+        uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,0.5));
                    
-        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, colorVal, colorVal, colorVal, 64); 
+        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, 255, 255, 255, colorVal); 
 
-        //most recent reported location                  
+        //age = pow(1.0 - (float)idx / 10.0f, 2.2);
 
-        // if(i == 0) {
-        //     boxRGBA(appData.renderer,currentX - 2 * appData.screen_uiscale, currentY - 2 * appData.screen_uiscale, currentX + 2 * appData.screen_uiscale, currentY + 2 * appData.screen_uiscale,
-        //         orange.r, orange.g, orange.b, 255);
-        // }
+        //colorVal = (uint8_t)floor(255.0 * clamp(age,0.1,1));
 
-        //tick marks
+        // float vec[3];
+        // vec[0] = sin(*heading_idx * M_PI / 180);
+        // vec[1] = -cos(*heading_idx * M_PI / 180);
+        // vec[2] = 0;
 
-        age = 1.0 - (float) 4.0 * (now - oldSeen[currentIdx]) / TRAIL_TTL;
-        colorVal = (uint8_t)floor(255.0 * clamp(age,0,1));
+        // float up[] = {0,0,1};
 
-        float vec[3];
-        vec[0] = sin(oldHeading[currentIdx] * M_PI / 180);
-        vec[1] = -cos(oldHeading[currentIdx] * M_PI / 180);
-        vec[2] = 0;
+        // float out[3];
 
-        float up[] = {0,0,1};
+        // CROSSVP(out,vec,up);
 
-        float out[3];
+        // int x1, y1, x2, y2;
 
-        CROSSVP(out,vec,up);
+        // int cross_size = 5 * appData.screen_uiscale * age;
 
-        int x1, y1, x2, y2;
+        // // //forward cross
+        // x1 = currentX + round(-cross_size*vec[0]);
+        // y1 = currentY + round(-cross_size*vec[1]);
+        // x2 = currentX + round(cross_size*vec[0]);
+        // y2 = currentY + round(cross_size*vec[1]);
 
-        int cross_size = 5 * appData.screen_uiscale;
-
-        //forward cross
-        x1 = currentX + round(-cross_size*vec[0]);
-        y1 = currentY + round(-cross_size*vec[1]);
-        x2 = currentX + round(cross_size*vec[0]);
-        y2 = currentY + round(cross_size*vec[1]);
-
-        thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,colorVal,colorVal,colorVal,127);
+        // thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,255,255,255,64);
    
-        //side cross
-        x1 = currentX + round(-cross_size*out[0]);
-        y1 = currentY + round(-cross_size*out[1]);
-        x2 = currentX + round(cross_size*out[0]);
-        y2 = currentY + round(cross_size*out[1]);
+        // //side cross
+        // x1 = currentX + round(-cross_size*out[0]);
+        // y1 = currentY + round(-cross_size*out[1]);
+        // x2 = currentX + round(cross_size*out[0]);
+        // y2 = currentY + round(cross_size*out[1]);
         
-        thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,colorVal,colorVal,colorVal,127);
+        // thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,255,255,255,64);
+
+        idx--;
     }
 }
 
@@ -853,7 +837,7 @@ void View::drawPlanes() {
     // draw all trails first so they don't cover up planes and text
     // also find closest plane to selection point
     while(p) {
-        drawTrail(p->oldLon, p->oldLat, p->oldHeading, p->oldSeen, p->oldIdx);
+        drawTrail(p);
         p = p->next;
     }
 
@@ -884,15 +868,14 @@ void View::drawPlanes() {
                     int usex = x;   
                     int usey = y;
 
-                    if(p->seenLatLon > p->oldSeen[p->oldIdx]) {
+                    if(p->seenLatLon > p->timestampHistory.back()) {
                         int oldx, oldy;
-                        int idx = (p->oldIdx - 1) % TRAIL_LENGTH;
 
-                        pxFromLonLat(&dx, &dy, p->oldLon[idx], p->oldLat[idx]);
+                        pxFromLonLat(&dx, &dy, p->lonHistory.back(), p->latHistory.back());
                         screenCoords(&oldx, &oldy, dx, dy);
 
-                        float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
-                        float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->oldSeen[idx]));
+                        float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->timestampHistory.back()));
+                        float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->timestampHistory.back()));
 
                         usex = x + (mstime() - p->msSeenLatLon) * velx;
                         usey = y + (mstime() - p->msSeenLatLon) * vely;

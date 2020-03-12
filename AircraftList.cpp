@@ -71,14 +71,18 @@ void AircraftList::update(Modes *modes) {
         if(p->seenLatLon < a->seenLatLon) {
             p->msSeenLatLon = mstime();
 
-            p->oldIdx = (p->oldIdx+1) % 32;
+            // p->oldIdx = (p->oldIdx+1) % 32;
 
-            p->oldLon[p->oldIdx] = p->lon;
-            p->oldLat[p->oldIdx] = p->lat;
+            // p->oldLon[p->oldIdx] = p->lon;
+            // p->oldLat[p->oldIdx] = p->lat;
+            p->lonHistory.push_back(p->lon);
+            p->latHistory.push_back(p->lat);
+            p->headingHistory.push_back(p->track);
+            p->timestampHistory.push_back(p->seenLatLon);
 
-            p->oldHeading[p->oldIdx] = p->track;
+            // p->oldHeading[p->oldIdx] = p->track;
 
-            p->oldSeen[p->oldIdx] = p->seenLatLon;
+            // p->oldSeen[p->oldIdx] = p->seenLatLon;
         }
         
         p->seenLatLon = a->seenLatLon;

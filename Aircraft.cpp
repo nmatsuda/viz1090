@@ -5,7 +5,7 @@
 Aircraft::Aircraft(struct aircraft *a) {
     addr = a->addr;
     created = 0;
-    oldIdx = 0;
+    //oldIdx = 0;
     prev_seen = 0;
 
     x = 0;
@@ -20,14 +20,15 @@ Aircraft::Aircraft(struct aircraft *a) {
     ddox = 0;
     ddoy = 0;
 
-    memset(oldLon, 0, sizeof(oldLon));
-    memset(oldLat, 0, sizeof(oldLat));    
-    memset(oldHeading, 0, sizeof(oldHeading));    
+    // memset(oldLon, 0, sizeof(oldLon));
+    // memset(oldLat, 0, sizeof(oldLat));    
+    // memset(oldHeading, 0, sizeof(oldHeading));    
 }
 
 
 Aircraft::~Aircraft() {
-	free(oldLat);
-	free(oldLon);
-	free(oldHeading);
+
+	// free(oldLat);
+	// free(oldLon);
+	// free(oldHeading);
 }

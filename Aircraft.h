@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "dump1090.h"
 #include <ctime>
+#include <list> 
 
 class Aircraft {
 public:	
@@ -19,15 +20,18 @@ public:
     double          lat, lon;       // Coordinated obtained from CPR encoded data
     
     //history
-    float           oldLon[TRAIL_LENGTH];
-    float           oldLat[TRAIL_LENGTH];
-    float           oldHeading[TRAIL_LENGTH];
-    time_t          oldSeen[TRAIL_LENGTH];
-    uint8_t         oldIdx; 
+
+    std::list <float>   lonHistory, latHistory, headingHistory, timestampHistory;
+
+    // float           oldLon[TRAIL_LENGTH];
+    // float           oldLat[TRAIL_LENGTH];
+    // float           oldHeading[TRAIL_LENGTH];
+    // time_t          oldSeen[TRAIL_LENGTH];
+    // uint8_t         oldIdx; 
     uint64_t        created;
     uint64_t        msSeen;
     uint64_t        msSeenLatLon;
-    int               live;
+    int             live;
 
     struct Aircraft *next;        // Next aircraft in our linked list
 
