@@ -117,6 +117,7 @@ AircraftData::AircraftData(){
     appData.screen_height           = 0;    
     appData.screen_depth            = 32;
     appData.fullscreen              = 0;
+    appData.screen_index              = 0;
 
     // Initialize status
     Status.msgRate                = 0;
