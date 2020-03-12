@@ -13,6 +13,10 @@ static uint64_t mstime(void) {
     return mst;
 }
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 void Input::getInput()
 {
 	SDL_Event event;
@@ -39,7 +43,11 @@ void Input::getInput()
 			break;
 
 			case SDL_MOUSEWHEEL:
-				appData.maxDist *= 1.0 + event.wheel.y / 10.0;
+				appData.maxDist *= 1.0 + 0.5 * sgn(event.wheel.y);
+				if(appData.maxDist < 0.001f) {
+					appData.maxDist = 0.001f;
+				}
+
 				appData.mapTargetMaxDist = 0;
 				appData.mapMoved = 1;
 				break;

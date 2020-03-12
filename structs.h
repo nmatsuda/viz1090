@@ -36,6 +36,7 @@ typedef struct AppData
     int screen_height;
     int screen_depth;
     int fullscreen;
+    int screen_index;
 
     float centerLon;
     float centerLat;

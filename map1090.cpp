@@ -70,6 +70,7 @@ void showHelp(void) {
   "--help                           Show this help\n"
   "--uiscale <factor>               UI global scaling (default: 1)\n"  
   "--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
+  "--screenindex <i>                Set the index of the display to use (default: 0)\n"
   "--fullscreen                     Start fullscreen\n"
     );
 }
@@ -94,9 +95,7 @@ int main(int argc, char **argv) {
     for (j = 1; j < argc; j++) {
         int more = ((j + 1) < argc); // There are more arguments
 
-        if        (!strcmp(argv[j],"--net-bo-port") && more) {
-            aircraftData.modes.net_input_beast_port = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--port") && more) {
+        if        (!strcmp(argv[j],"--port") && more) {
             aircraftData.modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--server") && more) {
             std::strcpy(aircraftData.server, argv[++j]);            
@@ -110,6 +109,8 @@ int main(int argc, char **argv) {
             aircraftData.modes.metric = 1;
         } else if (!strcmp(argv[j],"--fullscreen")) {
             appData.fullscreen = 1;         
+        } else if (!strcmp(argv[j],"--screenindex")) {
+            appData.screen_index = atoi(argv[++j]);         
         } else if (!strcmp(argv[j],"--uiscale") && more) {
             appData.screen_uiscale = atoi(argv[++j]);   
          } else if (!strcmp(argv[j],"--screensize") && more) {
