@@ -29,11 +29,9 @@
 //
 
 #include "view1090.h"
-#include "structs.h"
 #include "AppData.h"
 #include "View.h"
 #include "Input.h"
-
 #include <cstring> 
 
 //time utility, might change to std::chrono

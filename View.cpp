@@ -1,5 +1,5 @@
 #include "dump1090.h"
-#include "structs.h"
+
 #include "SDL2/SDL2_rotozoom.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
 //color schemes
@@ -400,15 +400,15 @@ void View::drawStatus() {
     drawStatusBox(&left, &top, "loc", strLoc, style.buttonColor);   
 
     char strPlaneCount[10] = " ";
-    snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
+    snprintf(strPlaneCount, 10,"%d/%d", appData->numVisiblePlanes, appData->numPlanes);
     drawStatusBox(&left, &top, "disp", strPlaneCount, style.buttonColor);
 
     char strMsgRate[18] = " ";
-    snprintf(strMsgRate, 18,"%.0f/s", Status.msgRate);
+    snprintf(strMsgRate, 18,"%.0f/s", appData->msgRate);
     drawStatusBox(&left, &top, "rate", strMsgRate, style.buttonColor);
 
     char strSig[18] = " ";
-    snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
+    snprintf(strSig, 18, "%.0f%%", 100.0 * appData->avgSig / 1024.0);
     drawStatusBox(&left, &top, "sAvg", strSig, style.buttonColor);
 
 }

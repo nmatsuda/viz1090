@@ -97,6 +97,7 @@ void AppData::updateStatus() {
     // struct aircraft *a = Modes.aircrafts;
 
     numVisiblePlanes = 0;
+    numPlanes = 0;
     maxDist = 0;
     totalCount = 0;
     sigAccumulate = 0.0;

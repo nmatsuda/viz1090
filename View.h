@@ -1,10 +1,47 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include  "AppData.h"
+#include "AppData.h"
 #include "Map.h"
 #include "SDL2/SDL.h"
-#include "SDL2/SDL_ttf.h"
+#include "SDL2/SDL_ttf.h" 
+
+//defs - should all move to config file setup
+#define ROUND_RADIUS 3 //radius of text box corners
+
+#define CENTEROFFSET .375 //vertical offset for middle of screen
+
+#define TRAIL_LENGTH 120
+#define TRAIL_TTL   240.0 
+#define DISPLAY_ACTIVE   30 
+#define TRAIL_TTL_STEP   2
+
+#define MIN_MAP_FEATURE 2
+
+#define FRAMETIME 33
+
+#define PAD 5
+
+
+
+//
+// This should go to a full theming class
+//
+typedef struct Style {
+    SDL_Color backgroundColor;
+
+    SDL_Color selectedColor;
+    SDL_Color planeColor;
+    SDL_Color planeGoneColor;
+
+    SDL_Color mapInnerColor;
+    SDL_Color mapOuterColor;
+    SDL_Color scaleBarColor;
+
+    SDL_Color buttonColor;
+} Style;
+
+
 
 class View {
 
@@ -28,6 +65,9 @@ class View {
 		void drawStatus();
 
 		Aircraft *selectedAircraft;
+
+		Style style;
+
 	public:
 		int screenDist(float d);
 		void pxFromLonLat(float *dx, float *dy, float lon, float lat);

@@ -55,10 +55,14 @@ void Input::getInput()
 				view->maxDist /=1.0 + 4.0*event.mgesture.dDist;
 				view->mapTargetMaxDist = 0;
 				view->mapMoved = 1;
+
+				if(mstime() - touchDownTime > 100) {
+						touchDownTime = 0;
+				}
 				break;
 
 			case SDL_FINGERMOTION:;					
-				isDragging = 1;
+				touchDownTime = 0;
 				view->moveCenterRelative( view->screen_width * event.tfinger.dx,  view->screen_height * event.tfinger.dy);
 				break;
 
@@ -70,9 +74,7 @@ void Input::getInput()
 				break;
 
 			case SDL_FINGERUP:
-				if(isDragging) {
-					isDragging = 0;
-				} else if(mstime() - touchDownTime < 120) {
+				if(mstime() - touchDownTime < 120) {
 					touchx = view->screen_width * event.tfinger.x;
 					touchy = view->screen_height * event.tfinger.y;
 					tapCount++;
@@ -99,7 +101,6 @@ void Input::getInput()
 					touchx = event.motion.x;
 					touchy = event.motion.y;
 					tapCount = event.button.clicks;
-					isDragging = 0;
 
 					view->registerClick(tapCount, touchx, touchy);
 				}
@@ -111,7 +112,6 @@ void Input::getInput()
 					view->registerMouseMove(event.motion.x, event.motion.y);
 					
 					if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-						isDragging = 1;
 						view->moveCenterRelative(event.motion.xrel, event.motion.yrel);
 					}					
 				}
@@ -123,8 +123,6 @@ void Input::getInput()
 Input::Input(AppData *appData, View *view) {
 	this->view = view;
 	this->appData = appData;
-
-    isDragging = 0;
 }
 
 

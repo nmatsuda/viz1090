@@ -3,7 +3,6 @@
 
 #include "dump1090.h"
 #include "view1090.h"
-#include "structs.h"
 
 #include "AircraftList.h"
 
@@ -33,9 +32,12 @@ class AppData {
 		char server[32];
 
 	    int numVisiblePlanes;
+	    int numPlanes;
 	    double maxDist;
 	    int totalCount;
+	    double avgSig;
 	    double sigAccumulate;
+	    double msgRate;
 	    double msgRateAccumulate;    
 };
 

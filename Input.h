@@ -18,7 +18,6 @@ public:
     int touchx;
     int touchy;
     int tapCount;
-    int isDragging;
 };
 
 #endif
