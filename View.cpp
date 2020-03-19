@@ -2,7 +2,6 @@
 #include "structs.h"
 #include "SDL2/SDL2_rotozoom.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
-#include "mapdata.h"
 //color schemes
 #include "parula.h"
 #include "monokai.h"
@@ -144,8 +143,8 @@ SDL_Color hsv2SDLColor(float h, float s, float v)
 }
 
 int View::screenDist(float d) {
-    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
-    return round(0.95 * scale_factor * 0.5 * fabs(d) / appData.maxDist);        
+    float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
+    return round(0.95 * scale_factor * 0.5 * fabs(d) / maxDist);        
 }
 
 void View::pxFromLonLat(float *dx, float *dy, float lon, float lat) {
@@ -155,55 +154,292 @@ void View::pxFromLonLat(float *dx, float *dy, float lon, float lat) {
         return;
     }
 
-    *dx = 6371.0 * (lon - appData.centerLon) * M_PI / 180.0f * cos(((lat + appData.centerLat)/2.0f) * M_PI / 180.0f);
-    *dy = 6371.0 * (lat - appData.centerLat) * M_PI / 180.0f;
+    *dx = 6371.0 * (lon - centerLon) * M_PI / 180.0f * cos(((lat + centerLat)/2.0f) * M_PI / 180.0f);
+    *dy = 6371.0 * (lat - centerLat) * M_PI / 180.0f;
 }
 
 void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
-    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+    float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
-    float dx = appData.maxDist * (x  - (appData.screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
-    float dy = appData.maxDist * (y  - (appData.screen_height * CENTEROFFSET)) / (0.95 * scale_factor * 0.5 );
+    float dx = maxDist * (x  - (screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
+    float dy = maxDist * (y  - (screen_height * CENTEROFFSET)) / (0.95 * scale_factor * 0.5 );
 
-    *lat = 180.0f * dy / (6371.0 * M_PI) + appData.centerLat;
-    *lon = 180.0 * dx / (cos(((*lat + appData.centerLat)/2.0f) * M_PI / 180.0f) * 6371.0 * M_PI) + appData.centerLon;
+    *lat = 180.0f * dy / (6371.0 * M_PI) + centerLat;
+    *lon = 180.0 * dx / (cos(((*lat + centerLat)/2.0f) * M_PI / 180.0f) * 6371.0 * M_PI) + centerLon;
 }
 
 
 void View::screenCoords(int *outX, int *outY, float dx, float dy) {
-    *outX = (appData.screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
-    *outY = (appData.screen_height * CENTEROFFSET) + ((dy>0) ? -1 : 1) * screenDist(dy);        
+    *outX = (screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
+    *outY = (screen_height * CENTEROFFSET) + ((dy>0) ? -1 : 1) * screenDist(dy);        
 }
 
 int View::outOfBounds(int x, int y) {
-    if(x < 0 || x >= appData.screen_width || y < 0 || y >= appData.screen_height ) {
+    if(x < 0 || x >= screen_width || y < 0 || y >= screen_height ) {
         return 1;
     } else {
         return 0;
     }
 }
 
+//
+// Font stuff
+//
+
+TTF_Font* View::loadFont(char *name, int size)
+{
+    TTF_Font *font = TTF_OpenFont(name, size);
+
+    if (font == NULL)
+    {
+        printf("Failed to open Font %s: %s\n", name, TTF_GetError());
+
+        exit(1);
+    }
+
+    return font;
+}
+
+void View::closeFont(TTF_Font *font)
+{   
+    if (font != NULL)
+    {
+        TTF_CloseFont(font);
+    }
+}
+
+//
+// SDL Utils
+//
+
+void View::SDL_init() {
+    
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("Could not initialize SDL: %s\n", SDL_GetError());       
+        exit(1);
+    }
+    
+    if (TTF_Init() < 0) {
+        printf("Couldn't initialize SDL TTF: %s\n", SDL_GetError());
+        exit(1);
+    }
+
+    SDL_ShowCursor(SDL_DISABLE);
+
+    Uint32 flags = 0;
+
+    if(fullscreen) {
+        flags = flags | SDL_WINDOW_FULLSCREEN_DESKTOP;
+    }
+
+    if(screen_width == 0) {
+        SDL_DisplayMode DM;
+        SDL_GetCurrentDisplayMode(0, &DM);
+        screen_width = DM.w;
+        screen_height= DM.h;
+    }
+
+    window =  SDL_CreateWindow("map1090",  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index),  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index), screen_width, screen_height, flags);        
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    mapTexture = SDL_CreateTexture(renderer,
+                               SDL_PIXELFORMAT_ARGB8888,
+                               SDL_TEXTUREACCESS_TARGET,
+                               screen_width, screen_height);
+
+    mapMoved = 1;
+    mapTargetLon = 0;
+    mapTargetLat = 0;
+    mapTargetMaxDist = 0;
+
+    if(fullscreen) {
+        //SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.
+        SDL_RenderSetLogicalSize(renderer, screen_width, screen_height);
+    }
+}
+
+void View::font_init() {
+    mapFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * screen_uiscale);
+    mapBoldFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);    
+       
+    listFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * screen_uiscale);
+
+    messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
+    labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
+
+    mapFontWidth = 5 * screen_uiscale;
+    mapFontHeight = 12 * screen_uiscale; 
+
+    messageFontWidth = 6 * screen_uiscale;
+    messageFontHeight = 12 * screen_uiscale; 
+
+    labelFontWidth = 6 * screen_uiscale;
+    labelFontHeight = 12 * screen_uiscale; 
+
+    //
+    // todo separate style stuff
+    //
+
+    SDL_Color bgcolor = {10,20,30,255};
+    SDL_Color greenblue = {236,192,68,255};
+    SDL_Color lightblue = {211,208,203,255};
+    SDL_Color mediumblue ={110,136,152,255};
+    SDL_Color darkblue =  {46,82,102,255};
+
+    style.backgroundColor = bgcolor;
+    style.selectedColor = pink;
+    style.planeColor = greenblue;
+    style.planeGoneColor = grey;
+    style.mapInnerColor = mediumblue;
+    style.mapOuterColor = darkblue;
+    style.scaleBarColor = lightGrey;
+    style.buttonColor =  lightblue;
+}
+
+void View::drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
+{
+    if(!strlen(text)) { 
+        return;
+    }
+
+    SDL_Surface *surface;
+    SDL_Rect dest;
+
+    surface = TTF_RenderUTF8_Solid(font, text, color);
+
+    if (surface == NULL)
+    {
+        printf("Couldn't create String %s: %s\n", text, SDL_GetError());
+
+        return;
+    }
+    
+    dest.x = x;
+    dest.y = y;
+    dest.w = surface->w;
+    dest.h = surface->h;
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_RenderCopy(renderer, texture, NULL, &dest);
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
+}
+
+void View::drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
+    if(!strlen(text)) { 
+        return;
+    }
+        
+    SDL_Surface *surface;
+    SDL_Rect dest;
+
+    surface = TTF_RenderUTF8_Shaded(font, text, color, bgColor);
+
+    if (surface == NULL)
+    {
+        printf("Couldn't create String %s: %s\n", text, SDL_GetError());
+
+        return;
+    }
+    
+    /* Blit the entire surface to the screen */
+
+    dest.x = x;
+    dest.y = y;
+    dest.w = surface->w;
+    dest.h = surface->h;
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_RenderCopy(renderer, texture, NULL, &dest);
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
+}
+
+//
+// Status boxes
+//
+
+void View::drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color) {
+    int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * labelFontWidth;
+    int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * messageFontWidth;
+
+    if(*left + labelWidth + messageWidth + PAD > screen_width) {
+        *left = PAD;
+        *top = *top - messageFontHeight - PAD;
+    }
+
+    // filled black background
+    if(messageWidth) {
+        roundedBoxRGBA(renderer, *left, *top, *left + labelWidth + messageWidth, *top + messageFontHeight, ROUND_RADIUS, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
+    }
+
+    // filled label box
+    if(labelWidth) {
+        roundedBoxRGBA(renderer, *left, *top, *left + labelWidth, *top + messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+    }
+
+    // outline message box
+    if(messageWidth) {
+        roundedRectangleRGBA(renderer, *left, *top, *left + labelWidth + messageWidth, *top + messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
+    }
+
+    drawString(label, *left + labelFontWidth/2, *top, labelFont, black);
+
+    //message
+    drawString(message, *left + labelWidth + messageFontWidth/2, *top, messageFont, color);
+
+    *left = *left + labelWidth + messageWidth + PAD;
+}
+
+void View::drawStatus() {
+
+    int left = PAD; 
+    int top = screen_height - messageFontHeight - PAD;
+
+    char strLoc[20] = " ";
+    snprintf(strLoc, 20, "%3.3fN %3.3f%c", centerLat, fabs(centerLon),(centerLon > 0) ? 'E' : 'W');
+    drawStatusBox(&left, &top, "loc", strLoc, style.buttonColor);   
+
+    char strPlaneCount[10] = " ";
+    snprintf(strPlaneCount, 10,"%d/%d", Status.numVisiblePlanes, Status.numPlanes);
+    drawStatusBox(&left, &top, "disp", strPlaneCount, style.buttonColor);
+
+    char strMsgRate[18] = " ";
+    snprintf(strMsgRate, 18,"%.0f/s", Status.msgRate);
+    drawStatusBox(&left, &top, "rate", strMsgRate, style.buttonColor);
+
+    char strSig[18] = " ";
+    snprintf(strSig, 18, "%.0f%%", 100.0 * Status.avgSig / 1024.0);
+    drawStatusBox(&left, &top, "sAvg", strSig, style.buttonColor);
+
+}
+
+//
+
+//
+// Main drawing
+//
+
 void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor) {
 
-    float arrowWidth = 6.0 * appData.screen_uiscale;
+    float arrowWidth = 6.0 * screen_uiscale;
 
-    float inx = x - (appData.screen_width>>1);
-    float iny = y - appData.screen_height * CENTEROFFSET;
+    float inx = x - (screen_width>>1);
+    float iny = y - screen_height * CENTEROFFSET;
     
     float outx, outy;
     outx = inx;
     outy = iny;
 
-    if(abs(inx) > abs(y - (appData.screen_height>>1)) * (float)(appData.screen_width>>1) / (float)(appData.screen_height * CENTEROFFSET)) { //left / right quadrants
-        outx = (appData.screen_width>>1) * ((inx > 0) ? 1.0 : -1.0);
+    if(abs(inx) > abs(y - (screen_height>>1)) * (float)(screen_width>>1) / (float)(screen_height * CENTEROFFSET)) { //left / right quadrants
+        outx = (screen_width>>1) * ((inx > 0) ? 1.0 : -1.0);
         outy = (outx) * iny / (inx);
     } else { // up / down quadrants
-        outy = appData.screen_height * ((iny > 0) ? 1.0-CENTEROFFSET : -CENTEROFFSET );
+        outy = screen_height * ((iny > 0) ? 1.0-CENTEROFFSET : -CENTEROFFSET );
         outx = (outy) * inx / (iny);
     }
 
-    // circleRGBA (appData.renderer,(appData.screen_width>>1) + outx, appData.screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    // thickLineRGBA(appData.renderer,appData.screen_width>>1,appData.screen_height * CENTEROFFSET, (appData.screen_width>>1) + outx, appData.screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    // circleRGBA (renderer,(screen_width>>1) + outx, screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    // thickLineRGBA(renderer,screen_width>>1,screen_height * CENTEROFFSET, (screen_width>>1) + outx, screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     float inmag = sqrt(inx *inx + iny*iny);
     float vec[3];
@@ -220,22 +456,22 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
     int x1, x2, x3, y1, y2, y3;
 
     // arrow 1
-    x1 = (appData.screen_width>>1) + outx - 2.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
-    y1 = (appData.screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
-    x2 = (appData.screen_width>>1) + outx - 2.0 * arrowWidth * vec[0] + round(arrowWidth*out[0]);
-    y2 = (appData.screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
-    x3 = (appData.screen_width>>1) +  outx - arrowWidth * vec[0];
-    y3 = (appData.screen_height * CENTEROFFSET) + outy - arrowWidth * vec[1];
-    filledTrigonRGBA(appData.renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    x1 = (screen_width>>1) + outx - 2.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
+    y1 = (screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
+    x2 = (screen_width>>1) + outx - 2.0 * arrowWidth * vec[0] + round(arrowWidth*out[0]);
+    y2 = (screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
+    x3 = (screen_width>>1) +  outx - arrowWidth * vec[0];
+    y3 = (screen_height * CENTEROFFSET) + outy - arrowWidth * vec[1];
+    filledTrigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     // arrow 2
-    x1 = (appData.screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
-    y1 = (appData.screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
-    x2 = (appData.screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(arrowWidth*out[0]);
-    y2 = (appData.screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
-    x3 = (appData.screen_width>>1) +  outx - 2.0 * arrowWidth * vec[0];
-    y3 = (appData.screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1];
-    filledTrigonRGBA(appData.renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    x1 = (screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
+    y1 = (screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
+    x2 = (screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(arrowWidth*out[0]);
+    y2 = (screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
+    x3 = (screen_width>>1) +  outx - 2.0 * arrowWidth * vec[0];
+    y3 = (screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1];
+    filledTrigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     *returnx = x3;
     *returny = y3;
@@ -243,10 +479,10 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
 
 void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 {
-    float body = 8.0 * appData.screen_uiscale;
-    float wing = 6.0 * appData.screen_uiscale;
-    float tail = 3.0 * appData.screen_uiscale;
-    float bodyWidth = 2.0 * appData.screen_uiscale;
+    float body = 8.0 * screen_uiscale;
+    float wing = 6.0 * screen_uiscale;
+    float tail = 3.0 * screen_uiscale;
+    float bodyWidth = 2.0 * screen_uiscale;
 
     float vec[3];
     vec[0] = sin(heading * M_PI / 180);
@@ -267,9 +503,9 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(body*vec[0]);
     y2 = y + round(body*vec[1]);
 
-    thickLineRGBA(appData.renderer,x,y,x2,y2,bodyWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    filledTrigonRGBA(appData.renderer, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
-    filledCircleRGBA(appData.renderer, x2,y2,appData.screen_uiscale,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    thickLineRGBA(renderer,x,y,x2,y2,bodyWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(renderer, x + round(-wing*.35*out[0]), y + round(-wing*.35*out[1]), x + round(wing*.35*out[0]), y + round(wing*.35*out[1]), x1, y1,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);        
+    filledCircleRGBA(renderer, x2,y2,screen_uiscale,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     //wing
     x1 = x + round(-wing*out[0]);
@@ -277,7 +513,7 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(wing*out[0]);
     y2 = y + round(wing*out[1]);
 
-    filledTrigonRGBA(appData.renderer, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(renderer, x1, y1, x2, y2, x+round(body*.35*vec[0]), y+round(body*.35*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     //tail
     x1 = x + round(-body*.75*vec[0]) + round(-tail*out[0]);
@@ -285,7 +521,7 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(-body*.75*vec[0]) + round(tail*out[0]);
     y2 = y + round(-body*.75*vec[1]) + round(tail*out[1]);
 
-    filledTrigonRGBA (appData.renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
 
 void View::drawTrail(Aircraft *p) {
@@ -322,7 +558,7 @@ void View::drawTrail(Aircraft *p) {
 
         uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,0.5));
                    
-        thickLineRGBA(appData.renderer, prevX, prevY, currentX, currentY, 2 * appData.screen_uiscale, 255, 255, 255, colorVal); 
+        thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
 
         //age = pow(1.0 - (float)idx / 10.0f, 2.2);
 
@@ -341,7 +577,7 @@ void View::drawTrail(Aircraft *p) {
 
         // int x1, y1, x2, y2;
 
-        // int cross_size = 5 * appData.screen_uiscale * age;
+        // int cross_size = 5 * screen_uiscale * age;
 
         // // //forward cross
         // x1 = currentX + round(-cross_size*vec[0]);
@@ -349,7 +585,7 @@ void View::drawTrail(Aircraft *p) {
         // x2 = currentX + round(cross_size*vec[0]);
         // y2 = currentY + round(cross_size*vec[1]);
 
-        // thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,255,255,255,64);
+        // thickLineRGBA(renderer,x1,y1,x2,y2,screen_uiscale,255,255,255,64);
    
         // //side cross
         // x1 = currentX + round(-cross_size*out[0]);
@@ -357,7 +593,7 @@ void View::drawTrail(Aircraft *p) {
         // x2 = currentX + round(cross_size*out[0]);
         // y2 = currentY + round(cross_size*out[1]);
         
-        // thickLineRGBA(appData.renderer,x1,y1,x2,y2,appData.screen_uiscale,255,255,255,64);
+        // thickLineRGBA(renderer,x1,y1,x2,y2,screen_uiscale,255,255,255,64);
 
         idx--;
     }
@@ -370,18 +606,18 @@ void View::drawScaleBars()
 
     char scaleLabel[13] = "";
         
-    lineRGBA(appData.renderer,10,10,10,10*appData.screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
+    lineRGBA(renderer,10,10,10,10*screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
-    while(scaleBarDist < appData.screen_width) {
-        lineRGBA(appData.renderer,10+scaleBarDist,8,10+scaleBarDist,16*appData.screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
+    while(scaleBarDist < screen_width) {
+        lineRGBA(renderer,10+scaleBarDist,8,10+scaleBarDist,16*screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
-        if (aircraftData->modes.metric) {
+        if (metric) {
             snprintf(scaleLabel,13,"%dkm", (int)pow(10,scalePower));
         } else {
             snprintf(scaleLabel,13,"%dmi", (int)pow(10,scalePower));
         }
 
-        drawString(scaleLabel, 10+scaleBarDist, 15*appData.screen_uiscale, appData.mapFont, style.scaleBarColor);
+        drawString(scaleLabel, 10+scaleBarDist, 15*screen_uiscale, mapFont, style.scaleBarColor);
 
         scalePower++;
         scaleBarDist = screenDist((float)pow(10,scalePower));
@@ -390,47 +626,28 @@ void View::drawScaleBars()
     scalePower--;
     scaleBarDist = screenDist((float)pow(10,scalePower));
 
-    lineRGBA(appData.renderer,10,10+5*appData.screen_uiscale,10+scaleBarDist,10+5*appData.screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
+    lineRGBA(renderer,10,10+5*screen_uiscale,10+scaleBarDist,10+5*screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
 }
 
-void View::drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
-    if(tree == NULL) {
-        return;
-    }
+void View::drawPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+    std::list<Polygon> polyList = map.getPolys(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
-    if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
-        return; 
-    }
-  
-    if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) {
-        return; 
-    }
+    std::list<Polygon>::iterator currentPolygon;
 
-    drawPolys(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    drawPolys(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    drawPolys(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    drawPolys(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-
-    float dx, dy;
-
-    Polygon *currentPolygon = tree->polygons;
-
-    while(currentPolygon != NULL) {
+    for (currentPolygon = polyList.begin(); currentPolygon != polyList.end(); ++currentPolygon) {
         int x1,y1,x2,y2;
+        float dx,dy;
 
-        if(currentPolygon->points == NULL)
-            continue;
+        std::list<Point>::iterator currentPoint;
+        std::list<Point>::iterator prevPoint;
 
-        Point *prevPoint = currentPolygon->points;
-        Point *currentPoint = prevPoint->next;
+        for (currentPoint = std::next(currentPolygon->points.begin()); currentPoint != currentPolygon->points.end(); ++currentPoint) {
+            prevPoint = std::prev(currentPoint);
 
-        while(currentPoint != NULL){
             pxFromLonLat(&dx, &dy, prevPoint->lon, prevPoint->lat); 
             screenCoords(&x1, &y1, dx, dy);
 
             if(outOfBounds(x1,y1)) {
-                prevPoint = currentPoint;
-                currentPoint = currentPoint->next;
                 continue;
             }
 
@@ -440,31 +657,28 @@ void View::drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max,
             screenCoords(&x2, &y2, dx, dy);
 
             if(outOfBounds(x2,y2)) {
-                prevPoint = currentPoint;
-                currentPoint = currentPoint->next;
                 continue;
             }
 
+            //this needs a differnt approach for the std list setup
 
-            if((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1) < MIN_MAP_FEATURE){
-                currentPoint = currentPoint->next;
-                continue;
-            }
+            // if((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1) < MIN_MAP_FEATURE){
+            //     currentPoint = currentPoint->next;
+            //     continue;
+            // }
 
             float d2 = dx* dx + dy * dy;
-    
-            float factor = 1.0 - (d1+d2) / (3* appData.maxDist * appData.maxDist);
+
+            float factor = 1.0 - (d1+d2) / (3* maxDist * maxDist);
 
             SDL_Color lineColor = lerpColor(style.mapOuterColor, style.mapInnerColor, factor); 
 
-            lineRGBA(appData.renderer, x1, y1, x2, y2, lineColor.r, lineColor.g, lineColor.b, 255);
-
-            prevPoint = currentPoint;
-            currentPoint = currentPoint->next;
-  
+            lineRGBA(renderer, x1, y1, x2, y2, lineColor.r, lineColor.g, lineColor.b, 255);
         }
 
         ////bounding boxes
+
+        // int x, y;
 
         // pxFromLonLat(&dx, &dy, currentPolygon->lon_min, currentPolygon->lat_min); 
         // screenCoords(&x, &y, dx, dy);
@@ -478,19 +692,18 @@ void View::drawPolys(QuadTree *tree, float screen_lat_min, float screen_lat_max,
         // int bottom = y;
         // int right = x;
           
-        // rectangleRGBA(appData.renderer, left, top, right, bottom,  purple.r, purple.g, purple.b, 255);      
-
-        currentPolygon = currentPolygon->next;
+        // rectangleRGBA(renderer, left, top, right, bottom,  purple.r, purple.g, purple.b, 255);      
     }
+
 }
 
 void View::drawGeography() {
     float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
-    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  appData.screen_height * -0.2);
-    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, appData.screen_width, appData.screen_height * 1.2);
+    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, 0,  screen_height * -0.2);
+    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, screen_width, screen_height * 1.2);
 
-    drawPolys(&(appData.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
+    drawPolys(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);    
 }
 
 void View::drawSignalMarks(Aircraft *p, int x, int y) {
@@ -502,12 +715,12 @@ void View::drawSignalMarks(Aircraft *p, int x, int y) {
 
     Uint8 seenFade = (Uint8) (255.0 - (mstime() - p->msSeen) / 4.0);
 
-    circleRGBA(appData.renderer, x + appData.mapFontWidth, y - 5, 2 * appData.screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
 
     seenFade = (Uint8) (255.0 - (mstime() - p->msSeenLatLon) / 4.0);
 
-    hlineRGBA(appData.renderer, x + appData.mapFontWidth + 5 * appData.screen_uiscale, x + appData.mapFontWidth + 9 * appData.screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
-    vlineRGBA(appData.renderer, x + appData.mapFontWidth + 7 * appData.screen_uiscale, y - 2 * appData.screen_uiscale - 5, y + 2 * appData.screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
+    hlineRGBA(renderer, x + mapFontWidth + 5 * screen_uiscale, x + mapFontWidth + 9 * screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
+    vlineRGBA(renderer, x + mapFontWidth + 7 * screen_uiscale, y - 2 * screen_uiscale - 5, y + 2 * screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
 }
 
 
@@ -517,30 +730,30 @@ void View::drawPlaneText(Aircraft *p) {
 
     int currentLine = 0;
 
-    if(p->pressure * appData.screen_width< 0.4f) {
+    if(p->pressure * screen_width< 0.4f) {
         drawSignalMarks(p, p->x, p->y);
 
         char flight[10] = " ";
         maxCharCount = snprintf(flight,10," %s", p->flight);
 
         if(maxCharCount > 1) {
-            drawStringBG(flight, p->x, p->y, appData.mapBoldFont, white, black); 
-            //roundedRectangleRGBA(appData.renderer, p->x, p->y, p->x + maxCharCount * appData.mapFontWidth, p->y + appData.mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
-            //drawString(flight, p->x, p->y, appData.mapBoldFont, white); 
+            drawStringBG(flight, p->x, p->y, mapBoldFont, white, black); 
+            //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
+            //drawString(flight, p->x, p->y, mapBoldFont, white); 
             currentLine++;             
         }
     }
 
-  if(p->pressure * appData.screen_width < 0.2f) {
+  if(p->pressure * screen_width < 0.2f) {
         char alt[10] = " ";
-        if (aircraftData->modes.metric) {
+        if (metric) {
             currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
         } else {
             currentCharCount = snprintf(alt,10," %d'", p->altitude); 
         }
 
         if(currentCharCount > 1) {
-            drawStringBG(alt, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
+            drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, grey, black);   
             currentLine++;                              
         }
 
@@ -549,14 +762,14 @@ void View::drawPlaneText(Aircraft *p) {
         }   
 
         char speed[10] = " ";
-        if (aircraftData->modes.metric) {
+        if (metric) {
             currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
         } else {
             currentCharCount = snprintf(speed,10," %dmph", p->speed);
         }
 
         if(currentCharCount > 1) {
-            drawStringBG(speed, p->x, p->y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
+            drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, grey, black);  
             currentLine++;               
         }
 
@@ -568,21 +781,21 @@ void View::drawPlaneText(Aircraft *p) {
     if(maxCharCount > 1) {
 
         Sint16 vx[4] = {p->cx, p->cx + (p->x - p->cx) / 2, p->x, p->x};
-        Sint16 vy[4] = {p->cy, p->cy + (p->y - p->cy) / 2, p->y - appData.mapFontHeight, p->y};
+        Sint16 vy[4] = {p->cy, p->cy + (p->y - p->cy) / 2, p->y - mapFontHeight, p->y};
         
-        if(p->cy > p->y + currentLine * appData.mapFontHeight) {
-            vy[2] = p->y + currentLine * appData.mapFontHeight + appData.mapFontHeight;
-            vy[3] = p->y + currentLine * appData.mapFontHeight;
+        if(p->cy > p->y + currentLine * mapFontHeight) {
+            vy[2] = p->y + currentLine * mapFontHeight + mapFontHeight;
+            vy[3] = p->y + currentLine * mapFontHeight;
         } 
 
-        bezierRGBA(appData.renderer,vx,vy,4,2,200,200,200,SDL_ALPHA_OPAQUE);
+        bezierRGBA(renderer,vx,vy,4,2,200,200,200,SDL_ALPHA_OPAQUE);
 
 
-        thickLineRGBA(appData.renderer,p->x,p->y,p->x,p->y+currentLine*appData.mapFontHeight,appData.screen_uiscale,200,200,200,SDL_ALPHA_OPAQUE);
+        thickLineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,screen_uiscale,200,200,200,SDL_ALPHA_OPAQUE);
     }
     
-    p->w = maxCharCount * appData.mapFontWidth;
-    p->h = currentLine * appData.mapFontHeight;         
+    p->w = maxCharCount * mapFontWidth;
+    p->h = currentLine * mapFontHeight;         
 }
 
 void View::drawSelectedAircraftText(Aircraft *p) {
@@ -604,21 +817,21 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     maxCharCount = snprintf(flight,10," %s", p->flight);
 
     if(maxCharCount > 1) {
-        drawStringBG(flight, x, y, appData.mapBoldFont, white, black); 
-        //roundedRectangleRGBA(appData.renderer, p->x, p->y, p->x + maxCharCount * appData.mapFontWidth, p->y + appData.mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
-        //drawString(flight, p->x, p->y, appData.mapBoldFont, white); 
+        drawStringBG(flight, x, y, mapBoldFont, white, black); 
+        //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
+        //drawString(flight, p->x, p->y, mapBoldFont, white); 
         currentLine++;             
     }
 
     char alt[10] = " ";
-    if (aircraftData->modes.metric) {
+    if (metric) {
         currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
     } else {
         currentCharCount = snprintf(alt,10," %d'", p->altitude); 
     }
 
     if(currentCharCount > 1) {
-        drawStringBG(alt, x, y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);   
+        drawStringBG(alt, x, y + currentLine * mapFontHeight, mapFont, grey, black);   
         currentLine++;                              
     }
 
@@ -627,33 +840,33 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     }   
 
     char speed[10] = " ";
-    if (aircraftData->modes.metric) {
+    if (metric) {
         currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
     } else {
         currentCharCount = snprintf(speed,10," %dmph", p->speed);
     }
 
     if(currentCharCount > 1) {
-        drawStringBG(speed, x, y + currentLine * appData.mapFontHeight, appData.mapFont, grey, black);  
+        drawStringBG(speed, x, y + currentLine * mapFontHeight, mapFont, grey, black);  
         currentLine++;               
     }
 }
 
 void View::resolveLabelConflicts() {
-    Aircraft *p = aircraftData->aircraftList.head;
+    Aircraft *p = appData->aircraftList.head;
 
     while(p) {
 
-        Aircraft *check_p = aircraftData->aircraftList.head;
+        Aircraft *check_p = appData->aircraftList.head;
 
-        int p_left = p->x - 10 * appData.screen_uiscale;
-        int p_right = p->x + p->w + 10 * appData.screen_uiscale;
-        int p_top = p->y - 10 * appData.screen_uiscale;
-        int p_bottom = p->y + p->h + 10 * appData.screen_uiscale;
+        int p_left = p->x - 10 * screen_uiscale;
+        int p_right = p->x + p->w + 10 * screen_uiscale;
+        int p_top = p->y - 10 * screen_uiscale;
+        int p_bottom = p->y + p->h + 10 * screen_uiscale;
 
         //debug box 
-        //rectangleRGBA(appData.renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
-        //lineRGBA(appData.renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);
+        //rectangleRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
+        //lineRGBA(renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);
 
         //apply damping
 
@@ -666,20 +879,20 @@ void View::resolveLabelConflicts() {
         
         // // //screen edge 
 
-        if(p_left < 10 * appData.screen_uiscale) {
-            p->ox += (float)(10 * appData.screen_uiscale - p_left);
+        if(p_left < 10 * screen_uiscale) {
+            p->ox += (float)(10 * screen_uiscale - p_left);
         }
 
-        if(p_right > (appData.screen_width - 10 * appData.screen_uiscale)) {
-            p->ox -= (float)(p_right - (appData.screen_width - 10 * appData.screen_uiscale));
+        if(p_right > (screen_width - 10 * screen_uiscale)) {
+            p->ox -= (float)(p_right - (screen_width - 10 * screen_uiscale));
         }
 
-        if(p_top < 10 * appData.screen_uiscale) {
-            p->oy += (float)(10 * appData.screen_uiscale - p_top);
+        if(p_top < 10 * screen_uiscale) {
+            p->oy += (float)(10 * screen_uiscale - p_top);
         }
 
-        if(p_bottom > (appData.screen_height - 10 * appData.screen_uiscale)) {
-            p->oy -= (float)(p_bottom - (appData.screen_height - 10 * appData.screen_uiscale));
+        if(p_bottom > (screen_height - 10 * screen_uiscale)) {
+            p->oy -= (float)(p_bottom - (screen_height - 10 * screen_uiscale));
         }
 
         p->pressure = 0;
@@ -689,10 +902,10 @@ void View::resolveLabelConflicts() {
         while(check_p) {
             if(check_p->addr != p->addr) {
 
-                int check_left = check_p->x - 5 * appData.screen_uiscale;
-                int check_right = check_p->x + check_p->w + 5 * appData.screen_uiscale;
-                int check_top = check_p->y - 5 * appData.screen_uiscale; 
-                int check_bottom = check_p->y + check_p->h + 5 * appData.screen_uiscale;
+                int check_left = check_p->x - 5 * screen_uiscale;
+                int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
+                int check_top = check_p->y - 5 * screen_uiscale; 
+                int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
 
 
                 p->pressure += 1.0f / ((check_p->cx - p->cx) * (check_p->cx - p->cx) + (check_p->cy - p->cy) * (check_p->cy - p->cy));
@@ -733,23 +946,23 @@ void View::resolveLabelConflicts() {
             check_p = check_p -> next;
         }
 
-        check_p = aircraftData->aircraftList.head;
+        check_p = appData->aircraftList.head;
 
         //check against plane icons (include self)
 
         float plane_force = 0.08f;
 
-        p_left = p->x - 5 * appData.screen_uiscale;
-        p_right = p->x + 5 * appData.screen_uiscale;
-        p_top = p->y - 5 * appData.screen_uiscale;
-        p_bottom = p->y + 5 * appData.screen_uiscale;
+        p_left = p->x - 5 * screen_uiscale;
+        p_right = p->x + 5 * screen_uiscale;
+        p_top = p->y - 5 * screen_uiscale;
+        p_bottom = p->y + 5 * screen_uiscale;
 
         while(check_p) {
 
-            int check_left = check_p->x - 5 * appData.screen_uiscale;
-            int check_right = check_p->x + check_p->w + 5 * appData.screen_uiscale;
-            int check_top = check_p->y - 5 * appData.screen_uiscale; 
-            int check_bottom = check_p->y + check_p->h + 5 * appData.screen_uiscale;
+            int check_left = check_p->x - 5 * screen_uiscale;
+            int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
+            int check_top = check_p->y - 5 * screen_uiscale; 
+            int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
 
             if(check_left > p_right || check_right < p_left) {
                 check_p = check_p -> next;
@@ -789,7 +1002,7 @@ void View::resolveLabelConflicts() {
 
     //update 
 
-    p = aircraftData->aircraftList.head;
+    p = appData->aircraftList.head;
 
     while(p) {
             //incorporate acceleration from label conflict resolution
@@ -830,7 +1043,7 @@ void View::resolveLabelConflicts() {
 
 
 void View::drawPlanes() {
-    Aircraft *p = aircraftData->aircraftList.head;
+    Aircraft *p = appData->aircraftList.head;
     time_t now = time(NULL);
     SDL_Color planeColor;
 
@@ -841,12 +1054,12 @@ void View::drawPlanes() {
         p = p->next;
     }
 
-    if(aircraftData->selectedAircraft) {
-        appData.mapTargetLon = aircraftData->selectedAircraft->lon;
-        appData.mapTargetLat = aircraftData->selectedAircraft->lat;             
+    if(selectedAircraft) {
+        mapTargetLon = selectedAircraft->lon;
+        mapTargetLat = selectedAircraft->lat;             
     }
 
-    p = aircraftData->aircraftList.head;
+    p = appData->aircraftList.head;
 
     while(p) {
         if (p->lon && p->lat) {
@@ -862,7 +1075,7 @@ void View::drawPlanes() {
 
             float age_ms = (float)(mstime() - p->created);
             if(age_ms < 500) {
-                circleRGBA(appData.renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
+                circleRGBA(renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
             } else {
                 if(MODES_ACFLAGS_HEADING_VALID) {
                     int usex = x;   
@@ -881,9 +1094,9 @@ void View::drawPlanes() {
                         usey = y + (mstime() - p->msSeenLatLon) * vely;
                     } 
 
-                    if(p == aircraftData->selectedAircraft) {
+                    if(p == selectedAircraft) {
                         // this logic should be in input, register a callback for click?
-                        float elapsed  = mstime() - appData.touchDownTime;
+                        float elapsed  = mstime() - clickTime;
 
                         int boxSize;
                         if(elapsed < 300) {
@@ -891,23 +1104,22 @@ void View::drawPlanes() {
                         } else {
                             boxSize = 20;
                         }
-                        //rectangleRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex + boxSize, usey + boxSize, pink.r, pink.g, pink.b, 255);                            
-                        lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(appData.renderer, usex - boxSize, usey - boxSize, usex - boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
+                        //rectangleRGBA(renderer, usex - boxSize, usey - boxSize, usex + boxSize, usey + boxSize, pink.r, pink.g, pink.b, 255);                            
+                        lineRGBA(renderer, usex - boxSize, usey - boxSize, usex - boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(renderer, usex - boxSize, usey - boxSize, usex - boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
 
-                        lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(appData.renderer, usex + boxSize, usey - boxSize, usex + boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(renderer, usex + boxSize, usey - boxSize, usex + boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(renderer, usex + boxSize, usey - boxSize, usex + boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
 
-                        lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(appData.renderer, usex + boxSize, usey + boxSize, usex + boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(renderer, usex + boxSize, usey + boxSize, usex + boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(renderer, usex + boxSize, usey + boxSize, usex + boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
 
-                        lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(appData.renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
-                        planeColor = lerpColor(style.selectedColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
-                    } else {
-                        planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
-                    }
-
+                        lineRGBA(renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
+                        lineRGBA(renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
+                    } 
+                        
+                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                    
                     if(outOfBounds(x,y)) {
                         drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
                     } else {
@@ -916,7 +1128,7 @@ void View::drawPlanes() {
                         p->cy = usey;
                     }
                       
-                    if(p != aircraftData->selectedAircraft) {
+                    if(p != selectedAircraft) {
                         drawPlaneText(p);
                     }
 
@@ -926,65 +1138,51 @@ void View::drawPlanes() {
         p = p->next;
     }
 
-    drawSelectedAircraftText(aircraftData->selectedAircraft);
-
-    if(appData.touchx && appData.touchy) {
-
-        int radius = .25 * (mstime() - appData.touchDownTime);
-        int alpha = 128 - (int)(0.5 * (mstime() - appData.touchDownTime));
-        if(alpha < 0 ) {
-            alpha = 0;
-            appData.touchx = 0;
-            appData.touchy = 0;
-        }
-
-        filledCircleRGBA(appData.renderer, appData.touchx, appData.touchy, radius,  white.r, white.g, white.b, alpha);      
-
-    }    
+    drawSelectedAircraftText(selectedAircraft);    
 }
 
 void View::animateCenterAbsolute(float x, float y) {
-    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+    float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
-    float dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * (x - appData.screen_width/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
-    float dy = 1.0 * (y - appData.screen_height/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
+    float dx = -1.0 * (0.75*(double)screen_width / (double)screen_height) * (x - screen_width/2) * maxDist / (0.95 * scale_factor * 0.5);
+    float dy = 1.0 * (y - screen_height/2) * maxDist / (0.95 * scale_factor * 0.5);
 
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
-    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
     //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
-    appData.mapTargetLon = appData.centerLon - outLon;
-    appData.mapTargetLat = appData.centerLat - outLat;
+    mapTargetLon = centerLon - outLon;
+    mapTargetLat = centerLat - outLat;
 
-    appData.mapTargetMaxDist = 0.25 * appData.maxDist;
+    mapTargetMaxDist = 0.25 * maxDist;
 
-    appData.mapMoved = 1;
+    mapMoved = 1;
 }
 
 
 void View::moveCenterAbsolute(float x, float y) {
-    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+    float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
-    float dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * (x - appData.screen_width/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
-    float dy = 1.0 * (y - appData.screen_height/2) * appData.maxDist / (0.95 * scale_factor * 0.5);
+    float dx = -1.0 * (0.75*(double)screen_width / (double)screen_height) * (x - screen_width/2) * maxDist / (0.95 * scale_factor * 0.5);
+    float dy = 1.0 * (y - screen_height/2) * maxDist / (0.95 * scale_factor * 0.5);
 
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
-    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
     //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
-    appData.centerLon += outLon;
-    appData.centerLat += outLat;
+    centerLon += outLon;
+    centerLat += outLat;
 
-    appData.mapTargetLon = 0;
-    appData.mapTargetLat = 0;
+    mapTargetLon = 0;
+    mapTargetLat = 0;
 
-    appData.mapMoved = 1;
+    mapMoved = 1;
 }
 
 void View::moveCenterRelative(float dx, float dy) {
@@ -992,74 +1190,89 @@ void View::moveCenterRelative(float dx, float dy) {
     // need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
     //
         
-    float scale_factor = (appData.screen_width > appData.screen_height) ? appData.screen_width : appData.screen_height;
+    float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
-    dx = -1.0 * (0.75*(double)appData.screen_width / (double)appData.screen_height) * dx * appData.maxDist / (0.95 * scale_factor * 0.5);
-    dy = 1.0 * dy * appData.maxDist / (0.95 * scale_factor * 0.5);
+    dx = -1.0 * (0.75*(double)screen_width / (double)screen_height) * dx * maxDist / (0.95 * scale_factor * 0.5);
+    dy = 1.0 * dy * maxDist / (0.95 * scale_factor * 0.5);
 
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
-    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((appData.centerLat)/2.0f) * M_PI / 180.0f);
+    float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
     //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
-    appData.centerLon += outLon;
-    appData.centerLat += outLat;
+    centerLon += outLon;
+    centerLat += outLat;
 
-    appData.mapTargetLon = 0;
-    appData.mapTargetLat = 0;
+    mapTargetLon = 0;
+    mapTargetLat = 0;
 
-    appData.mapMoved = 1;
+    mapMoved = 1;
 }
 
 void View::zoomMapToTarget() {
-    if(appData.mapTargetMaxDist) {
-        if(fabs(appData.mapTargetMaxDist - appData.maxDist) > 0.0001) {
-            appData.maxDist += 0.1 * (appData.mapTargetMaxDist - appData.maxDist);
+    if(mapTargetMaxDist) {
+        if(fabs(mapTargetMaxDist - maxDist) > 0.0001) {
+            maxDist += 0.1 * (mapTargetMaxDist - maxDist);
         } else {
-            appData.mapTargetMaxDist = 0;
+            mapTargetMaxDist = 0;
         }
     }
 }
 
 void View::moveMapToTarget() {
-    if(appData.mapTargetLon && appData.mapTargetLat) {
-        if(fabs(appData.mapTargetLon - appData.centerLon) > 0.0001 || fabs(appData.mapTargetLat - appData.centerLat) > 0.0001) {
-            appData.centerLon += 0.1 * (appData.mapTargetLon- appData.centerLon);
-            appData.centerLat += 0.1 * (appData.mapTargetLat - appData.centerLat);
+    if(mapTargetLon && mapTargetLat) {
+        if(fabs(mapTargetLon - centerLon) > 0.0001 || fabs(mapTargetLat - centerLat) > 0.0001) {
+            centerLon += 0.1 * (mapTargetLon- centerLon);
+            centerLat += 0.1 * (mapTargetLat - centerLat);
 
-            appData.mapMoved = 1;    
+            mapMoved = 1;    
         } else {
-            appData.mapTargetLon = 0;
-            appData.mapTargetLat = 0;
+            mapTargetLon = 0;
+            mapTargetLat = 0;
         }     
     }
 }
 
 void View::drawMouse() {
-    if(appData.mouseMovedTime == 0  || (mstime() - appData.mouseMovedTime) > 1000) {
-        appData.mouseMovedTime = 0;
+    if(mouseMovedTime == 0  || (mstime() - mouseMovedTime) > 1000) {
+        mouseMovedTime = 0;
         return;
     }
 
-    int alpha =  (int)(255.0f - 255.0f * (float)(mstime() - appData.mouseMovedTime) / 1000.0f);
+    int alpha =  (int)(255.0f - 255.0f * (float)(mstime() - mouseMovedTime) / 1000.0f);
 
-    lineRGBA(appData.renderer, appData.mousex - 10 * appData.screen_uiscale, appData.mousey,  appData.mousex + 10 * appData.screen_uiscale, appData.mousey, white.r, white.g, white.b, alpha);
-    lineRGBA(appData.renderer, appData.mousex,  appData.mousey - 10 * appData.screen_uiscale,  appData.mousex,  appData.mousey + 10 * appData.screen_uiscale, white.r, white.g, white.b, alpha);
+    lineRGBA(renderer, mousex - 10 * screen_uiscale, mousey,  mousex + 10 * screen_uiscale, mousey, white.r, white.g, white.b, alpha);
+    lineRGBA(renderer, mousex,  mousey - 10 * screen_uiscale,  mousex,  mousey + 10 * screen_uiscale, white.r, white.g, white.b, alpha);
 }
 
-void View::registerClick() {
-    if(appData.tapCount == 1 && appData.isDragging  == 0) {
-        Aircraft *p = aircraftData->aircraftList.head;
+void View::drawClick() {
+    if(clickx && clicky) {
+
+        int radius = .25 * (mstime() - clickTime);
+        int alpha = 128 - (int)(0.5 * (mstime() - clickTime));
+        if(alpha < 0 ) {
+            alpha = 0;
+            clickx = 0;
+            clicky = 0;
+        }
+
+        filledCircleRGBA(renderer, clickx, clicky, radius,  white.r, white.g, white.b, alpha);      
+    }
+}
+
+void View::registerClick(int tapcount, int x, int y) {
+    if(tapcount == 1) {
+        Aircraft *p = appData->aircraftList.head;
         Aircraft *selection = NULL;
 
         while(p) {
-            if(appData.touchx && appData.touchy) {
-                if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 900) {
+            if(x && y) {
+                if((p->cx - x) * (p->cx - x) + (p->cy - y) * (p->cy - y) < 900) {
                     if(selection) {
-                        if((p->cx - appData.touchx) * (p->cx - appData.touchx) + (p->cy - appData.touchy) * (p->cy - appData.touchy) < 
-                            (selection->cx - appData.touchx) * (selection->cx - appData.touchx) + (selection->cy - appData.touchy) * (selection->cy - appData.touchy)) {
+                        if((p->cx - x) * (p->cx - x) + (p->cy - y) * (p->cy - y) < 
+                            (selection->cx - x) * (selection->cx - x) + (selection->cy - y) * (selection->cy - y)) {
                             selection = p;
                         }
                     } else {
@@ -1071,13 +1284,22 @@ void View::registerClick() {
             p = p->next;
         }
 
-        //if(aircraftData->selectedAircraft == NULL) {
-            aircraftData->selectedAircraft = selection;
-        //}
-    } else if(appData.tapCount == 2) {
-        appData.mapTargetMaxDist = 0.25 * appData.maxDist;
-        animateCenterAbsolute(appData.touchx, appData.touchy);
+        selectedAircraft = selection;
+    } else if(tapcount == 2) {
+        mapTargetMaxDist = 0.25 * maxDist;
+        animateCenterAbsolute(x, y);
     }
+
+    clickx = x;
+    clicky = y;
+    clickTime = mstime();
+}
+
+void View::registerMouseMove(int x, int y) {
+    lastFrameTime = mstime();
+
+    this->mousex = x;
+    this->mousey = y;
 }
 
 //
@@ -1092,52 +1314,73 @@ void View::draw() {
 
     //updatePlanes();
 
-    updateStatus();
-
-    if(appData.mapMoved) {
-        SDL_SetRenderTarget(appData.renderer, appData.mapTexture);
+    if(mapMoved) {
+        SDL_SetRenderTarget(renderer, mapTexture);
         
-        SDL_SetRenderDrawColor(appData.renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+        SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
 
-        SDL_RenderClear(appData.renderer);
+        SDL_RenderClear(renderer);
         
         drawGeography();
 
         drawScaleBars();
 
-        SDL_SetRenderTarget(appData.renderer, NULL );   
+        SDL_SetRenderTarget(renderer, NULL );   
 
-        appData.mapMoved = 0; 
+        mapMoved = 0; 
     }
     
     for(int i = 0; i < 4; i++) {
         resolveLabelConflicts();
     }
 
-    //SDL_SetRenderDrawColor( appData.renderer, 0, 15, 30, 0);
-    SDL_SetRenderDrawColor(appData.renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+    //SDL_SetRenderDrawColor( renderer, 0, 15, 30, 0);
+    SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
 
-    SDL_RenderClear(appData.renderer);
+    SDL_RenderClear(renderer);
 
-    SDL_RenderCopy(appData.renderer, appData.mapTexture, NULL, NULL);
+    SDL_RenderCopy(renderer, mapTexture, NULL, NULL);
 
     drawPlanes();  
     drawStatus();
     drawMouse();
 
     char fps[13] = " ";
-    snprintf(fps,13," %.1ffps", 1000.0 / (mstime() - appData.lastFrameTime));
-    drawStringBG(fps, 0,0, appData.mapFont, grey, black);  
+    snprintf(fps,13," %.1ffps", 1000.0 / (mstime() - lastFrameTime));
+    drawStringBG(fps, 0,0, mapFont, grey, black);  
 
-    SDL_RenderPresent(appData.renderer);  
+    SDL_RenderPresent(renderer);  
 
-    appData.lastFrameTime = mstime(); 
+    lastFrameTime = mstime(); 
 
     if ((mstime() - drawStartTime) < FRAMETIME) {
         usleep(1000 * (FRAMETIME - (mstime() - drawStartTime)));
     } 
 }
 
-View::View(AircraftData *aircraftData){
-    this->aircraftData = aircraftData;
+View::View(AppData *appData){
+    this->appData = appData;
+
+    // Display options
+    screen_uiscale          = 1;
+    screen_width            = 0;
+    screen_height           = 0;    
+    screen_depth            = 32;
+    fullscreen              = 0;
+    screen_index              = 0;
+
+    maxDist                 = 25.0;
+
+    selectedAircraft =  NULL;
+}
+
+View::~View() {
+    closeFont(mapFont);
+    closeFont(mapBoldFont);
+    closeFont(messageFont);
+    closeFont(labelFont);
+    closeFont(listFont);
+
+    TTF_Quit();
+    SDL_Quit();
 }

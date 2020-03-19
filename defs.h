@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_ttf.h"
-#include "mapdata.h"
 
 #define ROUND_RADIUS 3 //radius of text box corners
 

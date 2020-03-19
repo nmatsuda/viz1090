@@ -1,5 +1,5 @@
-#ifndef AIRCRAFTDATA_H
-#define AIRCRAFTDATA_H
+#ifndef APPDATA_H
+#define APPDATA_H
 
 #include "dump1090.h"
 #include "view1090.h"
@@ -7,7 +7,7 @@
 
 #include "AircraftList.h"
 
-class AircraftData {
+class AppData {
 	private:
 		//from view1090.c
 	
@@ -24,13 +24,19 @@ class AircraftData {
 		void connect();
 		void disconnect();
 		void update();
-		AircraftData();
+		void updateStatus();
+		AppData();
 
 		AircraftList aircraftList;
-		Aircraft *selectedAircraft;
 		Modes modes;
 
 		char server[32];
+
+	    int numVisiblePlanes;
+	    double maxDist;
+	    int totalCount;
+	    double sigAccumulate;
+	    double msgRateAccumulate;    
 };
 
 #endif

@@ -1,38 +1,8 @@
-#include "dump1090.h"
-#include "mapdata.h"
-#include "structs.h"
-#include <stdbool.h>
+#include "Map.h"
+#include <stdio.h>
+#include <cstdlib>
 
-int mapPoints_count;
-float *mapPoints;
-
-void initQuadTree(QuadTree *tree) {
-  if(tree == NULL) {
-    return;
-  }
-
-  tree->polygons = NULL;
-  tree->nw = NULL;
-  tree->ne = NULL;
-  tree->sw = NULL;
-  tree->se = NULL;
-}
-
-void initPolygon(Polygon *currentPolygon) {
-  if(currentPolygon == NULL) {
-    return;
-  }
-
-  currentPolygon->lat_min = 180.0;
-  currentPolygon->lon_min = 180.0;
-  currentPolygon->lat_max = -180.0;
-  currentPolygon->lon_max = -180.0;
-  currentPolygon->numPoints = 0;
-  currentPolygon->points = NULL;
-  currentPolygon->next = NULL;
-}
-
-bool QTInsert(QuadTree *tree, Polygon* polygon) {
+bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
     // printf("Inserting %d point poly\n", polygon->numPoints);
 
   if (!(polygon->lat_min >= tree->lat_min &&
@@ -45,8 +15,7 @@ bool QTInsert(QuadTree *tree, Polygon* polygon) {
   }
         
   if (tree->nw == NULL) {
-  	tree->nw = (QuadTree*)malloc(sizeof(QuadTree));
-    initQuadTree(tree->nw);
+  	tree->nw = new QuadTree;
 
   	tree->nw->lat_min = tree->lat_min;	
   	tree->nw->lat_max = tree->lat_min + 0.5 * (tree->lat_max - tree->lat_min);
@@ -59,8 +28,7 @@ bool QTInsert(QuadTree *tree, Polygon* polygon) {
   }
 
   if (tree->sw == NULL) {
-  	tree->sw = (QuadTree*)malloc(sizeof(QuadTree));
-    initQuadTree(tree->sw);
+  	tree->sw = new QuadTree;
 
   	tree->sw->lat_min = tree->lat_min;	
   	tree->sw->lat_max = tree->lat_min + 0.5 * (tree->lat_max - tree->lat_min);
@@ -73,8 +41,7 @@ bool QTInsert(QuadTree *tree, Polygon* polygon) {
   }
 
   if (tree->ne == NULL) {
-  	tree->ne = (QuadTree*)malloc(sizeof(QuadTree));
-    initQuadTree(tree->ne);
+  	tree->ne = new QuadTree;
 
   	tree->ne->lat_min = tree->lat_min + 0.5 * (tree->lat_max - tree->lat_min);	
   	tree->ne->lat_max = tree->lat_max;
@@ -87,8 +54,7 @@ bool QTInsert(QuadTree *tree, Polygon* polygon) {
   } 	
 
   if (tree->se == NULL) {  
-  	tree->se = (QuadTree*)malloc(sizeof(QuadTree));
-    initQuadTree(tree->se);
+  	tree->se = new QuadTree;
 
   	tree->se->lat_min = tree->lat_min + 0.5 * (tree->lat_max - tree->lat_min);
   	tree->se->lat_max = tree->lat_max;
@@ -100,13 +66,50 @@ bool QTInsert(QuadTree *tree, Polygon* polygon) {
   	return true;	
 	} 
 	
-  polygon->next = tree->polygons;
-  tree->polygons = polygon;
+  tree->polygons.push_back(*polygon);
 
   return true;
 }
 
-void initMaps() { 
+
+std::list<Polygon> Map::getPolysRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+    std::list<Polygon> retPolys;
+
+    if(tree == NULL) {
+        return retPolys;
+    }
+
+    if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
+        return retPolys; 
+    }
+
+    if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) {
+        return retPolys; 
+    }
+
+    retPolys.splice(retPolys.end(),getPolysRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
+    retPolys.splice(retPolys.end(),getPolysRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
+    retPolys.splice(retPolys.end(),getPolysRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
+    retPolys.splice(retPolys.end(),getPolysRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
+
+    float dx, dy;
+
+    std::list<Polygon>::iterator currentPolygon;
+
+    for (currentPolygon = tree->polygons.begin(); currentPolygon != tree->polygons.end(); ++currentPolygon) {
+        if(currentPolygon->points.empty()) {
+          continue;
+        }
+
+        retPolys.push_back(*currentPolygon);
+    }
+}
+
+std::list<Polygon> Map::getPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+  return getPolysRecursive(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+};
+
+Map::Map() { 
   FILE *fileptr;
 
   if(!(fileptr = fopen("mapdata.bin", "rb"))) {
@@ -130,48 +133,36 @@ void initMaps() {
 
   // load quad tree
 
-	appData.root.lat_min = 180;
-	appData.root.lon_min = 180;
-	appData.root.lat_max = -180;
-	appData.root.lon_max = -180;
-
-	appData.root.nw = NULL;
-	appData.root.ne = NULL;
-	appData.root.sw = NULL;
-	appData.root.se = NULL;
-
 	for(int i = 0; i < mapPoints_count; i+=2) {
 		if(mapPoints[i] == 0)
 			continue;
 
-		if(mapPoints[i] < appData.root.lon_min) {
-			appData.root.lon_min = mapPoints[i];
-		} else if(mapPoints[i] > appData.root.lon_max) {
-			appData.root.lon_max = mapPoints[i];
+		if(mapPoints[i] < root.lon_min) {
+			root.lon_min = mapPoints[i];
+		} else if(mapPoints[i] > root.lon_max) {
+			root.lon_max = mapPoints[i];
 		} 
 
-		if(mapPoints[i+1] < appData.root.lat_min) {
-			appData.root.lat_min = mapPoints[i+1];
-		} else if(mapPoints[i+1] > appData.root.lat_max) {
-			appData.root.lat_max = mapPoints[i+1];
+		if(mapPoints[i+1] < root.lat_min) {
+			root.lat_min = mapPoints[i+1];
+		} else if(mapPoints[i+1] > root.lat_max) {
+			root.lat_max = mapPoints[i+1];
 		} 
 	}
 
-  Polygon *currentPolygon = (Polygon*)malloc(sizeof(Polygon));
-  initPolygon(currentPolygon);
+  Polygon *currentPolygon = new Polygon;
 
   for(int i = 0; i < mapPoints_count; i+=2) {
 
     if(mapPoints[i] == 0) {
-        QTInsert(&appData.root, currentPolygon);
-        currentPolygon = (Polygon*)malloc(sizeof(Polygon));
-        initPolygon(currentPolygon);
+        QTInsert(&root, currentPolygon);
+        currentPolygon = new Polygon;
         continue;
     }
 
     currentPolygon->numPoints++;
 
-		Point *currentPoint = (Point*)malloc(sizeof(Point));
+		Point *currentPoint = new Point;
 
 		if(mapPoints[i] < currentPolygon->lon_min) {
 			currentPolygon->lon_min = mapPoints[i];
@@ -188,7 +179,6 @@ void initMaps() {
 		currentPoint->lon = mapPoints[i];
 		currentPoint->lat = mapPoints[i+1]; 
 
-		currentPoint->next  = currentPolygon->points;
-		currentPolygon->points = currentPoint;
+    currentPolygon->points.push_back(*currentPoint);
 	}
 }

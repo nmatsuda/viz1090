@@ -1,11 +1,11 @@
-#include "AircraftData.h"
+#include "AppData.h"
 
 //
 //carried over from view1090.c
 //
 
 
-int AircraftData::setupConnection(struct client *c) {
+int AppData::setupConnection(struct client *c) {
     int fd;
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
@@ -37,7 +37,7 @@ int AircraftData::setupConnection(struct client *c) {
 //
 
 
-void AircraftData::initialize() {
+void AppData::initialize() {
     // Allocate the various buffers used by Modes
     if ( NULL == (modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)))
     {
@@ -53,7 +53,7 @@ void AircraftData::initialize() {
 }
 
 
-void AircraftData::connect() {
+void AppData::connect() {
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     c = (struct client *) malloc(sizeof(*c));
     while(1) {
@@ -68,13 +68,13 @@ void AircraftData::connect() {
 }
 
 
-void AircraftData::disconnect() {
+void AppData::disconnect() {
     if (fd != ANET_ERR) 
       {close(fd);}
 }
 
 
-void AircraftData::update() {
+void AppData::update() {
     if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
         free(c);
         usleep(1000000);
@@ -87,9 +87,51 @@ void AircraftData::update() {
     interactiveRemoveStaleAircrafts(&modes);
 
     aircraftList.update(&modes);
+
+    //this can probably be collapsed into somethingelse, came from status.c
+    updateStatus();
 }
 
-AircraftData::AircraftData(){
+
+void AppData::updateStatus() {
+    // struct aircraft *a = Modes.aircrafts;
+
+    numVisiblePlanes = 0;
+    maxDist = 0;
+    totalCount = 0;
+    sigAccumulate = 0.0;
+    msgRateAccumulate = 0.0;    
+
+
+  //   PlaneObj *p = appData.planes;
+
+  //   while(p) {
+        // unsigned char * pSig       = p->signalLevel;
+        // unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+        //                               pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
+
+        // sigAccumulate += signalAverage;
+        
+        // if (p->lon && p->lat) {
+        //         numVisiblePlanes++;
+        // }    
+
+        // totalCount++;
+
+  //       msgRateAccumulate += p->messageRate; 
+
+  //       p = p->next;
+  //   }
+
+    // Status.msgRate                = msgRateAccumulate;
+    // Status.avgSig                 = sigAccumulate / (double) totalCount;
+    // Status.numPlanes              = totalCount;
+    // Status.numVisiblePlanes       = numVisiblePlanes;
+    // Status.maxDist                = maxDist;
+}
+
+
+AppData::AppData(){
     // Default everything to zero/NULL
     memset(&modes,    0, sizeof(Modes));
 
@@ -105,27 +147,4 @@ AircraftData::AircraftData(){
 
     modes.interactive             = 0;
     modes.quiet                   = 1;
-
-    // Map options
-    appData.maxDist                 = 25.0;
-    appData.centerLon               = modes.fUserLon;
-    appData.centerLat               = modes.fUserLat;
-
-    // Display options
-    appData.screen_uiscale          = 1;
-    appData.screen_width            = 0;
-    appData.screen_height           = 0;    
-    appData.screen_depth            = 32;
-    appData.fullscreen              = 0;
-    appData.screen_index              = 0;
-
-    // Initialize status
-    Status.msgRate                = 0;
-    Status.avgSig                 = 0;
-    Status.numPlanes              = 0;
-    Status.numVisiblePlanes     = 0;
-    Status.maxDist                = 0;
-
-    selectedAircraft =  NULL;
 }
-

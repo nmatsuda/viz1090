@@ -12,8 +12,8 @@ all: map1090
 %.o: %.c %.cpp
 	$(CC) $(CFLAGS) $(EXTRACFLAGS) -c $<
 
-map1090: map1090.o AircraftData.o AircraftList.o Aircraft.o anet.o interactive.o mode_ac.o mode_s.o net_io.o Input.o View.o font.o init.o mapdata.o status.o parula.o monokai.o 
-	$(CC) -g -o map1090 map1090.o AircraftData.o AircraftList.o Aircraft.o anet.o interactive.o mode_ac.o mode_s.o net_io.o Input.o View.o font.o init.o mapdata.o status.o parula.o monokai.o $(LIBS) $(LDFLAGS)
+map1090: map1090.o AppData.o AircraftList.o Aircraft.o anet.o interactive.o mode_ac.o mode_s.o net_io.o Input.o View.o Map.o parula.o monokai.o 
+	$(CC) -g -o map1090 map1090.o AppData.o AircraftList.o Aircraft.o anet.o interactive.o mode_ac.o mode_s.o net_io.o Input.o View.o Map.o parula.o monokai.o $(LIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o map1090

@@ -30,7 +30,7 @@
 
 #include "view1090.h"
 #include "structs.h"
-#include "AircraftData.h"
+#include "AppData.h"
 #include "View.h"
 #include "Input.h"
 
@@ -80,42 +80,43 @@ void showHelp(void) {
 //=========================================================================
 //
 
+
 int main(int argc, char **argv) {
     int j;
 
-    AircraftData aircraftData;
-    View view(&aircraftData);
-    Input input(&view);
+    AppData appData;
+    View view(&appData);
+    Input input(&appData,&view);
 
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
 
-    aircraftData.initialize();
+    appData.initialize();
 
     // Parse the command line options
     for (j = 1; j < argc; j++) {
         int more = ((j + 1) < argc); // There are more arguments
 
         if        (!strcmp(argv[j],"--port") && more) {
-            aircraftData.modes.net_input_beast_port = atoi(argv[++j]);
+            appData.modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--server") && more) {
-            std::strcpy(aircraftData.server, argv[++j]);            
+            std::strcpy(appData.server, argv[++j]);            
         } else if (!strcmp(argv[j],"--lat") && more) {
-            aircraftData.modes.fUserLat = atof(argv[++j]);
-            appData.centerLat = aircraftData.modes.fUserLat;
+            appData.modes.fUserLat = atof(argv[++j]);
+            view.centerLat = appData.modes.fUserLat;
         } else if (!strcmp(argv[j],"--lon") && more) {
-            aircraftData.modes.fUserLon = atof(argv[++j]);
-            appData.centerLon = aircraftData.modes.fUserLon;
+            appData.modes.fUserLon = atof(argv[++j]);
+            view.centerLon = appData.modes.fUserLon;
         } else if (!strcmp(argv[j],"--metric")) {
-            aircraftData.modes.metric = 1;
+            view.metric = 1;
         } else if (!strcmp(argv[j],"--fullscreen")) {
-            appData.fullscreen = 1;         
+            view.fullscreen = 1;         
         } else if (!strcmp(argv[j],"--screenindex")) {
-            appData.screen_index = atoi(argv[++j]);         
+            view.screen_index = atoi(argv[++j]);         
         } else if (!strcmp(argv[j],"--uiscale") && more) {
-            appData.screen_uiscale = atoi(argv[++j]);   
+            view.screen_uiscale = atoi(argv[++j]);   
          } else if (!strcmp(argv[j],"--screensize") && more) {
-            appData.screen_width = atoi(argv[++j]);        
-            appData.screen_height = atoi(argv[++j]);        
+            view.screen_width = atoi(argv[++j]);        
+            view.screen_height = atoi(argv[++j]);        
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
@@ -128,22 +129,22 @@ int main(int argc, char **argv) {
     
     int go;
 
-    aircraftData.connect();
+    appData.connect();
+  
     
-    init("sdl1090");
-    
-    atexit(cleanup);
-        
+    view.SDL_init();
+    view.font_init();
+            
     go = 1;
           
     while (go == 1)
     {
         input.getInput();
-        aircraftData.update();
+        appData.update();
         view.draw();
     }
     
-    aircraftData.disconnect();
+    appData.disconnect();
 
     return (0);
 }
