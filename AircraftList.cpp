@@ -36,7 +36,7 @@ void AircraftList::update(Modes *modes) {
         p = find(a->addr);
         if (!p) {
             //p = createPlaneObj(a);
-            p = new Aircraft(a);
+            p = new Aircraft(a->addr);
             p->next = head;       
             head = p;      
         } else {

@@ -1,10 +1,7 @@
 #include "Aircraft.h"
 
-#include "dump1090.h" //for struct aircaft
-
-
-Aircraft::Aircraft(struct aircraft *a) {
-    addr = a->addr;
+Aircraft::Aircraft(uint32_t addr) {
+    this->addr = addr;
     created = 0;
     prev_seen = 0;
 

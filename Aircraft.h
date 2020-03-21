@@ -42,6 +42,6 @@ public:
 
 /// methods
 
-    Aircraft(struct aircraft *a);  
+    Aircraft(uint32_t addr);  
     ~Aircraft();
 };
