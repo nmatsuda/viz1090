@@ -1,8 +1,7 @@
 #ifndef APPDATA_H
 #define APPDATA_H
 
-#include "dump1090.h"
-#include "view1090.h"
+#include "view1090.h" //for Modes
 
 #include "AircraftList.h"
 

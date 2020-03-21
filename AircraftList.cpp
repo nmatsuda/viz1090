@@ -1,5 +1,4 @@
 #include "AircraftList.h"
-#include "dump1090.h"
 
 static uint64_t mstime(void) {
     struct timeval tv;

@@ -1,5 +1,7 @@
 #include "Aircraft.h"
 
+#include "dump1090.h" //for Modes
+
 class AircraftList {
 	public:
 		Aircraft *head;

@@ -28,7 +28,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "view1090.h"
 #include "AppData.h"
 #include "View.h"
 #include "Input.h"

@@ -1,5 +1,3 @@
-#include "dump1090.h"
-
 #include "SDL2/SDL2_rotozoom.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
 //color schemes
@@ -855,6 +853,12 @@ void View::drawSelectedAircraftText(Aircraft *p) {
 void View::resolveLabelConflicts() {
     Aircraft *p = appData->aircraftList.head;
 
+    float label_force = 0.01f;
+    float plane_force = 0.01f;
+    float damping_force = 0.95f;
+    float spring_force = 0.02f;
+    float spring_length = 10.0f;
+
     while(p) {
 
         Aircraft *check_p = appData->aircraftList.head;
@@ -867,15 +871,18 @@ void View::resolveLabelConflicts() {
         //debug box 
         //rectangleRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
         //lineRGBA(renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);
+        
+        p->ddox = 0;
+        p->ddoy = 0;
 
-        //apply damping
-
-        p->ddox -= 0.07f * p->dox;
-        p->ddoy -= 0.07f * p->doy;
+        float o_mag = sqrt(p->ox*p->ox + p->oy*p->oy);
 
         //spring back to origin
-        p->ddox -= 0.005f * p->ox;
-        p->ddoy -= 0.005f * p->oy;
+
+        if(o_mag > 0) {
+            p->ddox -= p->ox / o_mag * spring_force * (o_mag - spring_length);
+            p->ddoy -= p->oy / o_mag * spring_force * (o_mag - spring_length);
+        }
         
         // // //screen edge 
 
@@ -925,22 +932,22 @@ void View::resolveLabelConflicts() {
 
                 //left collision
                 if(check_left > p_left && check_left < p_right) {
-                    check_p->ddox -= 0.01f * (float)(check_left - p_right);   
+                    check_p->ddox -= label_force * (float)(check_left - p_right);   
                 }
 
                 //right collision
                 if(check_right > p_left && check_right < p_right) {
-                    check_p->ddox -= 0.01f * (float)(check_right - p_left);   
+                    check_p->ddox -= label_force * (float)(check_right - p_left);   
                 }
 
                 //top collision
                 if(check_top > p_top && check_top < p_bottom) {
-                    check_p->ddoy -= 0.01f * (float)(check_top - p_bottom);   
+                    check_p->ddoy -= label_force * (float)(check_top - p_bottom);   
                 }
 
                 //bottom collision
                 if(check_bottom > p_top && check_bottom < p_bottom) {
-                    check_p->ddoy -= 0.01f * (float)(check_bottom - p_top);   
+                    check_p->ddoy -= label_force * (float)(check_bottom - p_top);   
                 }    
             }
             check_p = check_p -> next;
@@ -949,8 +956,6 @@ void View::resolveLabelConflicts() {
         check_p = appData->aircraftList.head;
 
         //check against plane icons (include self)
-
-        float plane_force = 0.08f;
 
         p_left = p->x - 5 * screen_uiscale;
         p_right = p->x + 5 * screen_uiscale;
@@ -1005,11 +1010,12 @@ void View::resolveLabelConflicts() {
     p = appData->aircraftList.head;
 
     while(p) {
-            //incorporate acceleration from label conflict resolution
-      
         p->dox += p->ddox;
         p->doy += p->ddoy;
 
+        p->dox *= damping_force;
+        p->doy *= damping_force;
+  
         if(fabs(p->dox) > 10.0f) {
             p->dox = sign(p->dox) * 10.0f;
         }
@@ -1028,11 +1034,6 @@ void View::resolveLabelConflicts() {
 
         p->ox += p->dox;
         p->oy += p->doy;
-
-        //printf("p_ox: %f, p_oy %f\n",p->ox, p->oy);
-
-        p->ddox = 0;
-        p->ddoy = 0;
 
         p->x = p->cx + (int)round(p->ox);
         p->y = p->cy + (int)round(p->oy);
