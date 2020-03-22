@@ -1094,33 +1094,13 @@ void View::drawPlanes() {
                         usex = x + (mstime() - p->msSeenLatLon) * velx;
                         usey = y + (mstime() - p->msSeenLatLon) * vely;
                     } 
-
-                    if(p == selectedAircraft) {
-                        // this logic should be in input, register a callback for click?
-                        float elapsed  = mstime() - clickTime;
-
-                        int boxSize;
-                        if(elapsed < 300) {
-                            boxSize = (int)(20.0 * (1.0 - (1.0 - elapsed / 300.0) * cos(sqrt(elapsed)))); 
-                        } else {
-                            boxSize = 20;
-                        }
-                        //rectangleRGBA(renderer, usex - boxSize, usey - boxSize, usex + boxSize, usey + boxSize, pink.r, pink.g, pink.b, 255);                            
-                        lineRGBA(renderer, usex - boxSize, usey - boxSize, usex - boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(renderer, usex - boxSize, usey - boxSize, usex - boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
-
-                        lineRGBA(renderer, usex + boxSize, usey - boxSize, usex + boxSize/2, usey - boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(renderer, usex + boxSize, usey - boxSize, usex + boxSize, usey - boxSize/2, pink.r, pink.g, pink.b, 255);
-
-                        lineRGBA(renderer, usex + boxSize, usey + boxSize, usex + boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(renderer, usex + boxSize, usey + boxSize, usex + boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
-
-                        lineRGBA(renderer, usex - boxSize, usey + boxSize, usex - boxSize/2, usey + boxSize, pink.r, pink.g, pink.b, 255);
-                        lineRGBA(renderer, usex - boxSize, usey + boxSize, usex - boxSize, usey + boxSize/2, pink.r, pink.g, pink.b, 255);
-                    } 
                         
                     planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
                     
+                    if(p == selectedAircraft) {
+                        planeColor = style.selectedColor;
+                    }
+
                     if(outOfBounds(x,y)) {
                         drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
                     } else {
@@ -1261,6 +1241,31 @@ void View::drawClick() {
 
         filledCircleRGBA(renderer, clickx, clicky, radius,  white.r, white.g, white.b, alpha);      
     }
+
+
+    if(selectedAircraft) {
+        // this logic should be in input, register a callback for click?
+        float elapsed  = mstime() - clickTime;
+
+        int boxSize;
+        if(elapsed < 300) {
+            boxSize = (int)(20.0 * (1.0 - (1.0 - elapsed / 300.0) * cos(sqrt(elapsed)))); 
+        } else {
+            boxSize = 20;
+        }
+        //rectangleRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy - boxSize, selectedAircraft->cx + boxSize, selectedAircraft->cy + boxSize, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);                            
+        lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy - boxSize, selectedAircraft->cx - boxSize/2, selectedAircraft->cy - boxSize, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+        lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy - boxSize, selectedAircraft->cx - boxSize, selectedAircraft->cy - boxSize/2, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+
+        lineRGBA(renderer, selectedAircraft->cx + boxSize, selectedAircraft->cy - boxSize, selectedAircraft->cx + boxSize/2, selectedAircraft->cy - boxSize, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+        lineRGBA(renderer, selectedAircraft->cx + boxSize, selectedAircraft->cy - boxSize, selectedAircraft->cx + boxSize, selectedAircraft->cy - boxSize/2, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+
+        lineRGBA(renderer, selectedAircraft->cx + boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx + boxSize/2, selectedAircraft->cy + boxSize, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+        lineRGBA(renderer, selectedAircraft->cx + boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx + boxSize, selectedAircraft->cy + boxSize/2, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+
+        lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx - boxSize/2, selectedAircraft->cy + boxSize, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
+        lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize/2, style.selectedColor.r, style.selectedColor.g, pink.b, 255);
+    } 
 }
 
 void View::registerClick(int tapcount, int x, int y) {
@@ -1297,8 +1302,7 @@ void View::registerClick(int tapcount, int x, int y) {
 }
 
 void View::registerMouseMove(int x, int y) {
-    lastFrameTime = mstime();
-
+    mouseMovedTime = mstime();
     this->mousex = x;
     this->mousey = y;
 }
@@ -1345,6 +1349,7 @@ void View::draw() {
     drawPlanes();  
     drawStatus();
     drawMouse();
+    drawClick();
 
     char fps[13] = " ";
     snprintf(fps,13," %.1ffps", 1000.0 / (mstime() - lastFrameTime));

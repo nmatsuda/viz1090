@@ -4,7 +4,7 @@ static uint64_t mstime(void) {
     struct timeval tv;
     uint64_t mst;
 
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     mst = ((uint64_t)tv.tv_sec)*1000;
     mst += tv.tv_usec/1000;
     return mst;
@@ -17,7 +17,7 @@ Aircraft *AircraftList::find(uint32_t addr) {
         if (p->addr == addr) return (p);
         p = p->next;
     }
-    return (NULL);
+    return (nullptr);
 }
     
 	//instead of this, net_io should call this class directly to update info
@@ -90,7 +90,7 @@ void AircraftList::update(Modes *modes) {
     }
 
     p = head;
-    Aircraft *prev = NULL;
+    Aircraft *prev = nullptr;
 
     while(p) {
         if(!p->live) {
@@ -111,11 +111,11 @@ void AircraftList::update(Modes *modes) {
 }
 
 AircraftList::AircraftList() {
-    head = NULL;
+    head = nullptr;
 }
 
 AircraftList::~AircraftList() {
-    while(head != NULL) {
+    while(head != nullptr) {
         Aircraft *temp = head;
         head  = head->next;
         delete(temp);

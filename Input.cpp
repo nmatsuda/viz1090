@@ -59,20 +59,26 @@ void Input::getInput()
 				}
 				break;
 
-			case SDL_FINGERMOTION:;					
-				touchDownTime = 0;
+			case SDL_FINGERMOTION:;	
+				if(mstime() - touchDownTime > 150) {
+					tapCount = 0;
+					touchDownTime = 0;
+				}		
 				view->moveCenterRelative( view->screen_width * event.tfinger.dx,  view->screen_height * event.tfinger.dy);
 				break;
 
 			case SDL_FINGERDOWN:
 				if(mstime() - touchDownTime > 500) {
 					tapCount = 0;
+				} 
+
+				if(SDL_GetNumTouchFingers(event.tfinger.touchId) == 0) {
+					touchDownTime = mstime();	
 				}
-				touchDownTime = mstime();
 				break;
 
 			case SDL_FINGERUP:
-				if(mstime() - touchDownTime < 120) {
+				if(mstime() - touchDownTime < 150 && SDL_GetNumTouchFingers(event.tfinger.touchId) == 0) {
 					touchx = view->screen_width * event.tfinger.x;
 					touchy = view->screen_height * event.tfinger.y;
 					tapCount++;
