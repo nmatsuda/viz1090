@@ -1,5 +1,9 @@
-#include "SDL2/SDL2_rotozoom.h"
-#include "SDL2/SDL2_gfxPrimitives.h"
+
+#include "SDL2_rotozoom.h"
+#include "SDL2_gfxPrimitives.h"
+
+// #include "SDL2/SDL2_rotozoom.h"
+// #include "SDL2/SDL2_gfxPrimitives.h"
 //color schemes
 #include "parula.h"
 #include "monokai.h"

@@ -9,6 +9,8 @@ Tested and working on Ubuntu 18.04, Raspbian Stretch, Buster
 ```
 sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
+	Note: the sdl2-config output that would normally be passed to compiler flags points to the wrong directory on my distro. Instead I have manually linked to /usr/include/sdl2
+
 	Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
 
 2. Download and build spidr
@@ -27,6 +29,12 @@ The getmap.sh pulls the svg file for the contiguous 48 US states and produces a 
 ```
 ./getmap.sh
 ```
+
+## Android Notes [temp]
+
+to change Android version or Arm type
+android/app/build.gradle -> set compileSdkVersion, targetSdkVersion, abiFilters
+android/sdl2/build.gradle -> set compileSdkVersion, targetSdkVersion, abiFilters
 
 ###RUNNING
 

@@ -3,7 +3,7 @@
 # sure that the variable PREFIX is defined, e.g. make PREFIX=/usr/local
 #
 
-CFLAGS=-O2 -g -Wno-write-strings
+CPPFLAGS=-O2 -g -Wno-write-strings -I/usr/include/SDL2
 LIBS=-lm -lSDL2 -lSDL2_ttf -lSDL2_gfx
 CC=g++
 

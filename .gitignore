@@ -8,3 +8,6 @@ map1090
 *.swp
 .~
 thumbs.db
+
+external/
+.gradle

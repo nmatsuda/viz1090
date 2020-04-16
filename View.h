@@ -3,8 +3,11 @@
 
 #include "AppData.h"
 #include "Map.h"
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_ttf.h" 
+//#include "SDL2/SDL.h"
+//#include "SDL2/SDL_ttf.h" 
+#include <SDL.h>
+#include "SDL_ttf.h"
+
 
 //defs - should all move to config file setup
 #define ROUND_RADIUS 3 //radius of text box corners

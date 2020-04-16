@@ -51,13 +51,13 @@
     #include <unistd.h>
     #include <math.h>
     #include <sys/time.h>
-    #include <sys/timeb.h>
+    //#include <sys/timeb.h>
     #include <signal.h>
     #include <fcntl.h>
     #include <ctype.h>
     #include <sys/stat.h>
     #include <sys/ioctl.h>
-    #include "rtl-sdr.h"
+    //#include "rtl-sdr.h"
     #include "anet.h"
 #else
     #include "winstubs.h" //Put everything Windows specific in here
@@ -244,7 +244,7 @@ typedef struct Modes{                             // Internal state
     pthread_mutex_t data_mutex;      // Mutex to synchronize buffer access
     pthread_cond_t  data_cond;       // Conditional variable associated
     uint16_t       *pData          [MODES_ASYNC_BUF_NUMBER]; // Raw IQ sample buffers from RTL
-    struct timeb    stSystemTimeRTL[MODES_ASYNC_BUF_NUMBER]; // System time when RTL passed us this block
+//    struct timeb    stSystemTimeRTL[MODES_ASYNC_BUF_NUMBER]; // System time when RTL passed us this block
     int             iDataIn;         // Fifo input pointer
     int             iDataOut;        // Fifo output pointer
     int             iDataReady;      // Fifo content count
@@ -253,7 +253,7 @@ typedef struct Modes{                             // Internal state
     uint16_t       *pFileData;       // Raw IQ samples buffer (from a File)
     uint16_t       *magnitude;       // Magnitude vector
     uint64_t        timestampBlk;    // Timestamp of the start of the current block
-    struct timeb    stSystemTimeBlk; // System time when RTL passed us currently processing this block
+//    struct timeb    stSystemTimeBlk; // System time when RTL passed us currently processing this block
     int             fd;              // --ifile option file descriptor
     uint32_t       *icao_cache;      // Recently seen ICAO addresses cache
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
@@ -263,7 +263,7 @@ typedef struct Modes{                             // Internal state
     int           dev_index;
     int           gain;
     int           enable_agc;
-    rtlsdr_dev_t *dev;
+    //rtlsdr_dev_t *dev;
     int           freq;
     int           ppm_error;
 
@@ -449,7 +449,7 @@ struct aircraft* interactiveReceiveData(Modes *modes, struct modesMessage *mm);
 void  interactiveShowData(void);
 void  interactiveRemoveStaleAircrafts(Modes *modes);
 int   decodeBinMessage   (Modes *modes, struct client *c, char *p);
-struct aircraft *interactiveFindAircraft(uint32_t addr);
+struct aircraft *interactiveFindAircraft(Modes *modes, uint32_t addr);
 struct stDF     *interactiveFindDF      (uint32_t addr);
 
 //

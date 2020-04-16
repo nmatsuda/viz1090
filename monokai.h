@@ -1,4 +1,5 @@
-#include "SDL2/SDL.h"
+// #include "SDL2/SDL.h"
+#include "SDL.h"
 
 extern SDL_Color pink;
 extern SDL_Color purple;

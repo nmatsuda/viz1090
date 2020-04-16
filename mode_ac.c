@@ -356,7 +356,7 @@ int ModeAToModeC(unsigned int ModeA)
 //
 //=========================================================================
 //
-void decodeModeAMessage(struct modesMessage *mm, int ModeA)
+void decodeModeAMessage(Modes *modes, struct modesMessage *mm, int ModeA)
   {
   mm->msgtype = 32; // Valid Mode S DF's are DF-00 to DF-31.
                     // so use 32 to indicate Mode A/C
