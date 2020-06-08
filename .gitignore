@@ -2,9 +2,8 @@
 *.bin
 *.svg
 
-view1090
-map1090
-
 *.swp
 .~
 thumbs.db
+
+viz1090

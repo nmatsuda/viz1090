@@ -1,5 +1,12 @@
 # viz1090
 
+**This is work in progress**
+There are a lot of missing pieces in this implementation so far:
+* A proper map system yet. Eventually map data should be pulled from Mapbox or similar.
+* In-application menus or configuration yet.
+* Theming/colormaps (important as this is primarily intended to be eye candy!)
+* Integration with handheld features like GPS, battery monitors, buttons/dials, etc. 
+* Android build is currently broken
 
 ### BUILDING
 
@@ -26,9 +33,9 @@ make clean; make
 ```
 
 3. Download and process map data
-Until more comprehensive map source (e.g., Mapbox) is integrated, map1090 uses the lat/lon SVG files from https://www.mccurley.org
+Until more comprehensive map source (e.g., Mapbox) is integrated, viz1090 uses the lat/lon SVG files from https://www.mccurley.org
 
-The getmap.sh pulls the svg file for the contiguous 48 US states and produces a binary file for map1090 to read.
+The getmap.sh pulls the svg file for the contiguous 48 US states and produces a binary file for viz1090 to read.
 
 ```
 sudo apt install python3 python3-pip
@@ -40,7 +47,14 @@ pip3 install lxml numpy
 
 As WSL does not have an X server built in, you will need to install a 3rd party X server, such as https://sourceforge.net/projects/vcxsrv/
 
-When running vcxsrv Xlaunch, make sure to **uncheck "Use Native openGL"**
+	* run Xlaunch from the start menu
+	* Uncheck "Use Native openGL"
+	* Open the Ubuntu WSL terminal
+	* Specify the X display to use
+	```
+	export DISPLAY=:0
+	```
+	* Start viz1090 as described below.
 
 ### RUNNING
 
@@ -49,17 +63,17 @@ When running vcxsrv Xlaunch, make sure to **uncheck "Use Native openGL"**
 dump1090 --net
 ```
 
-2. Run map1090 
+2. Run viz1090 
 ```
-./view1090 --fullsceen --lat [your latitude] --lon [your longitude]
+./viz1090 --fullsceen --lat [your latitude] --lon [your longitude]
 ```
 
-map1090 will open an SDL window set to the resolution of your screen.
+viz1090 will open an SDL window set to the resolution of your screen.
 
 ### RUNTIME OPTIONS
 
---server [domain name or ip]	Specify a dump1090 server. Renamed from the view1090 "--net-bo-ip-addr" argument
---port [port number]			Specify dump1090 server port. Renamed from the view1090 "--net-bo-port" argument
+--server [domain name or ip]	Specify a dump1090 server. Renamed from the viz1090 "--net-bo-ip-addr" argument
+--port [port number]			Specify dump1090 server port. Renamed from the viz1090 "--net-bo-port" argument
 --metric						Display metric units rather than imperial.
 
 --lat                           Specify your latitude in degrees
@@ -71,27 +85,28 @@ map1090 will open an SDL window set to the resolution of your screen.
 
 ### HARDWARE NOTES
 
-map1090 is designed to be portable and work on a variety of systems, however it is intended to be used on a handheld device. 
-
-The software was originally develped for Raspberry Pi devices, and it is currently optimized for the Raspberry Pi 4 with the following configuration:
+This software was originally intended for Raspberry Pi devices, and it is currently optimized for the Raspberry Pi 4 with the following configuration:
 
 * Raspberry Pi 4
 * A display:
-	* [Pimoroni HyperPixel 4.0 Display] (https://shop.pimoroni.com/products/hyperpixel-4) \*best overall, but requires some rework to use battery monitoring features of the PiJuice mentioned below
-	* [Waveshare 5.5" AMOLED] (https://www.waveshare.com/5.5inch-hdmi-amoled.htm) \*this is very good screen but the Google Pixel 2 phone mentioned below has a very similar display for the same price (along with everything else you need in a nice package)
-	* [Waveshare 4.3" HDMI(B)] (https://www.waveshare.com/wiki/4.3inch_HDMI_LCD_(B))
-	* [Adafruit 2.8" Capacitive Touch] (https://www.adafruit.com/product/2423)
+	* [Pimoroni HyperPixel 4.0 Display](https://shop.pimoroni.com/products/hyperpixel-4) \*best overall, but requires some rework to use battery monitoring features of the PiJuice mentioned below
+	* [Waveshare 5.5" AMOLED](https://www.waveshare.com/5.5inch-hdmi-amoled.htm) \*this is very good screen but the Google Pixel 2 phone mentioned below has a very similar display for the same price (along with everything else you need in a nice package)
+	* [Waveshare 4.3" HDMI(B)](https://www.waveshare.com/wiki/4.3inch_HDMI_LCD_(B))
+	* [Adafruit 2.8" Capacitive Touch](https://www.adafruit.com/product/2423)
 * A battery hat, such as:
-	* [PiJuice Battery Hat] (https://uk.pi-supply.com/products/pijuice-standard) \*I2C pins must be reworked to connect to the Hyperpixel nonstandard I2C breakout pins, unfortunately
-	* [MakerFocus UPS Hat] (https://www.amazon.com/Makerfocus-Raspberry-2500mAh-Lithium-Battery/dp/B01MQYX4UX) 
+	* [PiJuice Battery Hat](https://uk.pi-supply.com/products/pijuice-standard) \*I2C pins must be reworked to connect to the Hyperpixel nonstandard I2C breakout pins, unfortunately
+	* [MakerFocus UPS Hat](https://www.amazon.com/Makerfocus-Raspberry-2500mAh-Lithium-Battery/dp/B01MQYX4UX) 
 * Any USB SDR receiver:
-	* [Noelec Nano V3] (https://www.nooelec.com/store/nesdr-nano-three.html)
+	* [Noelec Nano V3](https://www.nooelec.com/store/nesdr-nano-three.html)
 	* Stratux V2 \*very low power but hard to find
 
 
 If running as a front end only, with a separate dump1090 server, the best option is to use an Android phone, such as the Pixel 2, which significantly outperforms a Raspberry Pi 4.
 
-map1090 has been tested on other boards such as the UP Core and UP Squared, but these boards have significantly poorer performance than the Raspberry Pi 4 with less software and peripheral support, so they are not recommended. With low resolution maps the software will run on these boards or even a Raspberry Pi Zero, so these remain options with some tradeoffs.
+viz1090 has been tested on other boards such as the UP Core and UP Squared, but these boards have poor performance compared to a Raspberry Pi 4, along with worse software and peripheral support, so they are not recommended. viz1090 with a low resolution map will run on these boards or even a Raspberry Pi Zero, so these remain options with some tradeoffs.
 
 Of course, a variety of other devices work well for this purpose - all of the development so far has been done on a touchscreen Dell XPS laptop.
 
+### Credits
+
+viz1090 is largely based on [dump1090](https://github.com/MalcolmRobb/dump1090) (Malcom Robb, Salvatore Sanfilippo)
