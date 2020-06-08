@@ -5,7 +5,7 @@ import sys
 filename = sys.argv[1]
 
 if(len(filename) == 0):
-	print "No input filename given"
+	print("No input filename given")
 	exit()
 
 parser = ElementTree.XMLParser(recover=True)

@@ -1,9 +1,15 @@
-#map1090
+# viz1090
 
 
-###BUILDING
+### BUILDING
 
-Tested and working on Ubuntu 18.04, Raspbian Stretch, Buster
+Tested and working on Ubuntu 18.04, Raspbian Stretch / Buster, Windows Subsystem for Linux (with Ubuntu 18.04)
+
+0. Install build essentials
+
+```
+sudo apt-get install build-essentials
+```
 
 1. Install SDL and RTL-SDR libararies
 ```
@@ -25,10 +31,18 @@ Until more comprehensive map source (e.g., Mapbox) is integrated, map1090 uses t
 The getmap.sh pulls the svg file for the contiguous 48 US states and produces a binary file for map1090 to read.
 
 ```
+sudo apt install python3 python3-pip
+pip3 install lxml numpy
 ./getmap.sh
 ```
 
-###RUNNING
+3. (optional for Windows)
+
+As WSL does not have an X server built in, you will need to install a 3rd party X server, such as https://sourceforge.net/projects/vcxsrv/
+
+When running vcxsrv Xlaunch, make sure to **uncheck "Use Native openGL"**
+
+### RUNNING
 
 1. Start dump1090 (http://www.github.com/MalcolmRobb/dump1090) locally in network mode:
 ```
@@ -37,22 +51,25 @@ dump1090 --net
 
 2. Run map1090 
 ```
-./view1090 --fullsceen
+./view1090 --fullsceen --lat [your latitude] --lon [your longitude]
 ```
 
 map1090 will open an SDL window set to the resolution of your screen.
 
-###RUNTIME OPTIONS
+### RUNTIME OPTIONS
 
 --server [domain name or ip]	Specify a dump1090 server. Renamed from the view1090 "--net-bo-ip-addr" argument
 --port [port number]			Specify dump1090 server port. Renamed from the view1090 "--net-bo-port" argument
 --metric						Display metric units rather than imperial.
 
+--lat                           Specify your latitude in degrees
+--lon                           Specify your longitiude in degrees
+
 --screensize [width] [height]	Specify a specific resolution to pass to SDL_RenderSetLogicalSize, otherwise use resolution of display
 --uiscale [scale]				Scale up UI elements by integer amounts for high resolution screen
 --fullscreen					Render fullscreen rather than in a window
 
-###HARDWARE NOTES
+### HARDWARE NOTES
 
 map1090 is designed to be portable and work on a variety of systems, however it is intended to be used on a handheld device. 
 
