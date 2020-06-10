@@ -72,16 +72,14 @@ viz1090 will open an SDL window set to the resolution of your screen.
 
 ### RUNTIME OPTIONS
 
---server [domain name or ip]	Specify a dump1090 server. Renamed from the viz1090 "--net-bo-ip-addr" argument
---port [port number]			Specify dump1090 server port. Renamed from the viz1090 "--net-bo-port" argument
---metric						Display metric units rather than imperial.
-
---lat                           Specify your latitude in degrees
---lon                           Specify your longitiude in degrees
-
---screensize [width] [height]	Specify a specific resolution to pass to SDL_RenderSetLogicalSize, otherwise use resolution of display
---uiscale [scale]				Scale up UI elements by integer amounts for high resolution screen
---fullscreen					Render fullscreen rather than in a window
+| --server [domain name or ip]	| Specify a dump1090 server | 
+| --port [port number]			| Specify dump1090 server port | 
+| --metric						| Display metric units | 
+| --lat                         | Specify your latitude in degrees | 
+| --lon                         | Specify your longitiude in degrees | 
+| --screensize [width] [height]	| Specify a specific resolution to pass to SDL_RenderSetLogicalSize, otherwise use resolution of display | 
+| --uiscale [scale]				| Scale up UI elements by integer amounts for high resolution screen | 
+| --fullscreen					| Render fullscreen rather than in a window | 
 
 ### HARDWARE NOTES
 

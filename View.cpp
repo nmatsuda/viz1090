@@ -1,5 +1,6 @@
 #include "SDL2/SDL2_rotozoom.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
+
 //color schemes
 #include "parula.h"
 #include "monokai.h"
@@ -88,7 +89,7 @@ SDL_Color hsv2SDLColor(float h, float s, float v)
     long        i;
     SDL_Color         out;
 
-    if(s <= 0.0) {       // < is bogus, just shuts up warnings
+    if(s <= 0.0) {       
         out.r = (uint8_t)v;
         out.g = (uint8_t)v;
         out.b = (uint8_t)v;
@@ -339,8 +340,6 @@ void View::drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color col
         return;
     }
     
-    /* Blit the entire surface to the screen */
-
     dest.x = x;
     dest.y = y;
     dest.w = surface->w;

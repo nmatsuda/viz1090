@@ -87,6 +87,8 @@ std::list<Polygon> Map::getPolysRecursive(QuadTree *tree, float screen_lat_min, 
         return retPolys; 
     }
 
+
+    //for some reason os x clang doesn't like this 
     retPolys.splice(retPolys.end(),getPolysRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
     retPolys.splice(retPolys.end(),getPolysRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
     retPolys.splice(retPolys.end(),getPolysRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));

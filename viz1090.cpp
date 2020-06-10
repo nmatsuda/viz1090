@@ -1,3 +1,4 @@
+// Adapted from:
 // view1090, a Mode S messages viewer for dump1090 devices.
 //
 // Copyright (C) 2014 by Malcolm Robb <Support@ATTAvionics.com>
@@ -57,13 +58,13 @@ Style style;
 void showHelp(void) {
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        view1090 dump1090 Viewer        Ver : " MODES_DUMP1090_VERSION " |\n"
+"|                        viz1090 ADSB Viewer        Ver : "0.1" |\n"
 "-----------------------------------------------------------------------------\n"
   "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
   "--port <port>                    TCP Beast output listen port (default: 30005)\n"
-  "--lat <latitude>                 Reference/receiver latitide for surface posn (opt)\n"
-  "--lon <longitude>                Reference/receiver longitude for surface posn (opt)\n"
-  "--metric                         Use metric units (meters, km/h, ...)\n"
+  "--lat <latitude>                 Latitide in degrees\n"
+  "--lon <longitude>                Longitude in degrees\n"
+  "--metric                         Use metric units\n"
   "--help                           Show this help\n"
   "--uiscale <factor>               UI global scaling (default: 1)\n"  
   "--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
