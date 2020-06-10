@@ -72,6 +72,8 @@ viz1090 will open an SDL window set to the resolution of your screen.
 
 ### RUNTIME OPTIONS
 
+| Argument						| Description |
+| ----------------------------- | ----------- |
 | --server [domain name or ip]	| Specify a dump1090 server | 
 | --port [port number]			| Specify dump1090 server port | 
 | --metric						| Display metric units | 
