@@ -1,7 +1,7 @@
  #include <stdint.h>
 
 #include <ctime>
-#include <list> 
+#include <vector> 
 
 class Aircraft {
 public:	
@@ -20,7 +20,7 @@ public:
     
     //history
 
-    std::list <float>   lonHistory, latHistory, headingHistory, timestampHistory;
+    std::vector <float>   lonHistory, latHistory, headingHistory, timestampHistory;
 
     // float           oldLon[TRAIL_LENGTH];
     // float           oldLat[TRAIL_LENGTH];

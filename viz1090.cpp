@@ -58,7 +58,7 @@ Style style;
 void showHelp(void) {
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        viz1090 ADSB Viewer        Ver : "0.1" |\n"
+"|                        viz1090 ADSB Viewer        Ver : 0.1 |\n"
 "-----------------------------------------------------------------------------\n"
   "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
   "--port <port>                    TCP Beast output listen port (default: 30005)\n"

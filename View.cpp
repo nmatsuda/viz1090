@@ -238,7 +238,7 @@ void View::SDL_init() {
         screen_height= DM.h;
     }
 
-    window =  SDL_CreateWindow("map1090",  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index),  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index), screen_width, screen_height, flags);        
+    window =  SDL_CreateWindow("viz1090",  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index),  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index), screen_width, screen_height, flags);        
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     mapTexture = SDL_CreateTexture(renderer,
                                SDL_PIXELFORMAT_ARGB8888,
@@ -522,23 +522,24 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 }
 
 void View::drawTrail(Aircraft *p) {
+    return;
     int currentX, currentY, prevX, prevY;
 
-    std::list<float>::iterator lon_idx = std::next(p->lonHistory.begin());
-    std::list<float>::iterator lat_idx = std::next(p->latHistory.begin());
-    std::list<float>::iterator heading_idx = std::next(p->headingHistory.begin());
+    std::vector<float>::iterator lon_idx = p->lonHistory.begin();
+    std::vector<float>::iterator lat_idx = p->latHistory.begin();
+    std::vector<float>::iterator heading_idx = p->headingHistory.begin();
 
     int idx = p->lonHistory.size();
 
-    for(; lon_idx != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
+    for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
 
         float dx, dy;
 
-        pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
+        pxFromLonLat(&dx, &dy, *std::next(lon_idx), *std::next(lat_idx));
 
         screenCoords(&currentX, &currentY, dx, dy);
 
-        pxFromLonLat(&dx, &dy, *(std::prev(lon_idx)), *(std::prev(lat_idx)));
+        pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
 
         screenCoords(&prevX, &prevY, dx, dy);
 
@@ -627,20 +628,19 @@ void View::drawScaleBars()
 }
 
 void View::drawPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
-    std::list<Polygon> polyList = map.getPolys(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    std::vector<Polygon> polyList = map.getPolys(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
-    std::list<Polygon>::iterator currentPolygon;
+    std::vector<Polygon>::iterator currentPolygon;
 
     for (currentPolygon = polyList.begin(); currentPolygon != polyList.end(); ++currentPolygon) {
         int x1,y1,x2,y2;
         float dx,dy;
 
-        std::list<Point>::iterator currentPoint;
-        std::list<Point>::iterator prevPoint;
+        std::vector<Point>::iterator currentPoint;
+        std::vector<Point>::iterator prevPoint = currentPolygon->points.begin();
 
-        for (currentPoint = std::next(currentPolygon->points.begin()); currentPoint != currentPolygon->points.end(); ++currentPoint) {
-            prevPoint = std::prev(currentPoint);
-
+        for (currentPoint = std::next(currentPolygon->points.begin()); currentPoint != currentPolygon->points.end(); ++currentPoint, ++prevPoint) {
+            
             pxFromLonLat(&dx, &dy, prevPoint->lon, prevPoint->lat); 
             screenCoords(&x1, &y1, dx, dy);
 
@@ -656,13 +656,6 @@ void View::drawPolys(float screen_lat_min, float screen_lat_max, float screen_lo
             if(outOfBounds(x2,y2)) {
                 continue;
             }
-
-            //this needs a differnt approach for the std list setup
-
-            // if((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1) < MIN_MAP_FEATURE){
-            //     currentPoint = currentPoint->next;
-            //     continue;
-            // }
 
             float d2 = dx* dx + dy * dy;
 

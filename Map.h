@@ -1,7 +1,7 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include <list>
+#include <vector>
 
 typedef struct Point{
 	float lat;
@@ -14,7 +14,7 @@ typedef struct Polygon{
   	float lon_min;
   	float lon_max;
 
-	std::list<Point> points;
+	std::vector<Point> points;
 	int numPoints;
 
 	Polygon() {
@@ -32,7 +32,7 @@ typedef struct QuadTree{
   	float lon_min;
   	float lon_max;
 
-	std::list<Polygon> polygons;
+	std::vector<Polygon> polygons;
 
 	struct QuadTree *nw;
 	struct QuadTree *sw;
@@ -75,9 +75,9 @@ class Map {
 public:
 	QuadTree root;
 
-	bool QTInsert(QuadTree *tree, Polygon *polygon);
-	std::list<Polygon> getPolysRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
-	std::list<Polygon> getPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
+	bool QTInsert(QuadTree *tree, Polygon *polygon, int depth);
+	std::vector<Polygon> getPolysRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
+	std::vector<Polygon> getPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 
 	Map(); 
 

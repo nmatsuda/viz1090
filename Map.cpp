@@ -2,9 +2,14 @@
 #include <stdio.h>
 #include <cstdlib>
 
-bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
-    // printf("Inserting %d point poly\n", polygon->numPoints);
+bool Map::QTInsert(QuadTree *tree, Polygon *polygon, int depth) {
+  // printf("Inserting %d point poly\n", polygon->numPoints);
 
+  //temp maxdepth for debugging
+  if(depth > 10) {
+        return false;
+  }
+  
   if (!(polygon->lat_min >= tree->lat_min &&
   	polygon->lat_max <= tree->lat_max &&
   	polygon->lon_min >= tree->lon_min &&
@@ -23,7 +28,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
   	tree->nw->lon_max = tree->lon_min + 0.5 * (tree->lon_max - tree->lon_min);
   }
 
-  if (QTInsert(tree->nw,polygon)){
+  if (QTInsert(tree->nw,polygon, depth++)){
   	return true;
   }
 
@@ -36,7 +41,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
   	tree->sw->lon_max = tree->lon_max;
   }
 
-	if (QTInsert(tree->sw,polygon)){
+	if (QTInsert(tree->sw,polygon, depth++)){
 	 return true;
   }
 
@@ -49,7 +54,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
   	tree->ne->lon_max = tree->lon_min + 0.5 * (tree->lon_max - tree->lon_min);
   } 
 
-  if (QTInsert(tree->ne,polygon)){
+  if (QTInsert(tree->ne,polygon, depth++)){
   	return true;	
   } 	
 
@@ -62,7 +67,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
   	tree->se->lon_max = tree->lon_max;
 	}  
 
-  if (QTInsert(tree->se,polygon)){
+  if (QTInsert(tree->se,polygon, depth++)){
   	return true;	
 	} 
 	
@@ -72,8 +77,8 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon) {
 }
 
 
-std::list<Polygon> Map::getPolysRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
-    std::list<Polygon> retPolys;
+std::vector<Polygon> Map::getPolysRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+    std::vector<Polygon> retPolys;
 
     if(tree == NULL) {
         return retPolys;
@@ -88,26 +93,25 @@ std::list<Polygon> Map::getPolysRecursive(QuadTree *tree, float screen_lat_min, 
     }
 
 
-    //for some reason os x clang doesn't like this 
-    retPolys.splice(retPolys.end(),getPolysRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
-    retPolys.splice(retPolys.end(),getPolysRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
-    retPolys.splice(retPolys.end(),getPolysRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
-    retPolys.splice(retPolys.end(),getPolysRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max));
+    std::vector<Polygon> ret;
+    ret = getPolysRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
 
-    float dx, dy;
+    ret = getPolysRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
 
-    std::list<Polygon>::iterator currentPolygon;
+    ret = getPolysRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
 
-    for (currentPolygon = tree->polygons.begin(); currentPolygon != tree->polygons.end(); ++currentPolygon) {
-        if(currentPolygon->points.empty()) {
-          continue;
-        }
+    ret = getPolysRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
 
-        retPolys.push_back(*currentPolygon);
-    }
+    retPolys.insert(retPolys.end(), tree->polygons.begin(), tree->polygons.end());   
+
+    return retPolys;
 }
 
-std::list<Polygon> Map::getPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+std::vector<Polygon> Map::getPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
   return getPolysRecursive(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 };
 
@@ -131,7 +135,7 @@ Map::Map() {
 
   fclose(fileptr);
 
-  printf("Read %d map points.\n",mapPoints_count);
+  printf("Read %d map points.\n",mapPoints_count / 2);
 
   // load quad tree
 
@@ -153,15 +157,14 @@ Map::Map() {
 	}
 
   Polygon *currentPolygon = new Polygon;
-
+printf("A\n");
   for(int i = 0; i < mapPoints_count; i+=2) {
 
     if(mapPoints[i] == 0) {
-        QTInsert(&root, currentPolygon);
+        QTInsert(&root, currentPolygon, 0);
         currentPolygon = new Polygon;
         continue;
     }
-
     currentPolygon->numPoints++;
 
 		Point *currentPoint = new Point;
@@ -183,4 +186,6 @@ Map::Map() {
 
     currentPolygon->points.push_back(*currentPoint);
 	}
+printf("B\n");
+
 }

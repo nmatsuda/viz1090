@@ -39,7 +39,7 @@ The getmap.sh pulls the svg file for the contiguous 48 US states and produces a 
 
 ```
 sudo apt install python3 python3-pip
-pip3 install lxml numpy
+pip3 install lxml numpy tqdm
 ./getmap.sh
 ```
 
