@@ -1,14 +1,11 @@
 #include "AircraftList.h"
 
-static uint64_t mstime(void) {
-    struct timeval tv;
-    uint64_t mst;
+#include <chrono>
 
-    gettimeofday(&tv, nullptr);
-    mst = ((uint64_t)tv.tv_sec)*1000;
-    mst += tv.tv_usec/1000;
-    return mst;
+static uint64_t now() {
+	        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
+
 
 Aircraft *AircraftList::find(uint32_t addr) {
     Aircraft *p = head;
@@ -35,7 +32,6 @@ void AircraftList::update(Modes *modes) {
 
         p = find(a->addr);
         if (!p) {
-            //p = createPlaneObj(a);
             p = new Aircraft(a->addr);
             p->next = head;       
             head = p;      
@@ -51,7 +47,7 @@ void AircraftList::update(Modes *modes) {
         }
 
         p->seen = a->seen;            
-        p->msSeen = mstime();
+        p->msSeen = now();
 
         if((p->seen - p->prev_seen) > 0) {
                 p->messageRate = 1.0 / (double)(p->seen - p->prev_seen);
@@ -68,7 +64,7 @@ void AircraftList::update(Modes *modes) {
         p->lat = a->lat;
 
         if(p->seenLatLon < a->seenLatLon) {
-            p->msSeenLatLon = mstime();
+            p->msSeenLatLon = now();
 
             // p->oldIdx = (p->oldIdx+1) % 32;
 

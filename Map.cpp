@@ -157,7 +157,6 @@ Map::Map() {
 	}
 
   Polygon *currentPolygon = new Polygon;
-printf("A\n");
   for(int i = 0; i < mapPoints_count; i+=2) {
 
     if(mapPoints[i] == 0) {
@@ -171,13 +170,17 @@ printf("A\n");
 
 		if(mapPoints[i] < currentPolygon->lon_min) {
 			currentPolygon->lon_min = mapPoints[i];
-		} else if(mapPoints[i] > currentPolygon->lon_max) {
+		}
+		
+		if(mapPoints[i] > currentPolygon->lon_max) {
 			currentPolygon->lon_max = mapPoints[i];
 		} 
 
 		if(mapPoints[i+1] < currentPolygon->lat_min) {
 			currentPolygon->lat_min = mapPoints[i+1];
-		} else if(mapPoints[i+1] > currentPolygon->lat_max) {
+		}
+		
+		if(mapPoints[i+1] > currentPolygon->lat_max) {
 			currentPolygon->lat_max = mapPoints[i+1];
 		} 
 		
@@ -186,6 +189,5 @@ printf("A\n");
 
     currentPolygon->points.push_back(*currentPoint);
 	}
-printf("B\n");
 
 }

@@ -1,13 +1,13 @@
 #include "Input.h"
 
-static uint64_t mstime(void) {
-    struct timeval tv;
-    uint64_t mst;
+#include <chrono>
 
-    gettimeofday(&tv, NULL);
-    mst = ((uint64_t)tv.tv_sec)*1000;
-    mst += tv.tv_usec/1000;
-    return mst;
+static uint64_t now() {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+static uint64_t elapsed(uint64_t ref) {
+	return now() - ref;
 }
 
 template <typename T> int sgn(T val) {
@@ -54,13 +54,13 @@ void Input::getInput()
 				view->mapTargetMaxDist = 0;
 				view->mapMoved = 1;
 
-				if(mstime() - touchDownTime > 100) {
+				if(elapsed(touchDownTime) > 100) {
 						touchDownTime = 0;
 				}
 				break;
 
 			case SDL_FINGERMOTION:;	
-				if(mstime() - touchDownTime > 150) {
+				if(elapsed(touchDownTime) > 150) {
 					tapCount = 0;
 					touchDownTime = 0;
 				}		
@@ -68,17 +68,19 @@ void Input::getInput()
 				break;
 
 			case SDL_FINGERDOWN:
-				if(mstime() - touchDownTime > 500) {
+				if(elapsed(touchDownTime) > 500) {
 					tapCount = 0;
 				} 
 
-				if(SDL_GetNumTouchFingers(event.tfinger.touchId) == 0) {
-					touchDownTime = mstime();	
+
+				//this finger number is always 1 for down and 0 for up an rpi+hyperpixel??
+				if(SDL_GetNumTouchFingers(event.tfinger.touchId) == 1) {
+					touchDownTime = now();	
 				}
 				break;
 
 			case SDL_FINGERUP:
-				if(mstime() - touchDownTime < 150 && SDL_GetNumTouchFingers(event.tfinger.touchId) == 0) {
+				if(elapsed(touchDownTime) < 150 && SDL_GetNumTouchFingers(event.tfinger.touchId) == 0) {
 					touchx = view->screen_width * event.tfinger.x;
 					touchy = view->screen_height * event.tfinger.y;
 					tapCount++;
@@ -93,10 +95,10 @@ void Input::getInput()
 
 			case SDL_MOUSEBUTTONDOWN:
 				if(event.button.which != SDL_TOUCH_MOUSEID) {
-					if(mstime() - touchDownTime > 500) {
+					if(elapsed(touchDownTime) > 500) {
 						tapCount = 0;
 					}
-					touchDownTime = mstime();
+					touchDownTime = now();
 				}
 				break;
 

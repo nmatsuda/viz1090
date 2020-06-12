@@ -7,14 +7,24 @@
 
 #include "View.h"
 
-static uint64_t mstime(void) {
-    struct timeval tv;
-    uint64_t mst;
+#include <iostream>
 
-    gettimeofday(&tv, NULL);
-    mst = ((uint64_t)tv.tv_sec)*1000;
-    mst += tv.tv_usec/1000;
-    return mst;
+#include <chrono>
+
+static uint64_t now() {
+	        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
+static time_t now_s() {
+	        return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+static uint64_t elapsed(uint64_t ref) {
+	        return now() - ref;
+}
+
+static time_t elapsed_s(time_t ref) {
+	return now_s() - ref;
 }
 
 static float sign(float x) {
@@ -239,7 +249,7 @@ void View::SDL_init() {
     }
 
     window =  SDL_CreateWindow("viz1090",  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index),  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index), screen_width, screen_height, flags);        
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
     mapTexture = SDL_CreateTexture(renderer,
                                SDL_PIXELFORMAT_ARGB8888,
                                SDL_TEXTUREACCESS_TARGET,
@@ -278,11 +288,11 @@ void View::font_init() {
     // todo separate style stuff
     //
 
-    SDL_Color bgcolor = {10,20,30,255};
+    SDL_Color bgcolor = {0,0,0,255};
     SDL_Color greenblue = {236,192,68,255};
     SDL_Color lightblue = {211,208,203,255};
     SDL_Color mediumblue ={110,136,152,255};
-    SDL_Color darkblue =  {46,82,102,255};
+    SDL_Color darkblue =  {23,41,51,255};
 
     style.backgroundColor = bgcolor;
     style.selectedColor = pink;
@@ -522,8 +532,11 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 }
 
 void View::drawTrail(Aircraft *p) {
-    return;
     int currentX, currentY, prevX, prevY;
+
+	if(p->lonHistory.empty()) {
+		return;
+	}
 
     std::vector<float>::iterator lon_idx = p->lonHistory.begin();
     std::vector<float>::iterator lat_idx = p->latHistory.begin();
@@ -534,15 +547,12 @@ void View::drawTrail(Aircraft *p) {
     for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
 
         float dx, dy;
-
-        pxFromLonLat(&dx, &dy, *std::next(lon_idx), *std::next(lat_idx));
-
+        pxFromLonLat(&dx, &dy, *(std::next(lon_idx)), *(std::next(lat_idx)));
         screenCoords(&currentX, &currentY, dx, dy);
 
         pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
 
         screenCoords(&prevX, &prevY, dx, dy);
-
         if(outOfBounds(currentX,currentY)) {
             continue;
         }
@@ -631,11 +641,11 @@ void View::drawPolys(float screen_lat_min, float screen_lat_max, float screen_lo
     std::vector<Polygon> polyList = map.getPolys(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
     std::vector<Polygon>::iterator currentPolygon;
-
+ 
     for (currentPolygon = polyList.begin(); currentPolygon != polyList.end(); ++currentPolygon) {
         int x1,y1,x2,y2;
         float dx,dy;
-
+	
         std::vector<Point>::iterator currentPoint;
         std::vector<Point>::iterator prevPoint = currentPolygon->points.begin();
 
@@ -644,16 +654,12 @@ void View::drawPolys(float screen_lat_min, float screen_lat_max, float screen_lo
             pxFromLonLat(&dx, &dy, prevPoint->lon, prevPoint->lat); 
             screenCoords(&x1, &y1, dx, dy);
 
-            if(outOfBounds(x1,y1)) {
-                continue;
-            }
-
             float d1 = dx* dx + dy * dy;
 
             pxFromLonLat(&dx, &dy, currentPoint->lon, currentPoint->lat); 
             screenCoords(&x2, &y2, dx, dy);
 
-            if(outOfBounds(x2,y2)) {
+            if(outOfBounds(x1,y1) && outOfBounds(x2,y2)) {
                 continue;
             }
 
@@ -703,11 +709,11 @@ void View::drawSignalMarks(Aircraft *p, int x, int y) {
 
     SDL_Color barColor = signalToColor(signalAverage);
 
-    Uint8 seenFade = (Uint8) (255.0 - (mstime() - p->msSeen) / 4.0);
+    Uint8 seenFade = (Uint8) (255.0 - elapsed(p->msSeen) / 4.0);
 
     circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
 
-    seenFade = (Uint8) (255.0 - (mstime() - p->msSeenLatLon) / 4.0);
+    seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
 
     hlineRGBA(renderer, x + mapFontWidth + 5 * screen_uiscale, x + mapFontWidth + 9 * screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
     vlineRGBA(renderer, x + mapFontWidth + 7 * screen_uiscale, y - 2 * screen_uiscale - 5, y + 2 * screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
@@ -1037,7 +1043,6 @@ void View::resolveLabelConflicts() {
 
 void View::drawPlanes() {
     Aircraft *p = appData->aircraftList.head;
-    time_t now = time(NULL);
     SDL_Color planeColor;
 
     // draw all trails first so they don't cover up planes and text
@@ -1063,10 +1068,10 @@ void View::drawPlanes() {
             screenCoords(&x, &y, dx, dy);
 
             if(p->created == 0) {
-                p->created = mstime();
+                p->created = now();
             }
 
-            float age_ms = (float)(mstime() - p->created);
+            float age_ms = (float)elapsed(p->created);
             if(age_ms < 500) {
                 circleRGBA(renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
             } else {
@@ -1083,11 +1088,11 @@ void View::drawPlanes() {
                         float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->timestampHistory.back()));
                         float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->timestampHistory.back()));
 
-                        usex = x + (mstime() - p->msSeenLatLon) * velx;
-                        usey = y + (mstime() - p->msSeenLatLon) * vely;
+                        usex = x + elapsed(p->msSeenLatLon) * velx;
+                        usey = y + elapsed(p->msSeenLatLon) * vely;
                     } 
                         
-                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, (now - p->seen) / (float) DISPLAY_ACTIVE);
+                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->seen)) / (float) DISPLAY_ACTIVE);
                     
                     if(p == selectedAircraft) {
                         planeColor = style.selectedColor;
@@ -1165,8 +1170,8 @@ void View::moveCenterRelative(float dx, float dy) {
         
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
-    dx = -1.0 * (0.75*(double)screen_width / (double)screen_height) * dx * maxDist / (0.95 * scale_factor * 0.5);
-    dy = 1.0 * dy * maxDist / (0.95 * scale_factor * 0.5);
+    dx = -1.0 * dx * maxDist / (0.95 * scale_factor * 0.5);
+    dy =  1.0 * dy * maxDist / (0.95 * scale_factor * 0.5);
 
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
@@ -1209,12 +1214,12 @@ void View::moveMapToTarget() {
 }
 
 void View::drawMouse() {
-    if(mouseMovedTime == 0  || (mstime() - mouseMovedTime) > 1000) {
+    if(mouseMovedTime == 0  || elapsed(mouseMovedTime) > 1000) {
         mouseMovedTime = 0;
         return;
     }
 
-    int alpha =  (int)(255.0f - 255.0f * (float)(mstime() - mouseMovedTime) / 1000.0f);
+    int alpha =  (int)(255.0f - 255.0f * (float)elapsed(mouseMovedTime) / 1000.0f);
 
     lineRGBA(renderer, mousex - 10 * screen_uiscale, mousey,  mousex + 10 * screen_uiscale, mousey, white.r, white.g, white.b, alpha);
     lineRGBA(renderer, mousex,  mousey - 10 * screen_uiscale,  mousex,  mousey + 10 * screen_uiscale, white.r, white.g, white.b, alpha);
@@ -1223,8 +1228,8 @@ void View::drawMouse() {
 void View::drawClick() {
     if(clickx && clicky) {
 
-        int radius = .25 * (mstime() - clickTime);
-        int alpha = 128 - (int)(0.5 * (mstime() - clickTime));
+        int radius = .25 * elapsed(clickTime);
+        int alpha = 128 - (int)(0.5 * elapsed(clickTime));
         if(alpha < 0 ) {
             alpha = 0;
             clickx = 0;
@@ -1237,11 +1242,10 @@ void View::drawClick() {
 
     if(selectedAircraft) {
         // this logic should be in input, register a callback for click?
-        float elapsed  = mstime() - clickTime;
 
         int boxSize;
-        if(elapsed < 300) {
-            boxSize = (int)(20.0 * (1.0 - (1.0 - elapsed / 300.0) * cos(sqrt(elapsed)))); 
+        if(elapsed(clickTime) < 300) {
+            boxSize = (int)(20.0 * (1.0 - (1.0 - float(elapsed(clickTime)) / 300.0) * cos(sqrt(float(elapsed(clickTime)))))); 
         } else {
             boxSize = 20;
         }
@@ -1290,11 +1294,11 @@ void View::registerClick(int tapcount, int x, int y) {
 
     clickx = x;
     clicky = y;
-    clickTime = mstime();
+    clickTime = now();
 }
 
 void View::registerMouseMove(int x, int y) {
-    mouseMovedTime = mstime();
+    mouseMovedTime = now();
     this->mousex = x;
     this->mousey = y;
 }
@@ -1304,7 +1308,7 @@ void View::registerMouseMove(int x, int y) {
 //
 
 void View::draw() {
-    uint64_t drawStartTime = mstime();
+    uint64_t drawStartTime = now();
     
     moveMapToTarget();
     zoomMapToTarget();
@@ -1344,16 +1348,17 @@ void View::draw() {
     drawClick();
 
     char fps[13] = " ";
-    snprintf(fps,13," %.1ffps", 1000.0 / (mstime() - lastFrameTime));
+    snprintf(fps,13," %.1ffps", 1000.0 / elapsed(lastFrameTime));
     drawStringBG(fps, 0,0, mapFont, grey, black);  
 
     SDL_RenderPresent(renderer);  
 
-    lastFrameTime = mstime(); 
+    lastFrameTime = now(); 
 
-    if ((mstime() - drawStartTime) < FRAMETIME) {
-        usleep(1000 * (FRAMETIME - (mstime() - drawStartTime)));
+    if (elapsed(drawStartTime) < FRAMETIME) {
+        usleep(1000 * (FRAMETIME - elapsed(drawStartTime)));
     } 
+
 }
 
 View::View(AppData *appData){

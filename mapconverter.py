@@ -18,11 +18,10 @@ bin_file = open("mapdata.bin", "wb")
 outlist = []
 
 
-precision = 2
-
+resolution = 250
 print("Reading points")
-#for i in tqdm(range(len(polys))):
-for i in range(40):
+for i in tqdm(range(len(polys))):
+#for i in range(40):
 	p = polys[i]
 	currentPoints = (p.attrib['points']).replace(","," ").split()
 
@@ -35,19 +34,22 @@ for i in range(40):
 	temp = []
 
 	for i in range(int(len(currentPoints)/2)):
-		currentPoints[2 * i + 0] = "%.*f" % (precision, float(currentPoints[2 * i + 0]))
-		currentPoints[2 * i + 1] = "%.*f" % (precision, float(currentPoints[2 * i + 1]))
+		#currentPoints[2 * i + 0] = "%.*f" % (precision, float(currentPoints[2 * i + 0]))
+                #currentPoints[2 * i + 1] = "%.*f" % (precision, float(currentPoints[2 * i + 1]))
 
-		if(currentPoints[2 * i + 0] != prevx and currentPoints[2 * i + 1] != prevy):
-			temp.extend([currentPoints[2 * i + 0],currentPoints[2 * i + 1]])
-	
-		prevx = currentPoints[2 * i + 0]
-		prevy = currentPoints[2 * i + 1] 
+            currentPoints[2 * i + 0] = float(int(resolution * float(currentPoints[2 * i + 0]))) / resolution
+            currentPoints[2 * i + 1] = float(int(resolution * float(currentPoints[2 * i + 1]))) / resolution
 
+            if(currentPoints[2 * i + 0] != prevx and currentPoints[2 * i + 1] != prevy):
+                temp.extend([currentPoints[2 * i + 0],currentPoints[2 * i + 1]])
 
-	if(len(currentPoints) > 14): 
-		outlist.extend(temp)
-		outlist.extend(["0","0"])
+            prevx = currentPoints[2 * i + 0]
+            prevy = currentPoints[2 * i + 1] 
+
+	if(len(currentPoints) > 6): #must be at least a triangle
+                outlist.extend(temp)
+                outlist.extend([temp[0],temp[1]])
+                outlist.extend(["0","0"])
 
 
 np.asarray(outlist).astype(np.single).tofile(bin_file)

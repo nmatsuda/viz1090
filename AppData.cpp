@@ -81,31 +81,31 @@ void AppData::updateStatus() {
     msgRateAccumulate = 0.0;    
 
 
-  //   PlaneObj *p = appData.planes;
+     Aircraft *p = aircraftList.head;
 
-  //   while(p) {
-        // unsigned char * pSig       = p->signalLevel;
-        // unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-        //                               pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
+     while(p) {
+         unsigned char * pSig       = p->signalLevel;
+         unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+                                       pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
 
-        // sigAccumulate += signalAverage;
+         sigAccumulate += signalAverage;
         
-        // if (p->lon && p->lat) {
-        //         numVisiblePlanes++;
-        // }    
+         if (p->lon && p->lat) {
+                 numVisiblePlanes++;
+         }    
 
-        // totalCount++;
+         totalCount++;
 
-  //       msgRateAccumulate += p->messageRate; 
+         msgRateAccumulate += p->messageRate; 
 
-  //       p = p->next;
-  //   }
+         p = p->next;
+     }
 
-    // Status.msgRate                = msgRateAccumulate;
-    // Status.avgSig                 = sigAccumulate / (double) totalCount;
-    // Status.numPlanes              = totalCount;
-    // Status.numVisiblePlanes       = numVisiblePlanes;
-    // Status.maxDist                = maxDist;
+     msgRate                = msgRateAccumulate;
+     avgSig                 = sigAccumulate / (double) totalCount;
+     numPlanes              = totalCount;
+     numVisiblePlanes       = numVisiblePlanes;
+     maxDist                = maxDist;
 }
 
 

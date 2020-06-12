@@ -34,18 +34,6 @@
 #include "Input.h"
 #include <cstring> 
 
-//time utility, might change to std::chrono
-uint64_t mstime(void) {
-    struct timeval tv;
-    uint64_t mst;
-
-    gettimeofday(&tv, NULL);
-    mst = ((uint64_t)tv.tv_sec)*1000;
-    mst += tv.tv_usec/1000;
-    return mst;
-}
-
-
 int go = 1;
 
 
