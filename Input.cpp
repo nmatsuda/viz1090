@@ -74,7 +74,7 @@ void Input::getInput()
 
 
 				//this finger number is always 1 for down and 0 for up an rpi+hyperpixel??
-				if(SDL_GetNumTouchFingers(event.tfinger.touchId) == 1) {
+				if(SDL_GetNumTouchFingers(event.tfinger.touchId) <= 1) {
 					touchDownTime = now();	
 				}
 				break;

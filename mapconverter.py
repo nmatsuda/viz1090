@@ -40,7 +40,7 @@ for i in tqdm(range(len(polys))):
             currentPoints[2 * i + 0] = float(int(resolution * float(currentPoints[2 * i + 0]))) / resolution
             currentPoints[2 * i + 1] = float(int(resolution * float(currentPoints[2 * i + 1]))) / resolution
 
-            if(currentPoints[2 * i + 0] != prevx and currentPoints[2 * i + 1] != prevy):
+            if(currentPoints[2 * i + 0] != prevx or currentPoints[2 * i + 1] != prevy):
                 temp.extend([currentPoints[2 * i + 0],currentPoints[2 * i + 1]])
 
             prevx = currentPoints[2 * i + 0]
@@ -48,7 +48,7 @@ for i in tqdm(range(len(polys))):
 
 	if(len(currentPoints) > 6): #must be at least a triangle
                 outlist.extend(temp)
-                outlist.extend([temp[0],temp[1]])
+                #outlist.extend([temp[0],temp[1]])
                 outlist.extend(["0","0"])
 
 
