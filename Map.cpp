@@ -2,23 +2,26 @@
 #include <stdio.h>
 #include <cstdlib>
 
-bool Map::QTInsert(QuadTree *tree, Polygon *polygon, int depth) {
-  // printf("Inserting %d point poly\n", polygon->numPoints);
+bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
+  // printf("Inserting %d point poly\n", line->numPoints);
 
-  //temp maxdepth for debugging
-  if(depth > 10) {
-        return false;
-  }
   
-  if (!(polygon->lat_min >= tree->lat_min &&
-  	polygon->lat_max <= tree->lat_max &&
-  	polygon->lon_min >= tree->lon_min &&
-  	polygon->lon_max <=	 tree->lon_max)) {
-  	// printf("doesnt fit: %f > %f, %f < %f, %f < %f,%f > %f \n",polygon->lat_min, tree->lat_min, polygon->lat_max, tree->lat_max, polygon->lon_min, tree->lon_min, polygon->lon_max,tree->lon_max);
+  if (!(line->lat_min >= tree->lat_min &&
+  	line->lat_max <= tree->lat_max &&
+  	line->lon_min >= tree->lon_min &&
+  	line->lon_max <=	 tree->lon_max)) {
+  	// printf("doesnt fit: %f > %f, %f < %f, %f < %f,%f > %f \n",line->lat_min, tree->lat_min, line->lat_max, tree->lat_max, line->lon_min, tree->lon_min, line->lon_max,tree->lon_max);
 
   	return false;	
   }
         
+
+  // //temp maxdepth for debugging
+  // if(depth > 20) {
+  //   tree->lines.push_back(*line);
+  //   return true;
+  // }
+
   if (tree->nw == NULL) {
   	tree->nw = new QuadTree;
 
@@ -28,7 +31,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon, int depth) {
   	tree->nw->lon_max = tree->lon_min + 0.5 * (tree->lon_max - tree->lon_min);
   }
 
-  if (QTInsert(tree->nw,polygon, depth++)){
+  if (QTInsert(tree->nw, line, depth++)){
   	return true;
   }
 
@@ -41,7 +44,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon, int depth) {
   	tree->sw->lon_max = tree->lon_max;
   }
 
-	if (QTInsert(tree->sw,polygon, depth++)){
+	if (QTInsert(tree->sw, line, depth++)){
 	 return true;
   }
 
@@ -54,7 +57,7 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon, int depth) {
   	tree->ne->lon_max = tree->lon_min + 0.5 * (tree->lon_max - tree->lon_min);
   } 
 
-  if (QTInsert(tree->ne,polygon, depth++)){
+  if (QTInsert(tree->ne, line, depth++)){
   	return true;	
   } 	
 
@@ -67,52 +70,50 @@ bool Map::QTInsert(QuadTree *tree, Polygon *polygon, int depth) {
   	tree->se->lon_max = tree->lon_max;
 	}  
 
-  if (QTInsert(tree->se,polygon, depth++)){
+  if (QTInsert(tree->se, line, depth++)){
   	return true;	
 	} 
 	
-  tree->polygons.push_back(*polygon);
-
+  tree->lines.push_back(*line);
   return true;
 }
 
 
-std::vector<Polygon> Map::getPolysRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
-    std::vector<Polygon> retPolys;
+std::vector<Line> Map::getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+    std::vector<Line> retLines;
 
     if(tree == NULL) {
-        return retPolys;
+        return retLines;
     }
 
     if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
-        return retPolys; 
+        return retLines; 
     }
 
     if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) {
-        return retPolys; 
+        return retLines; 
     }
 
+    std::vector<Line> ret;
+    ret = getLinesRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retLines.insert(retLines.end(), ret.begin(), ret.end());
 
-    std::vector<Polygon> ret;
-    ret = getPolysRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
+    ret = getLinesRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retLines.insert(retLines.end(), ret.begin(), ret.end());
 
-    ret = getPolysRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
+    ret = getLinesRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retLines.insert(retLines.end(), ret.begin(), ret.end());
 
-    ret = getPolysRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
+    ret = getLinesRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    retLines.insert(retLines.end(), ret.begin(), ret.end());
 
-    ret = getPolysRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-    retPolys.insert(retPolys.end(), ret.begin(), ret.end());
+    retLines.insert(retLines.end(), tree->lines.begin(), tree->lines.end());   
 
-    retPolys.insert(retPolys.end(), tree->polygons.begin(), tree->polygons.end());   
-
-    return retPolys;
+    return retLines;
 }
 
-std::vector<Polygon> Map::getPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
-  return getPolysRecursive(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+std::vector<Line> Map::getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+  return getLinesRecursive(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 };
 
 Map::Map() { 
@@ -156,38 +157,19 @@ Map::Map() {
 		} 
 	}
 
-  Polygon *currentPolygon = new Polygon;
-  for(int i = 0; i < mapPoints_count; i+=2) {
+  Point currentPoint;
+  Point nextPoint;
 
-    if(mapPoints[i] == 0) {
-        QTInsert(&root, currentPolygon, 0);
-        currentPolygon = new Polygon;
-        continue;
-    }
-    currentPolygon->numPoints++;
+  for(int i = 0; i < mapPoints_count - 2; i+=2) {
+    if(mapPoints[i] == 0)
+      continue;
+    currentPoint.lon = mapPoints[i];
+    currentPoint.lat = mapPoints[i + 1];
 
-		Point *currentPoint = new Point;
+    nextPoint.lon = mapPoints[i + 2];
+    nextPoint.lat = mapPoints[i + 3];
 
-		if(mapPoints[i] < currentPolygon->lon_min) {
-			currentPolygon->lon_min = mapPoints[i];
-		}
-		
-		if(mapPoints[i] > currentPolygon->lon_max) {
-			currentPolygon->lon_max = mapPoints[i];
-		} 
-
-		if(mapPoints[i+1] < currentPolygon->lat_min) {
-			currentPolygon->lat_min = mapPoints[i+1];
-		}
-		
-		if(mapPoints[i+1] > currentPolygon->lat_max) {
-			currentPolygon->lat_max = mapPoints[i+1];
-		} 
-		
-		currentPoint->lon = mapPoints[i];
-		currentPoint->lat = mapPoints[i+1]; 
-
-    currentPolygon->points.push_back(*currentPoint);
+    QTInsert(&root, new Line(currentPoint, nextPoint), 0);
 	}
 
 }

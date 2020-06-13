@@ -78,8 +78,8 @@ class View {
 		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
 		void drawTrail(Aircraft *p);
 		void drawScaleBars();
-		void drawPolys(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
-		void drawGeography();
+		void drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime);
+		void drawGeography(int left, int top, int right, int bottom, int bailTime);
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);
 		void drawSelectedAircraftText(Aircraft *p);
@@ -107,6 +107,7 @@ class View {
 		bool metric;
 
 	    float maxDist;
+	    float currentMaxDist;
 
 	    float centerLon;
 	    float centerLat;
@@ -116,7 +117,11 @@ class View {
 	    float mapTargetLon;
 
 	    int mapMoved;
+	    int mapRedraw;
+	    float currentLon;
+	    float currentLat;
 	    uint64_t lastFrameTime;
+		uint64_t drawStartTime;
 
 	    Map map;
 
