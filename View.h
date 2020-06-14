@@ -86,6 +86,7 @@ class View {
 		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
 		void drawTrail(Aircraft *p);
 		void drawScaleBars();
+		void drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 		void drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime);
 		void drawGeography(int left, int top, int right, int bottom, int bailTime);
 		void drawSignalMarks(Aircraft *p, int x, int y);

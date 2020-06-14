@@ -13,11 +13,11 @@
 #include <thread>
 
 static uint64_t now() {
-	        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
 static time_t now_s() {
-	        return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 static uint64_t elapsed(uint64_t ref) {
@@ -640,6 +640,54 @@ void View::drawScaleBars()
     lineRGBA(renderer,10,10+5*screen_uiscale,10+scaleBarDist,10+5*screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
 }
 
+void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+    if(tree == NULL) {
+        return;
+    }
+
+    if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
+        return; 
+    }
+
+    if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) {
+        return; 
+    }
+    
+    drawLinesRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    
+    drawLinesRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    
+    drawLinesRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    
+    drawLinesRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+
+    std::vector<Line*>::iterator currentLine;
+
+    for (currentLine = tree->lines.begin(); currentLine != tree->lines.end(); ++currentLine) {
+        int x1,y1,x2,y2;
+        float dx,dy;
+    
+        pxFromLonLat(&dx, &dy, (*currentLine)->start.lon, (*currentLine)->start.lat); 
+        screenCoords(&x1, &y1, dx, dy);
+
+        pxFromLonLat(&dx, &dy, (*currentLine)->end.lon, (*currentLine)->end.lat); 
+        screenCoords(&x2, &y2, dx, dy);
+
+        lineCount++;
+
+        if(outOfBounds(x1,y1) && outOfBounds(x2,y2)) {
+            continue;
+        }
+
+        if(x1 == x2 && y1 == y2) {
+            continue;
+        }
+
+        lineRGBA(renderer, x1, y1, x2, y2, style.mapInnerColor.r, style.mapInnerColor.g, style.mapInnerColor.b, 255);     
+    }
+
+}
+
 void View::drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime) {
     std::vector<Line*> lineList = map.getLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
@@ -682,13 +730,9 @@ void View::drawGeography(int left, int top, int right, int bottom, int bailTime)
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
 
-    // screen_lat_min = 47.4;
-    // screen_lat_max = 47.8;
+    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
-    // screen_lon_min = -122.5;
-    // screen_lon_max = -121.5;
-
-    drawLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, bailTime);    
+    //drawLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, bailTime);    
 }
 
 void View::drawSignalMarks(Aircraft *p, int x, int y) {
@@ -698,14 +742,20 @@ void View::drawSignalMarks(Aircraft *p, int x, int y) {
 
     SDL_Color barColor = signalToColor(signalAverage);
 
-    Uint8 seenFade = (Uint8) (255.0 - elapsed(p->msSeen) / 4.0);
+    Uint8 seenFade;
 
-    circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    if(elapsed(p->msSeen) < 1024) {
+        seenFade = (Uint8) (255.0 - elapsed(p->msSeen) / 4.0);
 
-    seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
+        circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+    }
+    
+    if(elapsed(p->msSeenLatLon) < 1024) {
+        seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
 
-    hlineRGBA(renderer, x + mapFontWidth + 5 * screen_uiscale, x + mapFontWidth + 9 * screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
-    vlineRGBA(renderer, x + mapFontWidth + 7 * screen_uiscale, y - 2 * screen_uiscale - 5, y + 2 * screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
+        hlineRGBA(renderer, x + mapFontWidth + 5 * screen_uiscale, x + mapFontWidth + 9 * screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
+        vlineRGBA(renderer, x + mapFontWidth + 7 * screen_uiscale, y - 2 * screen_uiscale - 5, y + 2 * screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
+    }
 }
 
 
@@ -714,6 +764,11 @@ void View::drawPlaneText(Aircraft *p) {
     int currentCharCount;
 
     int currentLine = 0;
+
+
+    if(elapsed(p->msSeenLatLon) < 500) {
+        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
+    }
 
     if(p->pressure * screen_width< 0.4f) {
         drawSignalMarks(p, p->x, p->y);

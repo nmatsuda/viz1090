@@ -3,50 +3,25 @@
 #include <cstdlib>
 
 bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
-  // printf("Inserting %d point poly\n", line->numPoints);
 
-  
-  // if (!(line->lat_min >= tree->lat_min &&
-  // 	line->lat_max <= tree->lat_max &&
-  // 	line->lon_min >= tree->lon_min &&
-  // 	line->lon_max <=	 tree->lon_max)) {
-  // 	// printf("doesnt fit: %f > %f, %f < %f, %f < %f,%f > %f \n",line->lat_min, tree->lat_min, line->lat_max, tree->lat_max, line->lon_min, tree->lon_min, line->lon_max,tree->lon_max);
-
-  // 	return false;	
-  // }
-        
-  if (!(line->start.lat >= tree->lat_min &&
+  bool startInside = line->start.lat >= tree->lat_min &&
    line->start.lat <= tree->lat_max &&
    line->start.lon >= tree->lon_min &&
-   line->start.lon <=   tree->lon_max) &&
-    !(line->end.lat >= tree->lat_min &&
+   line->start.lon <=   tree->lon_max;
+
+  bool endInside = line->end.lat >= tree->lat_min &&
    line->end.lat <= tree->lat_max &&
    line->end.lon >= tree->lon_min &&
-   line->end.lon <=   tree->lon_max)
-    ) {
+   line->end.lon <=   tree->lon_max;
+
+  if (!startInside && !endInside) {
     return false; 
   }
-        
-
-   if ((line->start.lat >= tree->lat_min &&
-   line->start.lat <= tree->lat_max &&
-   line->start.lon >= tree->lon_min &&
-   line->start.lon <=   tree->lon_max)!=
-    (line->end.lat >= tree->lat_min &&
-   line->end.lat <= tree->lat_max &&
-   line->end.lon >= tree->lon_min &&
-   line->end.lon <=   tree->lon_max)
-    ) {
   
-      tree->lines.push_back(&(*line));
-      return true;
-    }
-        
-  // //temp maxdepth for debugging
-  // if(depth > 20) {
-  //   tree->lines.push_back(*line);
-  //   return true;
-  // }
+  if (startInside != endInside) {
+    tree->lines.push_back(&(*line));
+    return true; 
+  }     
 
   if (tree->nw == NULL) {
   	tree->nw = new QuadTree;
