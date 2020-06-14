@@ -769,7 +769,7 @@ void View::drawPlaneText(Aircraft *p) {
     int currentLine = 0;
 
 
-    float pressure_scale = 1.0f; //this should be set  by a UI slider eventually
+    float pressure_scale = 2.0f; //this should be set  by a UI slider eventually
 
     if(elapsed(p->msSeenLatLon) < 500) {
         circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
@@ -1124,7 +1124,12 @@ void View::drawPlanes() {
 
             float age_ms = elapsed(p->created);
             if(age_ms < 500) {
-                circleRGBA(renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
+                float ratio = age_ms / 500.0f;
+                float radius = (1.0f - ratio * ratio) * screen_width / 8;
+                for(float theta = 0; theta < 2*M_PI; theta += M_PI / 4) {
+                    pixelRGBA(renderer, x + radius * cos(theta), y + radius * sin(theta), style.planeColor.r, style.planeColor.g, style.planeColor.b, 255 * ratio);
+                }
+                // circleRGBA(renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
             } else {
                 if(MODES_ACFLAGS_HEADING_VALID) {
                     int usex = x;   
