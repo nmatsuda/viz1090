@@ -22,6 +22,9 @@
 
 #define PAD 5
 
+#define LATLONMULT 111.195 // 6371.0 * M_PI / 180.0
+
+
 
 
 //
@@ -56,6 +59,11 @@ class View {
 	    uint64_t clickTime;
 	    int clickx;
 	    int clicky;
+
+	    int lineCount;
+
+	    float dx_mult;
+	    float dy_mult;
 
 	    TTF_Font* loadFont(char *name, int size);
 	    void closeFont(TTF_Font *font);

@@ -6,16 +6,42 @@ bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
   // printf("Inserting %d point poly\n", line->numPoints);
 
   
-  if (!(line->lat_min >= tree->lat_min &&
-  	line->lat_max <= tree->lat_max &&
-  	line->lon_min >= tree->lon_min &&
-  	line->lon_max <=	 tree->lon_max)) {
-  	// printf("doesnt fit: %f > %f, %f < %f, %f < %f,%f > %f \n",line->lat_min, tree->lat_min, line->lat_max, tree->lat_max, line->lon_min, tree->lon_min, line->lon_max,tree->lon_max);
+  // if (!(line->lat_min >= tree->lat_min &&
+  // 	line->lat_max <= tree->lat_max &&
+  // 	line->lon_min >= tree->lon_min &&
+  // 	line->lon_max <=	 tree->lon_max)) {
+  // 	// printf("doesnt fit: %f > %f, %f < %f, %f < %f,%f > %f \n",line->lat_min, tree->lat_min, line->lat_max, tree->lat_max, line->lon_min, tree->lon_min, line->lon_max,tree->lon_max);
 
-  	return false;	
+  // 	return false;	
+  // }
+        
+  if (!(line->start.lat >= tree->lat_min &&
+   line->start.lat <= tree->lat_max &&
+   line->start.lon >= tree->lon_min &&
+   line->start.lon <=   tree->lon_max) &&
+    !(line->end.lat >= tree->lat_min &&
+   line->end.lat <= tree->lat_max &&
+   line->end.lon >= tree->lon_min &&
+   line->end.lon <=   tree->lon_max)
+    ) {
+    return false; 
   }
         
 
+   if ((line->start.lat >= tree->lat_min &&
+   line->start.lat <= tree->lat_max &&
+   line->start.lon >= tree->lon_min &&
+   line->start.lon <=   tree->lon_max)!=
+    (line->end.lat >= tree->lat_min &&
+   line->end.lat <= tree->lat_max &&
+   line->end.lon >= tree->lon_min &&
+   line->end.lon <=   tree->lon_max)
+    ) {
+  
+      tree->lines.push_back(&(*line));
+      return true;
+    }
+        
   // //temp maxdepth for debugging
   // if(depth > 20) {
   //   tree->lines.push_back(*line);
@@ -74,13 +100,13 @@ bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
   	return true;	
 	} 
 	
-  tree->lines.push_back(*line);
+  tree->lines.push_back(&(*line));
   return true;
 }
 
 
-std::vector<Line> Map::getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
-    std::vector<Line> retLines;
+std::vector<Line*> Map::getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+    std::vector<Line*> retLines;
 
     if(tree == NULL) {
         return retLines;
@@ -94,7 +120,7 @@ std::vector<Line> Map::getLinesRecursive(QuadTree *tree, float screen_lat_min, f
         return retLines; 
     }
 
-    std::vector<Line> ret;
+    std::vector<Line*> ret;
     ret = getLinesRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
     retLines.insert(retLines.end(), ret.begin(), ret.end());
 
@@ -109,10 +135,30 @@ std::vector<Line> Map::getLinesRecursive(QuadTree *tree, float screen_lat_min, f
 
     retLines.insert(retLines.end(), tree->lines.begin(), tree->lines.end());   
 
+    // Debug quadtree
+    // Point TL, TR, BL, BR;
+
+    // TL.lat = tree->lat_min;
+    // TL.lon = tree->lon_min;
+
+    // TR.lat = tree->lat_max;
+    // TR.lon = tree->lon_min;
+
+    // BL.lat = tree->lat_min;
+    // BL.lon = tree->lon_max;
+
+    // BR.lat = tree->lat_max;
+    // BR.lon = tree->lon_max;
+
+    // retLines.push_back(new Line(TL,TR));
+    // retLines.push_back(new Line(TR,BR));
+    // retLines.push_back(new Line(BL,BR));
+    // retLines.push_back(new Line(TL,BL));
+
     return retLines;
 }
 
-std::vector<Line> Map::getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+std::vector<Line*> Map::getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
   return getLinesRecursive(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 };
 
@@ -162,6 +208,12 @@ Map::Map() {
 
   for(int i = 0; i < mapPoints_count - 2; i+=2) {
     if(mapPoints[i] == 0)
+      continue;
+    if(mapPoints[i + 1] == 0)
+      continue;
+    if(mapPoints[i + 2] == 0)
+      continue;
+    if(mapPoints[i + 3] == 0)
       continue;
     currentPoint.lon = mapPoints[i];
     currentPoint.lat = mapPoints[i + 1];

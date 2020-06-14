@@ -34,7 +34,7 @@ typedef struct QuadTree{
   	float lon_min;
   	float lon_max;
 
-	std::vector<Line> lines;
+	std::vector<Line*> lines;
 
 	struct QuadTree *nw;
 	struct QuadTree *sw;
@@ -78,8 +78,8 @@ public:
 	QuadTree root;
 
 	bool QTInsert(QuadTree *tree, Line *line, int depth);
-	std::vector<Line> getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
-	std::vector<Line> getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
+	std::vector<Line*> getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
+	std::vector<Line*> getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 
 	Map(); 
 

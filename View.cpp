@@ -154,7 +154,8 @@ SDL_Color hsv2SDLColor(float h, float s, float v)
 
 int View::screenDist(float d) {
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
-    return round(0.95 * scale_factor * 0.5 * fabs(d) / maxDist);        
+    // return round(0.95 * scale_factor * 0.5 * fabs(d) / maxDist);        
+    return round(scale_factor * 0.5 * fabs(d) / maxDist);        
 }
 
 void View::pxFromLonLat(float *dx, float *dy, float lon, float lat) {
@@ -164,8 +165,9 @@ void View::pxFromLonLat(float *dx, float *dy, float lon, float lat) {
         return;
     }
 
-    *dx = 6371.0 * (lon - centerLon) * M_PI / 180.0f * cos(((lat + centerLat)/2.0f) * M_PI / 180.0f);
-    *dy = 6371.0 * (lat - centerLat) * M_PI / 180.0f;
+    // for accurate reprojection use the extra cos term
+    *dx = LATLONMULT * (lon - centerLon) * cos(((lat + centerLat)/2.0f) * M_PI / 180.0f);
+    *dy = LATLONMULT * (lat - centerLat);
 }
 
 void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
@@ -639,9 +641,9 @@ void View::drawScaleBars()
 }
 
 void View::drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime) {
-    std::vector<Line> lineList = map.getLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    std::vector<Line*> lineList = map.getLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
-    std::vector<Line>::iterator currentLine;
+    std::vector<Line*>::iterator currentLine;
  
     for (currentLine = lineList.begin(); currentLine != lineList.end(); ++currentLine) {
         int x1,y1,x2,y2;
@@ -653,13 +655,19 @@ void View::drawLines(float screen_lat_min, float screen_lat_max, float screen_lo
             }
         }
 	
-        pxFromLonLat(&dx, &dy, currentLine->start.lon, currentLine->start.lat); 
+        pxFromLonLat(&dx, &dy, (*currentLine)->start.lon, (*currentLine)->start.lat); 
         screenCoords(&x1, &y1, dx, dy);
 
-        pxFromLonLat(&dx, &dy, currentLine->end.lon, currentLine->end.lat); 
+        pxFromLonLat(&dx, &dy, (*currentLine)->end.lon, (*currentLine)->end.lat); 
         screenCoords(&x2, &y2, dx, dy);
 
+        lineCount++;
+
         if(outOfBounds(x1,y1) && outOfBounds(x2,y2)) {
+            continue;
+        }
+
+        if(x1 == x2 && y1 == y2) {
             continue;
         }
 
@@ -673,6 +681,12 @@ void View::drawGeography(int left, int top, int right, int bottom, int bailTime)
 
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
+
+    // screen_lat_min = 47.4;
+    // screen_lat_max = 47.8;
+
+    // screen_lon_min = -122.5;
+    // screen_lon_max = -121.5;
 
     drawLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, bailTime);    
 }
@@ -1290,7 +1304,11 @@ void View::draw() {
 
     //updatePlanes();
 
-    if(mapRedraw && !mapMoved) {
+    lineCount = 0;
+
+    if(mapMoved) {
+    //if(mapRedraw && !mapMoved) {
+
         SDL_SetRenderTarget(renderer, mapTexture);
         
         SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
@@ -1317,58 +1335,58 @@ void View::draw() {
 
     SDL_RenderClear(renderer);
 
-    int shiftx = 0;
-    int shifty = 0;
+    // int shiftx = 0;
+    // int shifty = 0;
 
-    if(mapMoved) {
-        float dx, dy;
-        int x1,y1, x2, y2;
-        pxFromLonLat(&dx, &dy, currentLon, currentLat);
-        screenCoords(&x1, &y1, dx, dy);
-        pxFromLonLat(&dx, &dy, centerLon, centerLat);
-        screenCoords(&x2, &y2, dx, dy);
+    // if(mapMoved) {
+    //     float dx, dy;
+    //     int x1,y1, x2, y2;
+    //     pxFromLonLat(&dx, &dy, currentLon, currentLat);
+    //     screenCoords(&x1, &y1, dx, dy);
+    //     pxFromLonLat(&dx, &dy, centerLon, centerLat);
+    //     screenCoords(&x2, &y2, dx, dy);
 
-        shiftx = x1-x2; 
-        shifty = y1-y2;
+    //     shiftx = x1-x2; 
+    //     shifty = y1-y2;
 
-        mapRedraw = 1;
+    //     mapRedraw = 1;
 
-        SDL_Rect dest;
+    //     SDL_Rect dest;
 
-        dest.x = shiftx + (screen_width / 2) * (1 - currentMaxDist / maxDist);
-        dest.y = shifty + (screen_height / 2) * (1 - currentMaxDist / maxDist);
-        dest.w = screen_width * currentMaxDist / maxDist;
-        dest.h = screen_height * currentMaxDist / maxDist;
+    //     dest.x = shiftx + (screen_width / 2) * (1 - currentMaxDist / maxDist);
+    //     dest.y = shifty + (screen_height / 2) * (1 - currentMaxDist / maxDist);
+    //     dest.w = screen_width * currentMaxDist / maxDist;
+    //     dest.h = screen_height * currentMaxDist / maxDist;
 
-        //left
-        if(dest.x > 0) {
-           drawGeography(0, 0, dest.x, screen_height, FRAMETIME / 4);    
-        }        
+    //     //left
+    //     if(dest.x > 0) {
+    //        drawGeography(0, 0, dest.x, screen_height, FRAMETIME / 4);    
+    //     }        
 
-        //top
-        if(dest.y > 0) {
-            drawGeography(0, screen_height - dest.y, screen_width, screen_height, FRAMETIME / 4);    
-        }
+    //     //top
+    //     if(dest.y > 0) {
+    //         drawGeography(0, screen_height - dest.y, screen_width, screen_height, FRAMETIME / 4);    
+    //     }
 
-        //right
-        if(dest.x + dest.w < screen_width) {
-           drawGeography(dest.x + dest.w, 0, screen_width, screen_height, FRAMETIME / 4);    
-        }        
+    //     //right
+    //     if(dest.x + dest.w < screen_width) {
+    //        drawGeography(dest.x + dest.w, 0, screen_width, screen_height, FRAMETIME / 4);    
+    //     }        
 
-        //bottom
-        if(dest.y + dest.h < screen_height) {
-            drawGeography(0, 0, screen_width, screen_height - dest.y - dest.h, FRAMETIME / 4);    
-        }        
+    //     //bottom
+    //     if(dest.y + dest.h < screen_height) {
+    //         drawGeography(0, 0, screen_width, screen_height - dest.y - dest.h, FRAMETIME / 4);    
+    //     }        
 
-        //attempt rest before bailing
-        //drawGeography(dest.x, screen_height - dest.y, dest.x + dest.w, screen_height - dest.y - dest.h, 1);    
+    //     //attempt rest before bailing
+    //     //drawGeography(dest.x, screen_height - dest.y, dest.x + dest.w, screen_height - dest.y - dest.h, 1);    
 
-        SDL_RenderCopy(renderer, mapTexture, NULL, &dest);
+    //     SDL_RenderCopy(renderer, mapTexture, NULL, &dest);
 
-        mapMoved = 0;
-    } else {
+    //     mapMoved = 0;
+    // } else {
         SDL_RenderCopy(renderer, mapTexture, NULL, NULL);
-    }
+    //}
 
 
     drawScaleBars();
@@ -1377,8 +1395,8 @@ void View::draw() {
     drawMouse();
     drawClick();
 
-    char fps[13] = " ";
-    snprintf(fps,13," %.1ffps", 1000.0 / elapsed(lastFrameTime));
+    char fps[40] = " ";
+    snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
     drawStringBG(fps, 0,0, mapFont, grey, black);  
 
     SDL_RenderPresent(renderer);  
