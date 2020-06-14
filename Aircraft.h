@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <vector> 
+#include <chrono>
 
 class Aircraft {
 public:	
@@ -20,16 +21,17 @@ public:
     
     //history
 
-    std::vector <float>   lonHistory, latHistory, headingHistory, timestampHistory;
+    std::vector <float>   lonHistory, latHistory, headingHistory;
+    std::vector <std::chrono::high_resolution_clock::time_point> timestampHistory;
 
     // float           oldLon[TRAIL_LENGTH];
     // float           oldLat[TRAIL_LENGTH];
     // float           oldHeading[TRAIL_LENGTH];
     // time_t          oldSeen[TRAIL_LENGTH];
     // uint8_t         oldIdx; 
-    uint64_t        created;
-    uint64_t        msSeen;
-    uint64_t        msSeenLatLon;
+    std::chrono::high_resolution_clock::time_point        created;
+    std::chrono::high_resolution_clock::time_point        msSeen;
+    std::chrono::high_resolution_clock::time_point        msSeenLatLon;
     int             live;
 
     struct Aircraft *next;        // Next aircraft in our linked list

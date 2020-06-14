@@ -8,24 +8,21 @@
 #include "View.h"
 
 #include <iostream>
-
-#include <chrono>
 #include <thread>
 
-static uint64_t now() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+using fmilliseconds = std::chrono::duration<float, std::milli>;
+using fseconds = std::chrono::duration<float>;
+
+static std::chrono::high_resolution_clock::time_point now() {
+    return std::chrono::high_resolution_clock::now();
 }
 
-static time_t now_s() {
-    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+static float elapsed(std::chrono::high_resolution_clock::time_point ref) {
+	        return (fmilliseconds {now() - ref}).count();
 }
 
-static uint64_t elapsed(uint64_t ref) {
-	        return now() - ref;
-}
-
-static time_t elapsed_s(time_t ref) {
-	return now_s() - ref;
+static  float elapsed_s(std::chrono::high_resolution_clock::time_point ref) {
+	return  (fseconds {    now() - ref}).count();
 }
 
 static float sign(float x) {
@@ -536,10 +533,17 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 
 void View::drawTrail(Aircraft *p) {
     int currentX, currentY, prevX, prevY;
-
-	if(p->lonHistory.empty()) {
+    float dx, dy;   
+	
+    if(p->lonHistory.empty()) {
 		return;
 	}
+
+
+    // pxFromLonLat(&dx, &dy, p->lonHistory.back(), p->latHistory.back());
+    // screenCoords(&currentX, &currentY, dx, dy);
+    // circleRGBA(renderer, currentX, currentY, 4 * screen_uiscale, 255,255,255,127);
+
 
     std::vector<float>::iterator lon_idx = p->lonHistory.begin();
     std::vector<float>::iterator lat_idx = p->latHistory.begin();
@@ -549,7 +553,6 @@ void View::drawTrail(Aircraft *p) {
 
     for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
 
-        float dx, dy;
         pxFromLonLat(&dx, &dy, *(std::next(lon_idx)), *(std::next(lat_idx)));
         screenCoords(&currentX, &currentY, dx, dy);
 
@@ -749,7 +752,7 @@ void View::drawSignalMarks(Aircraft *p, int x, int y) {
 
         circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
     }
-    
+
     if(elapsed(p->msSeenLatLon) < 1024) {
         seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
 
@@ -766,11 +769,13 @@ void View::drawPlaneText(Aircraft *p) {
     int currentLine = 0;
 
 
+    float pressure_scale = 1.0f; //this should be set  by a UI slider eventually
+
     if(elapsed(p->msSeenLatLon) < 500) {
         circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
     }
 
-    if(p->pressure * screen_width< 0.4f) {
+    if(p->pressure * screen_width < pressure_scale) {
         drawSignalMarks(p, p->x, p->y);
 
         char flight[10] = " ";
@@ -784,7 +789,7 @@ void View::drawPlaneText(Aircraft *p) {
         }
     }
 
-  if(p->pressure * screen_width < 0.2f) {
+  if(p->pressure * screen_width < 0.5f * pressure_scale) {
         char alt[10] = " ";
         if (metric) {
             currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
@@ -850,6 +855,10 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     int currentCharCount;
 
     int currentLine = 0;
+
+    if(elapsed(p->msSeenLatLon) < 500) {
+        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
+    }
 
     drawSignalMarks(p, x, y);
 
@@ -1092,7 +1101,9 @@ void View::drawPlanes() {
     // draw all trails first so they don't cover up planes and text
     // also find closest plane to selection point
     while(p) {
-        drawTrail(p);
+        if (p->lon && p->lat) {
+            drawTrail(p);   
+        }
         p = p->next;
     }
 
@@ -1111,11 +1122,7 @@ void View::drawPlanes() {
             pxFromLonLat(&dx, &dy, p->lon, p->lat);
             screenCoords(&x, &y, dx, dy);
 
-            if(p->created == 0) {
-                p->created = now();
-            }
-
-            float age_ms = (float)elapsed(p->created);
+            float age_ms = elapsed(p->created);
             if(age_ms < 500) {
                 circleRGBA(renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
             } else {
@@ -1123,20 +1130,32 @@ void View::drawPlanes() {
                     int usex = x;   
                     int usey = y;
 
-                    if(p->seenLatLon > p->timestampHistory.back()) {
-                        int oldx, oldy;
+                    //draw predicted position
+                    // if(p->timestampHistory.size() > 2) {
 
-                        pxFromLonLat(&dx, &dy, p->lonHistory.back(), p->latHistory.back());
-                        screenCoords(&oldx, &oldy, dx, dy);
+                    //     int x1, y1, x2, y2;
 
-                        float velx = (x - oldx) / (1000.0 * (p->seenLatLon - p->timestampHistory.back()));
-                        float vely = (y - oldy) / (1000.0 * (p->seenLatLon - p->timestampHistory.back()));
-
-                        usex = x + elapsed(p->msSeenLatLon) * velx;
-                        usey = y + elapsed(p->msSeenLatLon) * vely;
-                    } 
+                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-1], p->latHistory.end()[-1]);
+                    //     screenCoords(&x1, &y1, dx, dy);
                         
-                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->seen)) / (float) DISPLAY_ACTIVE);
+                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-2], p->latHistory.end()[-2]);
+                    //     screenCoords(&x2, &y2, dx, dy);
+
+                    //     //printf("latlon: [%f %f] -> [%f %f], px: [%d %d] -> [%d  %d]\n",p->lonHistory.end()[-1], p->latHistory.end()[-1],p->lonHistory.end()[-2], p->latHistory.end()[-2], x1,y1,x2,y2);
+
+
+                    //     float velx = float(x1 - x2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
+                    //     float vely = float(y1 - y2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
+
+                    //     //printf("diff: %f\n",(fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count());
+
+                    //     //printf("%f %f, %d - %d \n", velx,vely,p->timestampHistory.end()[-1], p->timestampHistory.end()[-2]);
+
+                    //     usex = x + float(elapsed(p->msSeenLatLon)) * velx;
+                    //     usey = y + float(elapsed(p->msSeenLatLon)) * vely;
+                    // }
+
+                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->msSeen)) / (float) DISPLAY_ACTIVE);
                     
                     if(p == selectedAircraft) {
                         planeColor = style.selectedColor;
@@ -1258,8 +1277,12 @@ void View::moveMapToTarget() {
 }
 
 void View::drawMouse() {
-    if(mouseMovedTime == 0  || elapsed(mouseMovedTime) > 1000) {
-        mouseMovedTime = 0;
+    if(!mouseMoved) {
+        return;
+    }
+    
+    if(elapsed(mouseMovedTime) > 1000) {
+        mouseMoved = false;
         return;
     }
 
@@ -1342,6 +1365,7 @@ void View::registerClick(int tapcount, int x, int y) {
 }
 
 void View::registerMouseMove(int x, int y) {
+    mouseMoved = true;
     mouseMovedTime = now();
     this->mousex = x;
     this->mousey = y;
@@ -1457,7 +1481,7 @@ void View::draw() {
     SDL_RenderPresent(renderer);  
 
    if (elapsed(drawStartTime) < FRAMETIME) {
-        std::this_thread::sleep_for(std::chrono::milliseconds((FRAMETIME - elapsed(drawStartTime))));
+        std::this_thread::sleep_for(fmilliseconds{FRAMETIME} - (now() - drawStartTime));
     } 
 
     lastFrameTime = now(); 

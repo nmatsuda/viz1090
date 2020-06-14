@@ -2,7 +2,9 @@
 #define INPUT_H
 
 #include "AppData.h"
-#include "View.h"
+#include "View.h" 
+
+#include <chrono>
 
 class Input {
 public:
@@ -14,7 +16,7 @@ public:
 	View *view;
 	AppData *appData;
 
-	uint64_t touchDownTime;
+	std::chrono::high_resolution_clock::time_point touchDownTime;
     int touchx;
     int touchy;
     int tapCount;

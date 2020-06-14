@@ -1,0 +1,172 @@
+net_io.c:            while ((p) && (p->next != c)) {
+net_io.c:                p = p->next;
+net_io.c:                p->next = c->next;
+Binary file .git/objects/pack/pack-bf860161866f3e6c65f8f17c93e90565fe339dff.idx matches
+Binary file .git/objects/pack/pack-bf860161866f3e6c65f8f17c93e90565fe339dff.pack matches
+AircraftList.cpp:        if (p->addr == addr) return (p);
+AircraftList.cpp:        p = p->next;
+AircraftList.cpp:        p->live = 0;
+AircraftList.cpp:        p = p->next;
+AircraftList.cpp:            p->next = head;       
+AircraftList.cpp:            p->prev_seen = p->seen;
+AircraftList.cpp:        p->live = 1;
+AircraftList.cpp:        if(p->seen == a->seen) {
+AircraftList.cpp:        p->seen = a->seen;            
+AircraftList.cpp:        p->msSeen = now();
+AircraftList.cpp:        if((p->seen - p->prev_seen) > 0) {
+AircraftList.cpp:                p->messageRate = 1.0 / (double)(p->seen - p->prev_seen);
+AircraftList.cpp:        memcpy(p->flight, a->flight, sizeof(p->flight));
+AircraftList.cpp:        memcpy(p->signalLevel, a->signalLevel, sizeof(p->signalLevel));
+AircraftList.cpp:        p->altitude = a->altitude;
+AircraftList.cpp:        p->speed =  a->speed;          
+AircraftList.cpp:        p->track = a->track;         
+AircraftList.cpp:        p->vert_rate = a->vert_rate;    
+AircraftList.cpp:        p->lon = a->lon;
+AircraftList.cpp:        p->lat = a->lat;
+AircraftList.cpp:        if(p->seenLatLon < a->seenLatLon) {
+AircraftList.cpp:            p->msSeenLatLon = now();
+AircraftList.cpp:            // p->oldIdx = (p->oldIdx+1) % 32;
+AircraftList.cpp:            // p->oldLon[p->oldIdx] = p->lon;
+AircraftList.cpp:            // p->oldLat[p->oldIdx] = p->lat;
+AircraftList.cpp:            p->lonHistory.push_back(p->lon);
+AircraftList.cpp:            p->latHistory.push_back(p->lat);
+AircraftList.cpp:            p->headingHistory.push_back(p->track);
+AircraftList.cpp:            p->timestampHistory.push_back(p->msSeenLatLon);
+AircraftList.cpp:            // p->oldHeading[p->oldIdx] = p->track;
+AircraftList.cpp:            // p->oldSeen[p->oldIdx] = p->seenLatLon;
+AircraftList.cpp:        p->seenLatLon = a->seenLatLon;
+AircraftList.cpp:        if(!p->live) {
+AircraftList.cpp:                head = p->next; 
+AircraftList.cpp:                prev->next = p->next; 
+AircraftList.cpp:            p = p->next;
+Binary file mapdata.bin matches
+Binary file viz1090 matches
+View.cpp:	if(p->lonHistory.empty()) {
+View.cpp:    std::vector<float>::iterator lon_idx = p->lonHistory.begin();
+View.cpp:    std::vector<float>::iterator lat_idx = p->latHistory.begin();
+View.cpp:    std::vector<float>::iterator heading_idx = p->headingHistory.begin();
+View.cpp:    int idx = p->lonHistory.size();
+View.cpp:    for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
+View.cpp:        // float age = pow(1.0 - (float)idx / (float)p->lonHistory.size(), 2.2);
+View.cpp:        float age = 1.0 - (float)idx / (float)p->lonHistory.size();
+View.cpp:    unsigned char * pSig       = p->signalLevel;
+View.cpp:    if(elapsed(p->msSeen) < 1024) {
+View.cpp:        seenFade = (Uint8) (255.0 - elapsed(p->msSeen) / 4.0);
+View.cpp:    if(elapsed(p->msSeenLatLon) < 1024) {
+View.cpp:        seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
+View.cpp:    if(elapsed(p->msSeenLatLon) < 500) {
+View.cpp:        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
+View.cpp:    if(p->pressure * screen_width < pressure_scale) {
+View.cpp:        drawSignalMarks(p, p->x, p->y);
+View.cpp:        maxCharCount = snprintf(flight,10," %s", p->flight);
+View.cpp:            drawStringBG(flight, p->x, p->y, mapBoldFont, white, black); 
+View.cpp:            //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
+View.cpp:            //drawString(flight, p->x, p->y, mapBoldFont, white); 
+View.cpp:  if(p->pressure * screen_width < 0.5f * pressure_scale) {
+View.cpp:            currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
+View.cpp:            currentCharCount = snprintf(alt,10," %d'", p->altitude); 
+View.cpp:            drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, grey, black);   
+View.cpp:            currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
+View.cpp:            currentCharCount = snprintf(speed,10," %dmph", p->speed);
+View.cpp:            drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, grey, black);  
+View.cpp:        Sint16 vx[4] = {p->cx, p->cx + (p->x - p->cx) / 2, p->x, p->x};
+View.cpp:        Sint16 vy[4] = {p->cy, p->cy + (p->y - p->cy) / 2, p->y - mapFontHeight, p->y};
+View.cpp:        if(p->cy > p->y + currentLine * mapFontHeight) {
+View.cpp:            vy[2] = p->y + currentLine * mapFontHeight + mapFontHeight;
+View.cpp:            vy[3] = p->y + currentLine * mapFontHeight;
+View.cpp:        thickLineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,screen_uiscale,200,200,200,SDL_ALPHA_OPAQUE);
+View.cpp:    p->w = maxCharCount * mapFontWidth;
+View.cpp:    p->h = currentLine * mapFontHeight;         
+View.cpp:    int x = p->cx - 20;
+View.cpp:    int y = p->cy + 22;
+View.cpp:    if(elapsed(p->msSeenLatLon) < 500) {
+View.cpp:        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
+View.cpp:    maxCharCount = snprintf(flight,10," %s", p->flight);
+View.cpp:        //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
+View.cpp:        //drawString(flight, p->x, p->y, mapBoldFont, white); 
+View.cpp:        currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
+View.cpp:        currentCharCount = snprintf(alt,10," %d'", p->altitude); 
+View.cpp:        currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
+View.cpp:        currentCharCount = snprintf(speed,10," %dmph", p->speed);
+View.cpp:        int p_left = p->x - 10 * screen_uiscale;
+View.cpp:        int p_right = p->x + p->w + 10 * screen_uiscale;
+View.cpp:        int p_top = p->y - 10 * screen_uiscale;
+View.cpp:        int p_bottom = p->y + p->h + 10 * screen_uiscale;
+View.cpp:        //rectangleRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
+View.cpp:        //lineRGBA(renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);
+View.cpp:        p->ddox = 0;
+View.cpp:        p->ddoy = 0;
+View.cpp:        float o_mag = sqrt(p->ox*p->ox + p->oy*p->oy);
+View.cpp:            p->ddox -= p->ox / o_mag * spring_force * (o_mag - spring_length);
+View.cpp:            p->ddoy -= p->oy / o_mag * spring_force * (o_mag - spring_length);
+View.cpp:            p->ox += (float)(10 * screen_uiscale - p_left);
+View.cpp:            p->ox -= (float)(p_right - (screen_width - 10 * screen_uiscale));
+View.cpp:            p->oy += (float)(10 * screen_uiscale - p_top);
+View.cpp:            p->oy -= (float)(p_bottom - (screen_height - 10 * screen_uiscale));
+View.cpp:        p->pressure = 0;
+View.cpp:            if(check_p->addr != p->addr) {
+View.cpp:                int check_left = check_p->x - 5 * screen_uiscale;
+View.cpp:                int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
+View.cpp:                int check_top = check_p->y - 5 * screen_uiscale; 
+View.cpp:                int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
+View.cpp:                p->pressure += 1.0f / ((check_p->cx - p->cx) * (check_p->cx - p->cx) + (check_p->cy - p->cy) * (check_p->cy - p->cy));
+View.cpp:                    check_p->ddox -= label_force * (float)(check_left - p_right);   
+View.cpp:                    check_p->ddox -= label_force * (float)(check_right - p_left);   
+View.cpp:                    check_p->ddoy -= label_force * (float)(check_top - p_bottom);   
+View.cpp:                    check_p->ddoy -= label_force * (float)(check_bottom - p_top);   
+View.cpp:        p_left = p->x - 5 * screen_uiscale;
+View.cpp:        p_right = p->x + 5 * screen_uiscale;
+View.cpp:        p_top = p->y - 5 * screen_uiscale;
+View.cpp:        p_bottom = p->y + 5 * screen_uiscale;
+View.cpp:            int check_left = check_p->x - 5 * screen_uiscale;
+View.cpp:            int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
+View.cpp:            int check_top = check_p->y - 5 * screen_uiscale; 
+View.cpp:            int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
+View.cpp:                check_p->ddox -= plane_force * (float)(check_left - p_right);   
+View.cpp:                check_p->ddox -= plane_force * (float)(check_right - p_left);   
+View.cpp:                check_p->ddoy -= plane_force * (float)(check_top - p_bottom);   
+View.cpp:                check_p->ddoy -= plane_force * (float)(check_bottom - p_top);   
+View.cpp:        p = p->next;
+View.cpp:        p->dox += p->ddox;
+View.cpp:        p->doy += p->ddoy;
+View.cpp:        p->dox *= damping_force;
+View.cpp:        p->doy *= damping_force;
+View.cpp:        if(fabs(p->dox) > 10.0f) {
+View.cpp:            p->dox = sign(p->dox) * 10.0f;
+View.cpp:        if(fabs(p->doy) > 10.0f) {
+View.cpp:            p->doy = sign(p->doy) * 10.0f;
+View.cpp:        if(fabs(p->dox) < 1.0f) {
+View.cpp:            p->dox = 0;
+View.cpp:        if(fabs(p->doy) < 1.0f) {
+View.cpp:            p->doy = 0;
+View.cpp:        p->ox += p->dox;
+View.cpp:        p->oy += p->doy;
+View.cpp:        p->x = p->cx + (int)round(p->ox);
+View.cpp:        p->y = p->cy + (int)round(p->oy);
+View.cpp:        p = p->next;
+View.cpp:        p = p->next;
+View.cpp:        if (p->lon && p->lat) {
+View.cpp:            pxFromLonLat(&dx, &dy, p->lon, p->lat);
+View.cpp:            if(p->created == 0) {
+View.cpp:                p->created = now();
+View.cpp:            float age_ms = (float)elapsed(p->created);
+View.cpp:                    if(p->msSeenLatLon > p->timestampHistory.back()) {
+View.cpp:                        pxFromLonLat(&dx, &dy, p->lonHistory.back(), p->latHistory.back());
+View.cpp:                        float velx = (x - oldx) / (p->msSeenLatLon - p->timestampHistory.back());
+View.cpp:                        float vely = (y - oldy) / (p->msSeenLatLon - p->timestampHistory.back());
+View.cpp:                        usex = x + elapsed(p->msSeenLatLon) * velx;
+View.cpp:                        usey = y + elapsed(p->msSeenLatLon) * vely;
+View.cpp:                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->seen)) / (float) DISPLAY_ACTIVE);
+View.cpp:                        drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
+View.cpp:                        drawPlaneIcon(usex, usey, p->track, planeColor);
+View.cpp:                        p->cx = usex;
+View.cpp:                        p->cy = usey;
+View.cpp:        p = p->next;
+View.cpp:                if((p->cx - x) * (p->cx - x) + (p->cy - y) * (p->cy - y) < 900) {
+View.cpp:                        if((p->cx - x) * (p->cx - x) + (p->cy - y) * (p->cy - y) < 
+View.cpp:            p = p->next;
+all.svg:<g id="00140" postname="Wyman Twp-Franklin Cnty" stateabbr="ME" cntyname="Franklin" cafintrst="One Upstream Watershed" pop2000="0" hostcount="3" lat="45.129440" lon="-70.357120">
+AppData.cpp:         unsigned char * pSig       = p->signalLevel;
+AppData.cpp:         if (p->lon && p->lat) {
+AppData.cpp:         msgRateAccumulate += p->messageRate; 
+AppData.cpp:         p = p->next;

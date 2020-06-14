@@ -1,13 +1,15 @@
 #include "Input.h"
 
-#include <chrono>
-
-static uint64_t now() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+static std::chrono::high_resolution_clock::time_point now() {
+    return std::chrono::high_resolution_clock::now();
 }
 
-static uint64_t elapsed(uint64_t ref) {
-	return now() - ref;
+// static uint64_t now() {
+//     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch).count();
+// }
+
+static uint64_t elapsed(std::chrono::high_resolution_clock::time_point ref) {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(now() - ref).count();
 }
 
 template <typename T> int sgn(T val) {
@@ -55,14 +57,14 @@ void Input::getInput()
 				view->mapMoved = 1;
 
 				if(elapsed(touchDownTime) > 100) {
-						touchDownTime = 0;
+						//touchDownTime = 0;
 				}
 				break;
 
 			case SDL_FINGERMOTION:;	
 				if(elapsed(touchDownTime) > 150) {
 					tapCount = 0;
-					touchDownTime = 0;
+					//touchDownTime = 0;
 				}		
 				view->moveCenterRelative( view->screen_width * event.tfinger.dx,  view->screen_height * event.tfinger.dy);
 				break;

@@ -5,6 +5,7 @@
 #include "Map.h"
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_ttf.h" 
+#include <chrono>
 
 //defs - should all move to config file setup
 #define ROUND_RADIUS 3 //radius of text box corners
@@ -52,11 +53,13 @@ class View {
 		AppData *appData;
 
 		//for cursor drawing
-	    uint64_t mouseMovedTime;
+	    std::chrono::high_resolution_clock::time_point mouseMovedTime;
+	    bool mouseMoved;
 	    int mousex;
 	    int mousey;
 
-	    uint64_t clickTime;
+	    std::chrono::high_resolution_clock::time_point clickTime;
+	    bool clicked;
 	    int clickx;
 	    int clicky;
 
@@ -129,8 +132,8 @@ class View {
 	    int mapRedraw;
 	    float currentLon;
 	    float currentLat;
-	    uint64_t lastFrameTime;
-		uint64_t drawStartTime;
+	    std::chrono::high_resolution_clock::time_point lastFrameTime;
+		std::chrono::high_resolution_clock::time_point drawStartTime;
 
 	    Map map;
 

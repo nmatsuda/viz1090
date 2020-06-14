@@ -1,9 +1,7 @@
 #include "AircraftList.h"
 
-#include <chrono>
-
-static uint64_t now() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+static auto now() {
+    return std::chrono::high_resolution_clock::now();
 }
 
 
@@ -56,32 +54,33 @@ void AircraftList::update(Modes *modes) {
         memcpy(p->flight, a->flight, sizeof(p->flight));
         memcpy(p->signalLevel, a->signalLevel, sizeof(p->signalLevel));
 
+
+        if(p->seenLatLon == a->seenLatLon) {
+            a = a->next;
+            continue;
+        }
+
+        p->msSeenLatLon = now();
+
+        p->seenLatLon = a->seenLatLon;
+
         p->altitude = a->altitude;
         p->speed =  a->speed;          
-        p->track = a->track;         
+        p->track = a->track;                  
+
         p->vert_rate = a->vert_rate;    
+
+        if(p->lon == 0) {
+            p->created = now();
+        }
         p->lon = a->lon;
         p->lat = a->lat;
 
-        if(p->seenLatLon < a->seenLatLon) {
-            p->msSeenLatLon = now();
-
-            // p->oldIdx = (p->oldIdx+1) % 32;
-
-            // p->oldLon[p->oldIdx] = p->lon;
-            // p->oldLat[p->oldIdx] = p->lat;
-            p->lonHistory.push_back(p->lon);
-            p->latHistory.push_back(p->lat);
-            p->headingHistory.push_back(p->track);
-            p->timestampHistory.push_back(p->seenLatLon);
-
-            // p->oldHeading[p->oldIdx] = p->track;
-
-            // p->oldSeen[p->oldIdx] = p->seenLatLon;
-        }
+        p->lonHistory.push_back(p->lon);
+        p->latHistory.push_back(p->lat);
+        p->headingHistory.push_back(p->track);
+        p->timestampHistory.push_back(p->msSeenLatLon);
         
-        p->seenLatLon = a->seenLatLon;
-    
         a = a->next;
     }
 
