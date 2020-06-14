@@ -168,7 +168,7 @@ void View::pxFromLonLat(float *dx, float *dy, float lon, float lat) {
     *dy = 6371.0 * (lat - centerLat) * M_PI / 180.0f;
 }
 
-void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
+void View::lonLatFromScreenCoords(float *lon, float *lat, int x, int y) {
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
     float dx = maxDist * (x  - (screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
@@ -176,6 +176,22 @@ void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
 
     *lat = 180.0f * dy / (6371.0 * M_PI) + centerLat;
     *lon = 180.0 * dx / (cos(((*lat + centerLat)/2.0f) * M_PI / 180.0f) * 6371.0 * M_PI) + centerLon;
+
+    // if(*lat < -180.0) {
+    //     *lat = -180.0;
+    // }
+
+    // if(*lat > 180.0) {
+    //     *lat = 180.0;
+    // }
+    
+    // if(*lon < -90.0) {
+    //     *lon = -90.0;
+    // }
+
+    // if(*lon > 90.0) {
+    //     *lon = 90.0;
+    // }
 }
 
 
@@ -671,8 +687,8 @@ void View::drawLines(float screen_lat_min, float screen_lat_max, float screen_lo
 void View::drawGeography(int left, int top, int right, int bottom, int bailTime) {
     float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
-    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
-    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
+    lonLatFromScreenCoords(&screen_lon_min, &screen_lat_min, left, top);
+    lonLatFromScreenCoords(&screen_lon_max, &screen_lat_max, right, bottom);
 
     drawLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, bailTime);    
 }
@@ -1105,7 +1121,7 @@ void View::animateCenterAbsolute(float x, float y) {
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
-    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
+    //lonLatFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
     mapTargetLon = centerLon - outLon;
     mapTargetLat = centerLat - outLat;
@@ -1127,7 +1143,7 @@ void View::moveCenterAbsolute(float x, float y) {
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
-    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
+    //lonLatFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
     centerLon += outLon;
     centerLat += outLat;
@@ -1153,7 +1169,7 @@ void View::moveCenterRelative(float dx, float dy) {
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
     //double outLon, outLat;
-    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
+    //lonLatFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
     centerLon += outLon;
     centerLat += outLat;
@@ -1282,13 +1298,117 @@ void View::registerMouseMove(int x, int y) {
 // 
 //
 
+void View::drawTiles() {
+    int x = 0;
+    int y = 0; 
+
+    float dx, dy;
+    int x1, y1, x2, y2;
+
+
+    float downres = 32;
+
+    float currentLon, currentLat;
+
+    Tile *useTile;
+
+    int count = 0;
+
+    while(y < screen_height) {
+        x = 0;
+        while(x < screen_width) {
+            //printf("count = %d,y=%d, x=%d\n",count,y,x);
+            // if(count > 100) {
+            //     return;
+            // }
+            // count++;
+            lonLatFromScreenCoords(&currentLon, &currentLat, x, screen_height - y);
+
+            std::vector<Tile>::iterator currentTile = tiles.begin();
+            for(; currentTile != tiles.end(); ++currentTile) {
+                if(currentLon >= currentTile->lon_min &&
+                    currentLon < currentTile->lon_max &&
+                    currentLat >= currentTile->lat_min &&
+                    currentLat < currentTile->lat_max) {
+                      //  printf("existing\n");
+
+                        useTile = &(*currentTile); 
+                        break;
+                }
+            }
+
+            if(currentTile == tiles.end()) {
+               // printf("new\n");
+
+                useTile = new Tile;
+
+
+                useTile->lon_min = floor(currentLon * downres) / downres;
+                useTile->lon_max = ceil(currentLon * downres) / downres;
+                useTile->lat_min = floor(currentLat * downres) / downres;
+                useTile->lat_max = ceil(currentLat * downres) / downres;
+
+                useTile->texture = SDL_CreateTexture(renderer,
+                               SDL_PIXELFORMAT_ARGB8888,
+                               SDL_TEXTUREACCESS_TARGET,
+                               512, 512);
+
+                SDL_SetRenderTarget(renderer, useTile->texture);
+                
+                // SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+
+                SDL_SetRenderDrawColor(renderer, rand()%255,rand()%255,rand()%255,255);
+                SDL_RenderClear(renderer);
+                
+                drawGeography(0, 0, screen_width, screen_height, 0);
+
+                SDL_SetRenderTarget(renderer, NULL );   
+
+
+                tiles.push_back(*useTile);
+
+            }
+
+            pxFromLonLat(&dx, &dy, useTile->lon_min, useTile->lat_min);
+            screenCoords(&x1, &y1, dx, dy);
+            pxFromLonLat(&dx, &dy, useTile->lon_max, useTile->lat_max);
+            screenCoords(&x2, &y2, dx, dy);
+
+            //printf("%d %d %d %d\n",x1,y1,x2,y2);
+
+            // boxRGBA(renderer, x1, screen_height - y1, x2, screen_height -  y2, rand() %255, rand() % 255, rand()%255, 255);
+
+            //rectangleRGBA(renderer, x1, y1, x2, y2,255,0,255,255);
+            //pixelRGBA(renderer,x,y,255,255,255,255);
+
+            //printf("x -> x2, %d %d\n",x,x2);
+               SDL_Rect dest;
+
+            dest.x = x1;
+            dest.y = y1;
+            dest.w = x2-x1;
+            dest.h = y1-y2;
+
+            SDL_RenderCopy(renderer, useTile->texture, NULL, &dest);
+
+            x = x2 + 1;
+        }
+
+        y = y1 + 1;
+            //printf("y, %d, screen_height %d\n",y,screen_height);
+
+    }
+}
+
 void View::draw() {
     drawStartTime = now();
     
     moveMapToTarget();
     zoomMapToTarget();
 
-    //updatePlanes();
+    for(int i = 0; i < 4; i++) {
+        resolveLabelConflicts();
+    }
 
     if(mapRedraw && !mapMoved) {
         SDL_SetRenderTarget(renderer, mapTexture);
@@ -1308,17 +1428,12 @@ void View::draw() {
         currentMaxDist = maxDist;
     }
     
-    for(int i = 0; i < 4; i++) {
-        resolveLabelConflicts();
-    }
+    int shiftx = 0;
+    int shifty = 0;
 
-    //SDL_SetRenderDrawColor( renderer, 0, 15, 30, 0);
     SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
 
     SDL_RenderClear(renderer);
-
-    int shiftx = 0;
-    int shifty = 0;
 
     if(mapMoved) {
         float dx, dy;
@@ -1370,6 +1485,7 @@ void View::draw() {
         SDL_RenderCopy(renderer, mapTexture, NULL, NULL);
     }
 
+    drawTiles();
 
     drawScaleBars();
     drawPlanes();  

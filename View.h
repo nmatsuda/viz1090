@@ -41,6 +41,14 @@ typedef struct Style {
     SDL_Color buttonColor;
 } Style;
 
+typedef struct Tile {
+	float lat_min;
+  	float lat_max;
+  	float lon_min;
+  	float lon_max;
+
+  	SDL_Texture *texture;
+}  Tile;
 
 
 class View {
@@ -68,55 +76,11 @@ class View {
 
 		Style style;
 
-	public:
-		int screenDist(float d);
-		void pxFromLonLat(float *dx, float *dy, float lon, float lat);
-		void latLonFromScreenCoords(float *lat, float *lon, int x, int y);
-		void screenCoords(int *outX, int *outY, float dx, float dy);
-		int outOfBounds(int x, int y);
-		void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor);
-		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
-		void drawTrail(Aircraft *p);
-		void drawScaleBars();
-		void drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime);
-		void drawGeography(int left, int top, int right, int bottom, int bailTime);
-		void drawSignalMarks(Aircraft *p, int x, int y);
-		void drawPlaneText(Aircraft *p);
-		void drawSelectedAircraftText(Aircraft *p);
-		void resolveLabelConflicts();
-		void drawPlanes();
-		void animateCenterAbsolute(float x, float y);
-		void moveCenterAbsolute(float x, float y);
-		void moveCenterRelative(float dx, float dy);
-		void zoomMapToTarget();
-		void moveMapToTarget();
-		void drawMouse();
-		void drawClick();
-		void registerClick(int tapcount, int x, int y);
-		void registerMouseMove(int x, int y);
-		void draw();
-		
-		void SDL_init();
-		void font_init();
-
-		View(AppData *appData);
-		~View();
-
-
-	////////////////
-		bool metric;
-
-	    float maxDist;
 	    float currentMaxDist;
 
-	    float centerLon;
-	    float centerLat;
-	   
-	    float mapTargetMaxDist;
 	    float mapTargetLat;
 	    float mapTargetLon;
 
-	    int mapMoved;
 	    int mapRedraw;
 	    float currentLon;
 	    float currentLat;
@@ -124,15 +88,8 @@ class View {
 		uint64_t drawStartTime;
 
 	    Map map;
-
-	    int screen_upscale;
-	    int screen_uiscale;
-	    int screen_width;
-	    int screen_height;
-	    int screen_depth;
-	    int fullscreen;
-	    int screen_index;
-
+	    std::vector<Tile> tiles;
+	   
 		SDL_Window		*window;
 		SDL_Renderer	*renderer;
 		SDL_Texture 	*mapTexture;
@@ -150,6 +107,59 @@ class View {
 		int labelFontHeight;	
 		int messageFontWidth;
 		int messageFontHeight;
+
+		int screenDist(float d);
+		void pxFromLonLat(float *dx, float *dy, float lon, float lat);
+		void lonLatFromScreenCoords(float *lon, float *lat, int x, int y);
+		void screenCoords(int *outX, int *outY, float dx, float dy);
+		int outOfBounds(int x, int y);
+		void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor);
+		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
+		void drawTrail(Aircraft *p);
+		void drawScaleBars();
+		void drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime);
+		void drawGeography(int left, int top, int right, int bottom, int bailTime);
+		void drawSignalMarks(Aircraft *p, int x, int y);
+		void drawPlaneText(Aircraft *p);
+		void drawSelectedAircraftText(Aircraft *p);
+		void resolveLabelConflicts();
+		void drawPlanes();
+		void drawTiles();
+		void animateCenterAbsolute(float x, float y);
+		void moveCenterAbsolute(float x, float y);
+		void zoomMapToTarget();
+		void moveMapToTarget();
+		void drawMouse();
+		void drawClick();
+
+	public:
+		void registerClick(int tapcount, int x, int y);
+		void registerMouseMove(int x, int y);
+		void draw();
+		
+		void SDL_init();
+		void font_init();
+
+		void moveCenterRelative(float dx, float dy);
+
+		View(AppData *appData);
+		~View();
+
+		bool metric;
+
+	    float centerLon;
+	    float centerLat;
+  	    float maxDist;
+	    int mapMoved;
+	    float mapTargetMaxDist;
+
+	    int screen_upscale;
+	    int screen_uiscale;
+	    int screen_width;
+	    int screen_height;
+	    int screen_depth;
+	    int fullscreen;
+	    int screen_index;
 };
 
 #endif

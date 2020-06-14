@@ -171,5 +171,8 @@ Map::Map() {
 
     QTInsert(&root, new Line(currentPoint, nextPoint), 0);
 	}
-
 }
+
+Map::~Map() {
+  delete mapPoints;
+} 

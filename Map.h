@@ -74,16 +74,19 @@ typedef struct QuadTree{
 
 class Map {
 
-public:
+private:
+	int mapPoints_count;
+	float *mapPoints;
+
 	QuadTree root;
 
 	bool QTInsert(QuadTree *tree, Line *line, int depth);
 	std::vector<Line> getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
+public:
+
 	std::vector<Line> getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 
 	Map(); 
-
-	int mapPoints_count;
-	float *mapPoints;
+	~Map();
 };
 #endif
