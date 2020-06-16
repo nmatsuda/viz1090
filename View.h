@@ -130,10 +130,13 @@ class View {
 
 	    int mapMoved;
 	    int mapRedraw;
+	    int mapAnimating;
+	    
 	    float currentLon;
 	    float currentLat;
 	    std::chrono::high_resolution_clock::time_point lastFrameTime;
 		std::chrono::high_resolution_clock::time_point drawStartTime;
+		std::chrono::high_resolution_clock::time_point lastRedraw;
 
 	    Map map;
 

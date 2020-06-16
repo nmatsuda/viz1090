@@ -771,10 +771,6 @@ void View::drawPlaneText(Aircraft *p) {
 
     float pressure_scale = 2.0f; //this should be set  by a UI slider eventually
 
-    if(elapsed(p->msSeenLatLon) < 500) {
-        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
-    }
-
     if(p->pressure * screen_width < pressure_scale) {
         drawSignalMarks(p, p->x, p->y);
 
@@ -1175,6 +1171,11 @@ void View::drawPlanes() {
                     }
                       
                     if(p != selectedAircraft) {
+                        //show latlon ping
+                        if(elapsed(p->msSeenLatLon) < 500) {
+                            circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
+                        }
+
                         drawPlaneText(p);
                     }
 
@@ -1261,6 +1262,8 @@ void View::zoomMapToTarget() {
     if(mapTargetMaxDist) {
         if(fabs(mapTargetMaxDist - maxDist) > 0.0001) {
             maxDist += 0.1 * (mapTargetMaxDist - maxDist);
+            mapAnimating = 1;
+            mapMoved = 1;
         } else {
             mapTargetMaxDist = 0;
         }
@@ -1273,6 +1276,7 @@ void View::moveMapToTarget() {
             centerLon += 0.1 * (mapTargetLon- centerLon);
             centerLat += 0.1 * (mapTargetLat - centerLat);
 
+            mapAnimating = 1;
             mapMoved = 1;    
         } else {
             mapTargetLon = 0;
@@ -1390,8 +1394,7 @@ void View::draw() {
 
     lineCount = 0;
 
-    if(mapMoved) {
-    //if(mapRedraw && !mapMoved) {
+    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME)) {
 
         SDL_SetRenderTarget(renderer, mapTexture);
         
@@ -1403,7 +1406,11 @@ void View::draw() {
 
         SDL_SetRenderTarget(renderer, NULL );   
 
-        mapRedraw = 0; 
+        mapMoved = 0;
+        mapRedraw = 0;
+        mapAnimating = 0;
+
+        lastRedraw = now();
 
         currentLon = centerLon;
         currentLat = centerLat;
@@ -1419,58 +1426,57 @@ void View::draw() {
 
     SDL_RenderClear(renderer);
 
-    // int shiftx = 0;
-    // int shifty = 0;
+    int shiftx = 0;
+    int shifty = 0;
 
-    // if(mapMoved) {
-    //     float dx, dy;
-    //     int x1,y1, x2, y2;
-    //     pxFromLonLat(&dx, &dy, currentLon, currentLat);
-    //     screenCoords(&x1, &y1, dx, dy);
-    //     pxFromLonLat(&dx, &dy, centerLon, centerLat);
-    //     screenCoords(&x2, &y2, dx, dy);
+    if(mapMoved) {
+        float dx, dy;
+        int x1,y1, x2, y2;
+        pxFromLonLat(&dx, &dy, currentLon, currentLat);
+        screenCoords(&x1, &y1, dx, dy);
+        pxFromLonLat(&dx, &dy, centerLon, centerLat);
+        screenCoords(&x2, &y2, dx, dy);
 
-    //     shiftx = x1-x2; 
-    //     shifty = y1-y2;
+        shiftx = x1-x2; 
+        shifty = y1-y2;
 
-    //     mapRedraw = 1;
+        SDL_Rect dest;
 
-    //     SDL_Rect dest;
+        dest.x = shiftx + (screen_width / 2) * (1 - currentMaxDist / maxDist);
+        dest.y = shifty + (screen_height / 2) * (1 - currentMaxDist / maxDist);
+        dest.w = screen_width * currentMaxDist / maxDist;
+        dest.h = screen_height * currentMaxDist / maxDist;
 
-    //     dest.x = shiftx + (screen_width / 2) * (1 - currentMaxDist / maxDist);
-    //     dest.y = shifty + (screen_height / 2) * (1 - currentMaxDist / maxDist);
-    //     dest.w = screen_width * currentMaxDist / maxDist;
-    //     dest.h = screen_height * currentMaxDist / maxDist;
+        //left
+        if(dest.x > 0) {
+           drawGeography(0, 0, dest.x, screen_height, FRAMETIME / 4);    
+        }        
 
-    //     //left
-    //     if(dest.x > 0) {
-    //        drawGeography(0, 0, dest.x, screen_height, FRAMETIME / 4);    
-    //     }        
+        //top
+        if(dest.y > 0) {
+            drawGeography(0, screen_height - dest.y, screen_width, screen_height, FRAMETIME / 4);    
+        }
 
-    //     //top
-    //     if(dest.y > 0) {
-    //         drawGeography(0, screen_height - dest.y, screen_width, screen_height, FRAMETIME / 4);    
-    //     }
+        //right
+        if(dest.x + dest.w < screen_width) {
+           drawGeography(dest.x + dest.w, 0, screen_width, screen_height, FRAMETIME / 4);    
+        }        
 
-    //     //right
-    //     if(dest.x + dest.w < screen_width) {
-    //        drawGeography(dest.x + dest.w, 0, screen_width, screen_height, FRAMETIME / 4);    
-    //     }        
+        //bottom
+        if(dest.y + dest.h < screen_height) {
+            drawGeography(0, 0, screen_width, screen_height - dest.y - dest.h, FRAMETIME / 4);    
+        }        
 
-    //     //bottom
-    //     if(dest.y + dest.h < screen_height) {
-    //         drawGeography(0, 0, screen_width, screen_height - dest.y - dest.h, FRAMETIME / 4);    
-    //     }        
+        //attempt rest before bailing
+        //drawGeography(dest.x, screen_height - dest.y, dest.x + dest.w, screen_height - dest.y - dest.h, 1);    
 
-    //     //attempt rest before bailing
-    //     //drawGeography(dest.x, screen_height - dest.y, dest.x + dest.w, screen_height - dest.y - dest.h, 1);    
+        SDL_RenderCopy(renderer, mapTexture, NULL, &dest);
 
-    //     SDL_RenderCopy(renderer, mapTexture, NULL, &dest);
-
-    //     mapMoved = 0;
-    // } else {
+        mapRedraw = 1;
+        mapMoved = 0;
+    } else {
         SDL_RenderCopy(renderer, mapTexture, NULL, NULL);
-    //}
+    }
 
 
     drawScaleBars();
