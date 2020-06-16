@@ -59,7 +59,8 @@ void AppData::update() {
         fd = setupConnection(c);
         return;
     }
-    modesReadFromClient(&modes, c,"",decodeBinMessage);
+    char empty;
+    modesReadFromClient(&modes, c, &empty,decodeBinMessage);
 
     interactiveRemoveStaleAircrafts(&modes);
 

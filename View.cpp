@@ -195,7 +195,7 @@ int View::outOfBounds(int x, int y) {
 // Font stuff
 //
 
-TTF_Font* View::loadFont(char *name, int size)
+TTF_Font* View::loadFont(const char *name, int size)
 {
     TTF_Font *font = TTF_OpenFont(name, size);
 
@@ -304,20 +304,20 @@ void View::font_init() {
     style.buttonColor =  lightblue;
 }
 
-void View::drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color)
+void View::drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color)
 {
-    if(!strlen(text)) { 
+    if(!text.length()) { 
         return;
     }
 
     SDL_Surface *surface;
     SDL_Rect dest;
 
-    surface = TTF_RenderUTF8_Solid(font, text, color);
+    surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);
 
     if (surface == NULL)
     {
-        printf("Couldn't create String %s: %s\n", text, SDL_GetError());
+        printf("Couldn't create String %s: %s\n", text.c_str(), SDL_GetError());
 
         return;
     }
@@ -333,19 +333,19 @@ void View::drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color
     SDL_FreeSurface(surface);
 }
 
-void View::drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
-    if(!strlen(text)) { 
+void View::drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
+    if(!text.length()) { 
         return;
     }
         
     SDL_Surface *surface;
     SDL_Rect dest;
 
-    surface = TTF_RenderUTF8_Shaded(font, text, color, bgColor);
+    surface = TTF_RenderUTF8_Shaded(font, text.c_str(), color, bgColor);
 
     if (surface == NULL)
     {
-        printf("Couldn't create String %s: %s\n", text, SDL_GetError());
+        printf("Couldn't create String %s: %s\n", text.c_str(), SDL_GetError());
 
         return;
     }
@@ -365,9 +365,9 @@ void View::drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color col
 // Status boxes
 //
 
-void View::drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color) {
-    int labelWidth = (strlen(label) + ((strlen(label) > 0 ) ? 1 : 0)) * labelFontWidth;
-    int messageWidth = (strlen(message) + ((strlen(message) > 0 ) ? 1 : 0)) * messageFontWidth;
+void View::drawStatusBox(int *left, int *top, std::string label, std::string message, SDL_Color color) {
+    int labelWidth = (label.length() + ((label.length() > 0 ) ? 1 : 0)) * labelFontWidth;
+    int messageWidth = (message.length() + ((message.length() > 0 ) ? 1 : 0)) * messageFontWidth;
 
     if(*left + labelWidth + messageWidth + PAD > screen_width) {
         *left = PAD;
@@ -821,8 +821,17 @@ void View::drawPlaneText(Aircraft *p) {
 
     if(maxCharCount > 1) {
 
-        Sint16 vx[4] = {p->cx, p->cx + (p->x - p->cx) / 2, p->x, p->x};
-        Sint16 vy[4] = {p->cy, p->cy + (p->y - p->cy) / 2, p->y - mapFontHeight, p->y};
+        Sint16 vx[4] = {
+            static_cast<Sint16>(p->cx), 
+            static_cast<Sint16>(p->cx + (p->x - p->cx) / 2), 
+            static_cast<Sint16>(p->x), 
+            static_cast<Sint16>(p->x)};
+
+        Sint16 vy[4] = {
+            static_cast<Sint16>(p->cy), 
+            static_cast<Sint16>(p->cy + (p->y - p->cy) / 2), 
+            static_cast<Sint16>(p->y - mapFontHeight), 
+            static_cast<Sint16>(p->y)};
         
         if(p->cy > p->y + currentLine * mapFontHeight) {
             vy[2] = p->y + currentLine * mapFontHeight + mapFontHeight;

@@ -6,6 +6,7 @@
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_ttf.h" 
 #include <chrono>
+#include <string>
 
 //defs - should all move to config file setup
 #define ROUND_RADIUS 3 //radius of text box corners
@@ -68,11 +69,11 @@ class View {
 	    float dx_mult;
 	    float dy_mult;
 
-	    TTF_Font* loadFont(char *name, int size);
+	    TTF_Font* loadFont(const char *name, int size);
 	    void closeFont(TTF_Font *font);
-		void drawString(char * text, int x, int y, TTF_Font *font, SDL_Color color);
-		void drawStringBG(char * text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
-		void drawStatusBox(int *left, int *top, char *label, char *message, SDL_Color color);
+		void drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color);
+		void drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
+		void drawStatusBox(int *left, int *top, std::string label, std::string message, SDL_Color color);
 		void drawStatus();
 
 		Aircraft *selectedAircraft;
@@ -131,7 +132,7 @@ class View {
 	    int mapMoved;
 	    int mapRedraw;
 	    int mapAnimating;
-	    
+
 	    float currentLon;
 	    float currentLat;
 	    std::chrono::high_resolution_clock::time_point lastFrameTime;
