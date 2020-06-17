@@ -2,15 +2,21 @@ from lxml import etree as ElementTree
 import numpy as np
 import sys
 from tqdm import tqdm 
+import argparse
 
-filename = sys.argv[1]
+parser = argparse.ArgumentParser(description='viz1090 SVG Map Converter')
+parser.add_argument("--resolution", default=250, type=int, nargs=1, help="downsample resolution")
+parser.add_argument("file", nargs=1, help="filename")
 
-if(len(filename) == 0):
+args = parser.parse_args()
+
+
+if(len(args.file) == 0):
 	print("No input filename given")
 	exit()
 
 parser = ElementTree.XMLParser(recover=True)
-tree = ElementTree.parse(filename, parser)
+tree = ElementTree.parse(args.file[0], parser)
 polys = tree.xpath('//polygon')
 
 bin_file = open("mapdata.bin", "wb")
@@ -18,7 +24,8 @@ bin_file = open("mapdata.bin", "wb")
 outlist = []
 
 
-resolution = 250
+resolution = args.resolution[0]
+
 print("Reading points")
 for i in tqdm(range(len(polys))):
 #for i in range(40):

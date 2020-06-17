@@ -10,12 +10,12 @@ There are a lot of missing pieces in this implementation so far:
 
 ### BUILDING
 
-Tested and working on Ubuntu 18.04, Raspbian Stretch / Buster, Windows Subsystem for Linux (with Ubuntu 18.04)
+Tested and working on Ubuntu 18.04, Raspbian Stretch / Buster, Windows Subsystem for Linux (with Ubuntu 18.04), and Mac
 
 0. Install build essentials
 
 ```
-sudo apt-get install build-essentials
+sudo apt-get install build-essential
 ```
 
 1. Install SDL and RTL-SDR libararies
@@ -43,7 +43,21 @@ pip3 install lxml numpy tqdm
 ./getmap.sh
 ```
 
-3. (optional for Windows)
+The mapconverter script called by getmap.sh downsamples the file to render resonably quickly on a Raspberri Pi 4. If you are on a slower device (e.g, a Raspberry Pi 3), you may want to try something like:
+
+```
+python3 mapconverter.py --resolution 64 all.svg
+```
+
+On the other hand, if you are on a modern desktop or laptop, you can use something higher (but you probably don't need the full 6 digit precision of the McCurley SVG file):
+
+
+```
+python3 mapconverter.py --resolution 8192 all.svg
+```
+
+
+3. (Windows only)
 
 As WSL does not have an X server built in, you will need to install a 3rd party X server, such as https://sourceforge.net/projects/vcxsrv/
 
@@ -79,7 +93,7 @@ viz1090 will open an SDL window set to the resolution of your screen.
 | --metric						| Display metric units | 
 | --lat                         | Specify your latitude in degrees | 
 | --lon                         | Specify your longitiude in degrees | 
-| --screensize [width] [height]	| Specify a specific resolution to pass to SDL_RenderSetLogicalSize, otherwise use resolution of display | 
+| --screensize [width] [height]	| Specify a resolution, otherwise use resolution of display | 
 | --uiscale [scale]				| Scale up UI elements by integer amounts for high resolution screen | 
 | --fullscreen					| Render fullscreen rather than in a window | 
 
