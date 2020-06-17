@@ -428,7 +428,7 @@ extern "C" {
 // Functions exported from mode_ac.c
 //
 int  detectModeA       (uint16_t *m, struct modesMessage *mm);
-void decodeModeAMessage(Modes *modes, struct modesMessage *mm, int ModeA);
+//void decodeModeAMessage(Modes *modes, struct modesMessage *mm, int ModeA);
 int  ModeAToModeC      (unsigned int ModeA);
 
 //
@@ -449,7 +449,7 @@ struct aircraft* interactiveReceiveData(Modes *modes, struct modesMessage *mm);
 void  interactiveShowData(void);
 void  interactiveRemoveStaleAircrafts(Modes *modes);
 int   decodeBinMessage   (Modes *modes, struct client *c, char *p);
-struct aircraft *interactiveFindAircraft(uint32_t addr);
+// struct aircraft *interactiveFindAircraft(uint32_t addr);
 struct stDF     *interactiveFindDF      (uint32_t addr);
 
 //

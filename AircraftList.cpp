@@ -1,6 +1,6 @@
 #include "AircraftList.h"
 
-static auto now() {
+static std::chrono::high_resolution_clock::time_point now() {
     return std::chrono::high_resolution_clock::now();
 }
 

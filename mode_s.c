@@ -210,7 +210,7 @@ int fixBitErrors(unsigned char *msg, int bits, int maxfix, char *fixedbits) {
     int bitpos, offset, res, i;
     memset(&ei, 0, sizeof(struct errorinfo));
     ei.syndrome = modesChecksum(msg, bits);
-    pei = (errorinfo*)bsearch(&ei, bitErrorTable, NERRORINFO,
+    pei = bsearch(&ei, bitErrorTable, NERRORINFO,
                   sizeof(struct errorinfo), cmpErrorInfo);
     if (pei == NULL) {
         return 0; // No syndrome found

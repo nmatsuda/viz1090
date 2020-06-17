@@ -1,12 +1,7 @@
 #include "Aircraft.h"
 
-static auto now() {
-    return std::chrono::high_resolution_clock::now();
-}
-
 Aircraft::Aircraft(uint32_t addr) {
     this->addr = addr;
-    // created = now();
     prev_seen = 0;
 
     x = 0;

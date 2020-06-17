@@ -4,7 +4,6 @@
 //carried over from view1090.c
 //
 
-
 int AppData::setupConnection(struct client *c) {
     int fd;
 

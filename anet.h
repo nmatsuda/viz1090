@@ -39,6 +39,10 @@
 #define AF_LOCAL AF_UNIX
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int anetTcpConnect(char *err, char *addr, int port);
 int anetTcpNonBlockConnect(char *err, char *addr, int port);
 int anetUnixConnect(char *err, char *path);
@@ -55,5 +59,10 @@ int anetTcpNoDelay(char *err, int fd);
 int anetTcpKeepAlive(char *err, int fd);
 int anetPeerToString(int fd, char *ip, int *port);
 int anetSetSendBuffer(char *err, int fd, int buffsize);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
