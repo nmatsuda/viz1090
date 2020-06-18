@@ -6,4 +6,10 @@
 .~
 thumbs.db
 
+*.shp
+*.shp*
+*.shx*
+*.shx
+*.geojson
+
 viz1090
