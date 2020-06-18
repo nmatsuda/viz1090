@@ -667,6 +667,26 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
         lineRGBA(renderer, x1, y1, x2, y2, style.mapInnerColor.r, style.mapInnerColor.g, style.mapInnerColor.b, 255);     
     }
 
+    //Debug quadtree
+    int tl_x,tl_y,tr_x,tr_y,bl_x,bl_y,br_x,br_y;
+    float dx,dy;
+
+    pxFromLonLat(&dx, &dy, tree->lat_min, tree->lon_min); 
+    screenCoords(&tl_x, &tl_y, dx, dy);
+
+    pxFromLonLat(&dx, &dy, tree->lat_max, tree->lon_min); 
+    screenCoords(&tr_x, &tr_y, dx, dy);
+
+    pxFromLonLat(&dx, &dy, tree->lat_min, tree->lon_max); 
+    screenCoords(&bl_x, &bl_y, dx, dy);
+
+    pxFromLonLat(&dx, &dy, tree->lat_max, tree->lon_max); 
+    screenCoords(&br_x, &br_y, dx, dy);    
+
+    lineRGBA(renderer, tl_x, tl_y, tr_x, tr_y, 255, 0, 0, 255);     
+    lineRGBA(renderer, tr_x, tr_y, br_x, br_y, 255, 0, 0, 255);     
+    lineRGBA(renderer, bl_x, bl_y, br_x, br_y, 255, 0, 0, 255);     
+    lineRGBA(renderer, tl_x, tl_y, bl_x, bl_y, 255, 0, 0, 255);     
 }
 
 

@@ -1,6 +1,0 @@
-curl "https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/8/40/89.mvt?access_token=pk.eyJ1Ijoibm1hdHN1ZGEiLCJhIjoiY2swazhrdGNjMGZ3NzNvcmE0OGxoaGd2byJ9.PAYHqO3any_6vLdjQ44RGw"
-
-mapbox://styles/nmatsuda/ck0k7rvvt3rkv1cq6l74wjda2
-
-
-47.695,-123.489
