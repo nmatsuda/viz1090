@@ -184,7 +184,11 @@ void View::screenCoords(int *outX, int *outY, float dx, float dy) {
 }
 
 int View::outOfBounds(int x, int y) {
-    if(x < 0 || x >= screen_width || y < 0 || y >= screen_height ) {
+    return outOfBounds(x, y, 0, 0, screen_width, screen_height);
+}
+
+int View::outOfBounds(int x, int y, int left, int top, int right, int bottom) {
+    if(x < left || x >= right || y < top || y >= bottom ) {
         return 1;
     } else {
         return 0;
@@ -531,85 +535,47 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body*.5*vec[0]), y+round(-body*.5*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
 
-void View::drawTrail(Aircraft *p) {
+void View::drawTrails(int left, int top, int right, int bottom) {
     int currentX, currentY, prevX, prevY;
     float dx, dy;   
-	
-    if(p->lonHistory.empty()) {
-		return;
-	}
 
+    Aircraft *p = appData->aircraftList.head;
 
-    // pxFromLonLat(&dx, &dy, p->lonHistory.back(), p->latHistory.back());
-    // screenCoords(&currentX, &currentY, dx, dy);
-    // circleRGBA(renderer, currentX, currentY, 4 * screen_uiscale, 255,255,255,127);
+    while(p) {
+        if (p->lon && p->lat) {
+            if(p->lonHistory.empty()) {
+                    return;
+                }
 
+                std::vector<float>::iterator lon_idx = p->lonHistory.begin();
+                std::vector<float>::iterator lat_idx = p->latHistory.begin();
+                std::vector<float>::iterator heading_idx = p->headingHistory.begin();
 
-    std::vector<float>::iterator lon_idx = p->lonHistory.begin();
-    std::vector<float>::iterator lat_idx = p->latHistory.begin();
-    std::vector<float>::iterator heading_idx = p->headingHistory.begin();
+                int idx = p->lonHistory.size();
 
-    int idx = p->lonHistory.size();
+                for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
 
-    for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
+                    pxFromLonLat(&dx, &dy, *(std::next(lon_idx)), *(std::next(lat_idx)));
+                    screenCoords(&currentX, &currentY, dx, dy);
 
-        pxFromLonLat(&dx, &dy, *(std::next(lon_idx)), *(std::next(lat_idx)));
-        screenCoords(&currentX, &currentY, dx, dy);
+                    pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
 
-        pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
+                    screenCoords(&prevX, &prevY, dx, dy);
+                    if(outOfBounds(currentX,currentY,left,top,right,bottom) && outOfBounds(prevX,prevY,left,top,right,bottom)) {
+                        continue;
+                    }
 
-        screenCoords(&prevX, &prevY, dx, dy);
-        if(outOfBounds(currentX,currentY)) {
-            continue;
+                    // float age = pow(1.0 - (float)idx / (float)p->lonHistory.size(), 2.2);
+                    float age = 1.0 - (float)idx / (float)p->lonHistory.size();
+
+                    uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,0.5));
+                               
+                    thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
+
+                    idx--;
+                }
         }
-
-        if(outOfBounds(prevX,prevY)) {
-            continue;
-        }
-
-        // float age = pow(1.0 - (float)idx / (float)p->lonHistory.size(), 2.2);
-        float age = 1.0 - (float)idx / (float)p->lonHistory.size();
-
-        uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,0.5));
-                   
-        thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
-
-        //age = pow(1.0 - (float)idx / 10.0f, 2.2);
-
-        //colorVal = (uint8_t)floor(255.0 * clamp(age,0.1,1));
-
-        // float vec[3];
-        // vec[0] = sin(*heading_idx * M_PI / 180);
-        // vec[1] = -cos(*heading_idx * M_PI / 180);
-        // vec[2] = 0;
-
-        // float up[] = {0,0,1};
-
-        // float out[3];
-
-        // CROSSVP(out,vec,up);
-
-        // int x1, y1, x2, y2;
-
-        // int cross_size = 5 * screen_uiscale * age;
-
-        // // //forward cross
-        // x1 = currentX + round(-cross_size*vec[0]);
-        // y1 = currentY + round(-cross_size*vec[1]);
-        // x2 = currentX + round(cross_size*vec[0]);
-        // y2 = currentY + round(cross_size*vec[1]);
-
-        // thickLineRGBA(renderer,x1,y1,x2,y2,screen_uiscale,255,255,255,64);
-   
-        // //side cross
-        // x1 = currentX + round(-cross_size*out[0]);
-        // y1 = currentY + round(-cross_size*out[1]);
-        // x2 = currentX + round(cross_size*out[0]);
-        // y2 = currentY + round(cross_size*out[1]);
-        
-        // thickLineRGBA(renderer,x1,y1,x2,y2,screen_uiscale,255,255,255,64);
-
-        idx--;
+        p = p->next;
     }
 }
 
@@ -641,6 +607,18 @@ void View::drawScaleBars()
     scaleBarDist = screenDist((float)pow(10,scalePower));
 
     lineRGBA(renderer,10,10+5*screen_uiscale,10+scaleBarDist,10+5*screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
+}
+
+
+void View::drawLines(int left, int top, int right, int bottom, int bailTime) {
+    float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
+
+    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
+    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
+
+    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+
+    drawTrails(left, top, right, bottom);
 }
 
 void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
@@ -691,51 +669,89 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
 
 }
 
-void View::drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime) {
-    std::vector<Line*> lineList = map.getLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 
-    std::vector<Line*>::iterator currentLine;
- 
-    for (currentLine = lineList.begin(); currentLine != lineList.end(); ++currentLine) {
-        int x1,y1,x2,y2;
-        float dx,dy;
+void View::drawGeography() {
 
-        if(bailTime) {
-            if (elapsed(drawStartTime) > bailTime) {
-                return;
-            }
-        }
-	
-        pxFromLonLat(&dx, &dy, (*currentLine)->start.lon, (*currentLine)->start.lat); 
+    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME)) {
+
+        SDL_SetRenderTarget(renderer, mapTexture);
+        
+        SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+
+        SDL_RenderClear(renderer);
+        
+        drawLines(0, 0, screen_width, screen_height, 0);
+
+        SDL_SetRenderTarget(renderer, NULL );   
+
+        mapMoved = 0;
+        mapRedraw = 0;
+        mapAnimating = 0;
+
+        lastRedraw = now();
+
+        currentLon = centerLon;
+        currentLat = centerLat;
+        currentMaxDist = maxDist;
+    }
+    
+
+
+    SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+
+    SDL_RenderClear(renderer);
+
+    int shiftx = 0;
+    int shifty = 0;
+
+    if(mapMoved) {
+        float dx, dy;
+        int x1,y1, x2, y2;
+        pxFromLonLat(&dx, &dy, currentLon, currentLat);
         screenCoords(&x1, &y1, dx, dy);
-
-        pxFromLonLat(&dx, &dy, (*currentLine)->end.lon, (*currentLine)->end.lat); 
+        pxFromLonLat(&dx, &dy, centerLon, centerLat);
         screenCoords(&x2, &y2, dx, dy);
 
-        lineCount++;
+        shiftx = x1-x2; 
+        shifty = y1-y2;
 
-        if(outOfBounds(x1,y1) && outOfBounds(x2,y2)) {
-            continue;
+        SDL_Rect dest;
+
+        dest.x = shiftx + (screen_width / 2) * (1 - currentMaxDist / maxDist);
+        dest.y = shifty + (screen_height / 2) * (1 - currentMaxDist / maxDist);
+        dest.w = screen_width * currentMaxDist / maxDist;
+        dest.h = screen_height * currentMaxDist / maxDist;
+
+        //left
+        if(dest.x > 0) {
+           drawLines(0, 0, dest.x, screen_height, FRAMETIME / 4);    
+        }        
+
+        //top
+        if(dest.y > 0) {
+            drawLines(0, screen_height - dest.y, screen_width, screen_height, FRAMETIME / 4);    
         }
 
-        if(x1 == x2 && y1 == y2) {
-            continue;
-        }
+        //right
+        if(dest.x + dest.w < screen_width) {
+           drawLines(dest.x + dest.w, 0, screen_width, screen_height, FRAMETIME / 4);    
+        }        
 
-        lineRGBA(renderer, x1, y1, x2, y2, style.mapInnerColor.r, style.mapInnerColor.g, style.mapInnerColor.b, 255);     
+        //bottom
+        if(dest.y + dest.h < screen_height) {
+            drawLines(0, 0, screen_width, screen_height - dest.y - dest.h, FRAMETIME / 4);    
+        }        
+
+        //attempt rest before bailing
+        //drawGeography(dest.x, screen_height - dest.y, dest.x + dest.w, screen_height - dest.y - dest.h, 1);    
+
+        SDL_RenderCopy(renderer, mapTexture, NULL, &dest);
+
+        mapRedraw = 1;
+        mapMoved = 0;
+    } else {
+        SDL_RenderCopy(renderer, mapTexture, NULL, NULL);
     }
-
-}
-
-void View::drawGeography(int left, int top, int right, int bottom, int bailTime) {
-    float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
-
-    latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
-    latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
-
-    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
-
-    //drawLines(screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, bailTime);    
 }
 
 void View::drawSignalMarks(Aircraft *p, int x, int y) {
@@ -767,7 +783,6 @@ void View::drawPlaneText(Aircraft *p) {
     int currentCharCount;
 
     int currentLine = 0;
-
 
     float pressure_scale = 2.0f; //this should be set  by a UI slider eventually
 
@@ -1103,15 +1118,6 @@ void View::drawPlanes() {
     Aircraft *p = appData->aircraftList.head;
     SDL_Color planeColor;
 
-    // draw all trails first so they don't cover up planes and text
-    // also find closest plane to selection point
-    while(p) {
-        if (p->lon && p->lat) {
-            drawTrail(p);   
-        }
-        p = p->next;
-    }
-
     if(selectedAircraft) {
         mapTargetLon = selectedAircraft->lon;
         mapTargetLat = selectedAircraft->lat;             
@@ -1399,99 +1405,17 @@ void View::draw() {
     moveMapToTarget();
     zoomMapToTarget();
 
-    //updatePlanes();
-
-    lineCount = 0;
-
-    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME)) {
-
-        SDL_SetRenderTarget(renderer, mapTexture);
-        
-        SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
-
-        SDL_RenderClear(renderer);
-        
-        drawGeography(0, 0, screen_width, screen_height, 0);
-
-        SDL_SetRenderTarget(renderer, NULL );   
-
-        mapMoved = 0;
-        mapRedraw = 0;
-        mapAnimating = 0;
-
-        lastRedraw = now();
-
-        currentLon = centerLon;
-        currentLat = centerLat;
-        currentMaxDist = maxDist;
-    }
-    
     for(int i = 0; i < 4; i++) {
         resolveLabelConflicts();
     }
 
-    //SDL_SetRenderDrawColor( renderer, 0, 15, 30, 0);
-    SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
+    lineCount = 0;
 
-    SDL_RenderClear(renderer);
-
-    int shiftx = 0;
-    int shifty = 0;
-
-    if(mapMoved) {
-        float dx, dy;
-        int x1,y1, x2, y2;
-        pxFromLonLat(&dx, &dy, currentLon, currentLat);
-        screenCoords(&x1, &y1, dx, dy);
-        pxFromLonLat(&dx, &dy, centerLon, centerLat);
-        screenCoords(&x2, &y2, dx, dy);
-
-        shiftx = x1-x2; 
-        shifty = y1-y2;
-
-        SDL_Rect dest;
-
-        dest.x = shiftx + (screen_width / 2) * (1 - currentMaxDist / maxDist);
-        dest.y = shifty + (screen_height / 2) * (1 - currentMaxDist / maxDist);
-        dest.w = screen_width * currentMaxDist / maxDist;
-        dest.h = screen_height * currentMaxDist / maxDist;
-
-        //left
-        if(dest.x > 0) {
-           drawGeography(0, 0, dest.x, screen_height, FRAMETIME / 4);    
-        }        
-
-        //top
-        if(dest.y > 0) {
-            drawGeography(0, screen_height - dest.y, screen_width, screen_height, FRAMETIME / 4);    
-        }
-
-        //right
-        if(dest.x + dest.w < screen_width) {
-           drawGeography(dest.x + dest.w, 0, screen_width, screen_height, FRAMETIME / 4);    
-        }        
-
-        //bottom
-        if(dest.y + dest.h < screen_height) {
-            drawGeography(0, 0, screen_width, screen_height - dest.y - dest.h, FRAMETIME / 4);    
-        }        
-
-        //attempt rest before bailing
-        //drawGeography(dest.x, screen_height - dest.y, dest.x + dest.w, screen_height - dest.y - dest.h, 1);    
-
-        SDL_RenderCopy(renderer, mapTexture, NULL, &dest);
-
-        mapRedraw = 1;
-        mapMoved = 0;
-    } else {
-        SDL_RenderCopy(renderer, mapTexture, NULL, NULL);
-    }
-
-
+    drawGeography();
     drawScaleBars();
     drawPlanes();  
     drawStatus();
-    drawMouse();
+    //drawMouse();
     drawClick();
 
     char fps[40] = " ";

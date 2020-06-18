@@ -22,7 +22,8 @@ sudo apt-get install build-essential
 ```
 sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
-	Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
+
+Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
 
 2. Download and build spidr
 ```
@@ -35,13 +36,15 @@ make clean; make
 3. Download and process map data
 Until more comprehensive map source (e.g., Mapbox) is integrated, viz1090 uses the lat/lon SVG files from https://www.mccurley.org
 
-The getmap.sh pulls the svg file for the contiguous 48 US states and produces a binary file for viz1090 to read.
+The getmap.sh pulls the large SVG file for the contiguous 48 US states and produces a binary file for viz1090 to read.
 
 ```
 sudo apt install python3 python3-pip
 pip3 install lxml numpy tqdm
 ./getmap.sh
 ```
+
+There is also a world map avaiable from McCurley (https://mccurley.org/svg/data/World.svgz), which is much lower resolution and thus better for lower power hardware.
 
 The mapconverter script called by getmap.sh downsamples the file to render resonably quickly on a Raspberri Pi 4. If you are on a slower device (e.g, a Raspberry Pi 3), you may want to try something like:
 

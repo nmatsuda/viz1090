@@ -86,13 +86,14 @@ class View {
 		void latLonFromScreenCoords(float *lat, float *lon, int x, int y);
 		void screenCoords(int *outX, int *outY, float dx, float dy);
 		int outOfBounds(int x, int y);
+		int outOfBounds(int x, int y, int left, int top, int right, int bottom);
 		void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor);
 		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
-		void drawTrail(Aircraft *p);
+		void drawTrails(int left, int top, int right, int bottom);
 		void drawScaleBars();
 		void drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
-		void drawLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, int bailTime);
-		void drawGeography(int left, int top, int right, int bottom, int bailTime);
+		void drawLines(int left, int top, int right, int bottom, int bailTime);
+		void drawGeography();
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);
 		void drawSelectedAircraftText(Aircraft *p);
