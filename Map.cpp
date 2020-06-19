@@ -4,14 +4,14 @@
 
 bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
 
-  if(depth > 25) {
-   // printf("fail [%f %f] -> [%f %f]\n",line->start.lon,line->start.lat,line->end.lon,line->end.lat);
+  // if(depth > 25) {
+  //  // printf("fail [%f %f] -> [%f %f]\n",line->start.lon,line->start.lat,line->end.lon,line->end.lat);
 
-   // printf("bounds %f %f %f %f\n",tree->lon_min, tree->lon_max, tree->lat_min, tree->lat_max);
-    // fflush(stdout); 
-     tree->lines.push_back(&(*line));
-     return true;
-  }
+  //  // printf("bounds %f %f %f %f\n",tree->lon_min, tree->lon_max, tree->lat_min, tree->lat_max);
+  //   // fflush(stdout); 
+  //    tree->lines.push_back(&(*line));
+  //    return true;
+  // }
   
 
   bool startInside = line->start.lat >= tree->lat_min &&
@@ -24,17 +24,17 @@ bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
    line->end.lon >= tree->lon_min &&
    line->end.lon <= tree->lon_max;
 
-  if (!startInside || !endInside) {
-    return false; 
-  }
-  // if (!startInside && !endInside) {
+  // if (!startInside || !endInside) {
   //   return false; 
   // }
+  if (!startInside && !endInside) {
+    return false; 
+  }
   
-  // if (startInside != endInside) {
-  //   tree->lines.push_back(&(*line));
-  //   return true; 
-  // }     
+  if (startInside != endInside) {
+    tree->lines.push_back(&(*line));
+    return true; 
+  }     
 
   if (tree->nw == NULL) {
   	tree->nw = new QuadTree;

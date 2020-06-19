@@ -1,12 +1,20 @@
 # viz1090
 
 **This is work in progress**
-There are a lot of missing pieces in this implementation so far:
-* A proper map system yet. Eventually map data should be pulled from Mapbox or similar.
-* In-application menus or configuration yet.
+
+
+There are some major fixes and cleanup that need to happen before a relase:
+* Everything is a grab bag of C and C++, need to more consistently modernize
+* A full refactor, especially View.cpp, necessary for many of the new features below.
+* A working Android build, as this is the best way to run this on portable hardware.
+
+There are also a lot of missing features:
+* Map improvements
+	* Labels, different colors/line weights for features
+	* Tile prerenderer for improved performance
+* In-application menus for view options and configuration
 * Theming/colormaps (important as this is primarily intended to be eye candy!)
 * Integration with handheld features like GPS, battery monitors, buttons/dials, etc. 
-* Android build is currently broken
 
 ### BUILDING
 
@@ -34,30 +42,21 @@ make clean; make
 ```
 
 3. Download and process map data
-Until more comprehensive map source (e.g., Mapbox) is integrated, viz1090 uses the lat/lon SVG files from https://www.mccurley.org
+Grab a shapefile with your desired level of detail from https://www.naturalearthdata.com/downloads
 
-The getmap.sh pulls the large SVG file for the contiguous 48 US states and produces a binary file for viz1090 to read.
+[This](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip) is a good place to start.
+
+Unzip and copy the .shp and .shx files. 
 
 ```
 sudo apt install python3 python3-pip
-pip3 install lxml numpy tqdm
-./getmap.sh
+pip3 install geopandas tqdm
+python3 mapconverter.py ne_10m_admin_1_states_provinces.shp
 ```
 
-There is also a world map avaiable from McCurley (https://mccurley.org/svg/data/World.svgz), which is much lower resolution and thus better for lower power hardware.
+This will produce a file mapdata.bin that viz1090 reads. If the file doesn't exist then visualizer will show planes and trails without any geography.
 
-The mapconverter script called by getmap.sh downsamples the file to render resonably quickly on a Raspberri Pi 4. If you are on a slower device (e.g, a Raspberry Pi 3), you may want to try something like:
-
-```
-python3 mapconverter.py --resolution 64 all.svg
-```
-
-On the other hand, if you are on a modern desktop or laptop, you can use something higher (but you probably don't need the full 6 digit precision of the McCurley SVG file):
-
-
-```
-python3 mapconverter.py --resolution 8192 all.svg
-```
+The default parameters for mapconverter should render resonably quickly on a Raspberri Pi 4. See the mapconverter section below for other options.
 
 
 3. (Windows only)

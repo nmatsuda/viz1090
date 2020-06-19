@@ -292,7 +292,7 @@ void View::font_init() {
     // todo separate style stuff
     //
 
-    SDL_Color bgcolor = {0,0,0,255};
+    SDL_Color bgcolor = {0,0,20,255};
     SDL_Color greenblue = {236,192,68,255};
     SDL_Color lightblue = {211,208,203,255};
     SDL_Color mediumblue ={110,136,152,255};
@@ -667,26 +667,33 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
         lineRGBA(renderer, x1, y1, x2, y2, style.mapInnerColor.r, style.mapInnerColor.g, style.mapInnerColor.b, 255);     
     }
 
-    //Debug quadtree
-    int tl_x,tl_y,tr_x,tr_y,bl_x,bl_y,br_x,br_y;
-    float dx,dy;
+    // //Debug quadtree
+    // int tl_x,tl_y,tr_x,tr_y,bl_x,bl_y,br_x,br_y;
+    // float dx,dy;
 
-    pxFromLonLat(&dx, &dy, tree->lat_min, tree->lon_min); 
-    screenCoords(&tl_x, &tl_y, dx, dy);
+    // pxFromLonLat(&dx, &dy, tree->lon_min, tree->lat_min); 
+    // screenCoords(&tl_x, &tl_y, dx, dy);
 
-    pxFromLonLat(&dx, &dy, tree->lat_max, tree->lon_min); 
-    screenCoords(&tr_x, &tr_y, dx, dy);
+    // pxFromLonLat(&dx, &dy, tree->lon_max, tree->lat_min); 
+    // screenCoords(&tr_x, &tr_y, dx, dy);
 
-    pxFromLonLat(&dx, &dy, tree->lat_min, tree->lon_max); 
-    screenCoords(&bl_x, &bl_y, dx, dy);
+    // pxFromLonLat(&dx, &dy, tree->lon_min, tree->lat_max); 
+    // screenCoords(&bl_x, &bl_y, dx, dy);
 
-    pxFromLonLat(&dx, &dy, tree->lat_max, tree->lon_max); 
-    screenCoords(&br_x, &br_y, dx, dy);    
+    // pxFromLonLat(&dx, &dy, tree->lon_max, tree->lat_max); 
+    // screenCoords(&br_x, &br_y, dx, dy);    
 
-    lineRGBA(renderer, tl_x, tl_y, tr_x, tr_y, 255, 0, 0, 255);     
-    lineRGBA(renderer, tr_x, tr_y, br_x, br_y, 255, 0, 0, 255);     
-    lineRGBA(renderer, bl_x, bl_y, br_x, br_y, 255, 0, 0, 255);     
-    lineRGBA(renderer, tl_x, tl_y, bl_x, bl_y, 255, 0, 0, 255);     
+    // lineRGBA(renderer, tl_x, tl_y, tr_x, tr_y, 50, 50, 50, 255);     
+    // lineRGBA(renderer, tr_x, tr_y, br_x, br_y, 50, 50, 50, 255);     
+    // lineRGBA(renderer, bl_x, bl_y, br_x, br_y, 50, 50, 50, 255);     
+    // lineRGBA(renderer, tl_x, tl_y, bl_x, bl_y, 50, 50, 50, 255);  
+
+    // // pixelRGBA(renderer,tl_x, tl_y,255,0,0,255);
+    // pixelRGBA(renderer,tr_x, tr_y,0,255,0,255);
+    // pixelRGBA(renderer,bl_x, bl_y,0,0,255,255);
+    // pixelRGBA(renderer,br_x, br_y,255,255,0,255);
+
+   
 }
 
 
