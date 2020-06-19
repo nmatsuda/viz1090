@@ -1,8 +1,8 @@
-// Adapted from:
-// view1090, a Mode S messages viewer for dump1090 devices.
+// viz1090, a vizualizer for dump1090 ADSB output
 //
-// Copyright (C) 2014 by Malcolm Robb <Support@ATTAvionics.com>
-//
+// Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
+// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
+// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
