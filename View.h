@@ -124,6 +124,7 @@ class View {
 		void drawScaleBars();
 		void drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 		void drawLines(int left, int top, int right, int bottom, int bailTime);
+		void drawPlaceNames();		
 		void drawGeography();
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);

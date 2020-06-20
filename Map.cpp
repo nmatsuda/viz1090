@@ -32,6 +32,10 @@
 #include "Map.h"
 #include <stdio.h>
 #include <cstdlib>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <iostream>
 
 bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
 
@@ -186,8 +190,8 @@ Map::Map() {
   FILE *fileptr;
 
   if(!(fileptr = fopen("mapdata.bin", "rb"))) {
-    printf("Couldn't read mapdata.bin\nDid you run getmap.sh?\n");
-    exit(0);
+    printf("No map file found\n");
+    return;
   }  
 
   fseek(fileptr, 0, SEEK_END);
@@ -196,7 +200,7 @@ Map::Map() {
 
   mapPoints = (float *)malloc(mapPoints_count * sizeof(float)); 
   if(!fread(mapPoints, sizeof(float), mapPoints_count, fileptr)){
-    printf("Read error\n");
+    printf("Map read error\n");
     exit(0);
   } 
 
@@ -223,7 +227,7 @@ Map::Map() {
 		} 
 	}
 
-  printf("map bounds: %f %f %f %f\n",root.lon_min, root.lon_max, root.lat_min, root.lat_max);
+  //printf("map bounds: %f %f %f %f\n",root.lon_min, root.lon_max, root.lat_min, root.lat_max);
 
   Point currentPoint;
   Point nextPoint;
@@ -247,6 +251,37 @@ Map::Map() {
 
     QTInsert(&root, new Line(currentPoint, nextPoint), 0);
 	}
+
+
+
+
+  std::string line;
+  std::ifstream infile("mapnames");
+
+
+  while (std::getline(infile, line))  
+  {
+    float lon, lat;
+
+    std::istringstream iss(line);
+
+    iss >> lon;
+    iss >> lat;
+
+    std::string assemble;
+
+    iss >> assemble;
+
+    for(std::string s; iss >> s; ) {
+      assemble = assemble + " " + s;
+    }
+
+    // std::cout << "[" << x << "," << y << "] " << assemble << "\n";
+    Label *label = new Label(lon,lat,assemble); 
+    mapnames.push_back(label);
+  }
+
+  std::cout << "Read " << mapnames.size() << " place names\n";
 
   printf("done\n");
 }

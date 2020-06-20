@@ -727,10 +727,26 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
    
 }
 
+void View::drawPlaceNames() {
+
+    for(std::vector<Label*>::iterator label = map.mapnames.begin(); label != map.mapnames.end(); ++label) {
+        float dx, dy;
+        int x,y;
+
+        pxFromLonLat(&dx, &dy, (*label)->location.lon, (*label)->location.lat);
+        screenCoords(&x, &y, dx, dy);
+
+        if(outOfBounds(x,y)) {
+            continue;
+        }
+
+        drawString((*label)->text, x, y, mapFont, grey);
+    }
+}
 
 void View::drawGeography() {
 
-    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME)) {
+    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME) ||  elapsed(lastRedraw) > 2000) {
 
         SDL_SetRenderTarget(renderer, mapTexture);
         
@@ -739,6 +755,7 @@ void View::drawGeography() {
         SDL_RenderClear(renderer);
         
         drawLines(0, 0, screen_width, screen_height, 0);
+        drawPlaceNames();
 
         SDL_SetRenderTarget(renderer, NULL );   
 
