@@ -189,70 +189,135 @@ std::vector<Line*> Map::getLines(float screen_lat_min, float screen_lat_max, flo
 Map::Map() { 
   FILE *fileptr;
 
-  if(!(fileptr = fopen("mapdata.bin", "rb"))) {
+  if((fileptr = fopen("mapdata.bin", "rb"))) {
+      
+
+    fseek(fileptr, 0, SEEK_END);
+    mapPoints_count = ftell(fileptr) / sizeof(float);
+    rewind(fileptr);                   
+
+    mapPoints = (float *)malloc(mapPoints_count * sizeof(float)); 
+    if(!fread(mapPoints, sizeof(float), mapPoints_count, fileptr)){
+      printf("Map read error\n");
+      exit(0);
+    } 
+
+    fclose(fileptr);
+
+    printf("Read %d map points.\n",mapPoints_count / 2);
+
+    // load quad tree
+
+  	for(int i = 0; i < mapPoints_count; i+=2) {
+  		if(mapPoints[i] == 0)
+  			continue;
+
+  		if(mapPoints[i] < root.lon_min) {
+  			root.lon_min = mapPoints[i];
+  		} else if(mapPoints[i] > root.lon_max) {
+  			root.lon_max = mapPoints[i];
+  		} 
+
+  		if(mapPoints[i+1] < root.lat_min) {
+  			root.lat_min = mapPoints[i+1];
+  		} else if(mapPoints[i+1] > root.lat_max) {
+  			root.lat_max = mapPoints[i+1];
+  		} 
+  	}
+
+    //printf("map bounds: %f %f %f %f\n",root.lon_min, root.lon_max, root.lat_min, root.lat_max);
+
+    Point currentPoint;
+    Point nextPoint;
+
+    for(int i = 0; i < mapPoints_count - 2; i+=2) {
+      if(mapPoints[i] == 0)
+        continue;
+      if(mapPoints[i + 1] == 0)
+        continue;
+      if(mapPoints[i + 2] == 0)
+        continue;
+      if(mapPoints[i + 3] == 0)
+        continue;
+      currentPoint.lon = mapPoints[i];
+      currentPoint.lat = mapPoints[i + 1];
+
+      nextPoint.lon = mapPoints[i + 2];
+      nextPoint.lat = mapPoints[i + 3];
+
+      // printf("inserting [%f %f] -> [%f %f]\n",currentPoint.lon,currentPoint.lat,nextPoint.lon,nextPoint.lat);
+
+      QTInsert(&root, new Line(currentPoint, nextPoint), 0);
+  	}
+  } else {
     printf("No map file found\n");
-    return;
-  }  
-
-  fseek(fileptr, 0, SEEK_END);
-  mapPoints_count = ftell(fileptr) / sizeof(float);
-  rewind(fileptr);                   
-
-  mapPoints = (float *)malloc(mapPoints_count * sizeof(float)); 
-  if(!fread(mapPoints, sizeof(float), mapPoints_count, fileptr)){
-    printf("Map read error\n");
-    exit(0);
-  } 
-
-  fclose(fileptr);
-
-  printf("Read %d map points.\n",mapPoints_count / 2);
-
-  // load quad tree
-
-	for(int i = 0; i < mapPoints_count; i+=2) {
-		if(mapPoints[i] == 0)
-			continue;
-
-		if(mapPoints[i] < root.lon_min) {
-			root.lon_min = mapPoints[i];
-		} else if(mapPoints[i] > root.lon_max) {
-			root.lon_max = mapPoints[i];
-		} 
-
-		if(mapPoints[i+1] < root.lat_min) {
-			root.lat_min = mapPoints[i+1];
-		} else if(mapPoints[i+1] > root.lat_max) {
-			root.lat_max = mapPoints[i+1];
-		} 
-	}
-
-  //printf("map bounds: %f %f %f %f\n",root.lon_min, root.lon_max, root.lat_min, root.lat_max);
-
-  Point currentPoint;
-  Point nextPoint;
-
-  for(int i = 0; i < mapPoints_count - 2; i+=2) {
-    if(mapPoints[i] == 0)
-      continue;
-    if(mapPoints[i + 1] == 0)
-      continue;
-    if(mapPoints[i + 2] == 0)
-      continue;
-    if(mapPoints[i + 3] == 0)
-      continue;
-    currentPoint.lon = mapPoints[i];
-    currentPoint.lat = mapPoints[i + 1];
-
-    nextPoint.lon = mapPoints[i + 2];
-    nextPoint.lat = mapPoints[i + 3];
-
-    // printf("inserting [%f %f] -> [%f %f]\n",currentPoint.lon,currentPoint.lat,nextPoint.lon,nextPoint.lat);
-
-    QTInsert(&root, new Line(currentPoint, nextPoint), 0);
-	}
+  }
+//
 
 
+  if((fileptr = fopen("airportdata.bin", "rb"))) {
+    fseek(fileptr, 0, SEEK_END);
+    airportPoints_count = ftell(fileptr) / sizeof(float);
+    rewind(fileptr);                   
+
+    airportPoints = (float *)malloc(airportPoints_count * sizeof(float)); 
+    if(!fread(airportPoints, sizeof(float), airportPoints_count, fileptr)){
+      printf("Map read error\n");
+      exit(0);
+    } 
+
+    fclose(fileptr);
+
+    printf("Read %d airport points.\n",airportPoints_count / 2);
+
+    // load quad tree
+
+    for(int i = 0; i < airportPoints_count; i+=2) {
+      if(airportPoints[i] == 0)
+        continue;
+
+      if(airportPoints[i] < airport_root.lon_min) {
+        airport_root.lon_min = airportPoints[i];
+      } else if(airportPoints[i] > airport_root.lon_max) {
+        airport_root.lon_max = airportPoints[i];
+      } 
+
+      if(airportPoints[i+1] < airport_root.lat_min) {
+        airport_root.lat_min = airportPoints[i+1];
+      } else if(airportPoints[i+1] > airport_root.lat_max) {
+        airport_root.lat_max = airportPoints[i+1];
+      } 
+    }
+
+    //printf("map bounds: %f %f %f %f\n",root.lon_min, root.lon_max, root.lat_min, root.lat_max);
+
+    Point currentPoint;
+    Point nextPoint;
+
+    for(int i = 0; i < airportPoints_count - 2; i+=2) {
+      if(airportPoints[i] == 0)
+        continue;
+      if(airportPoints[i + 1] == 0)
+        continue;
+      if(airportPoints[i + 2] == 0)
+        continue;
+      if(airportPoints[i + 3] == 0)
+        continue;
+      currentPoint.lon = airportPoints[i];
+      currentPoint.lat = airportPoints[i + 1];
+
+      nextPoint.lon = airportPoints[i + 2];
+      nextPoint.lat = airportPoints[i + 3];
+
+      //printf("inserting [%f %f] -> [%f %f]\n",currentPoint.lon,currentPoint.lat,nextPoint.lon,nextPoint.lat);
+
+      QTInsert(&airport_root, new Line(currentPoint, nextPoint), 0);
+    }
+  } else {
+    printf("No airport file found\n");
+  }
+
+//
 
 
   std::string line;
@@ -282,6 +347,39 @@ Map::Map() {
   }
 
   std::cout << "Read " << mapnames.size() << " place names\n";
+
+  infile.close();
+
+  infile.open("airportnames");
+
+
+  while (std::getline(infile, line))  
+  {
+    float lon, lat;
+
+    std::istringstream iss(line);
+
+    iss >> lon;
+    iss >> lat;
+
+    std::string assemble;
+
+    iss >> assemble;
+
+    for(std::string s; iss >> s; ) {
+      assemble = assemble + " " + s;
+    }
+
+    // std::cout << "[" << x << "," << y << "] " << assemble << "\n";
+    Label *label = new Label(lon,lat,assemble); 
+    airportnames.push_back(label);
+  }
+
+  std::cout << "Read " << airportnames.size() << " airport names\n";
+
+  infile.close();
+
+
 
   printf("done\n");
 }

@@ -119,16 +119,22 @@ class Map {
 
 public:
 	QuadTree root;
+	QuadTree airport_root;
 
 	bool QTInsert(QuadTree *tree, Line *line, int depth);
 	std::vector<Line*> getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 	std::vector<Line*> getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 
 	std::vector<Label*> mapnames;
+	std::vector<Label*> airportnames;
 
 	Map(); 
 
 	int mapPoints_count;
 	float *mapPoints;	
+
+	int airportPoints_count;
+	float *airportPoints;	
+
 };
 #endif

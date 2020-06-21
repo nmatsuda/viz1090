@@ -62,16 +62,20 @@ void AppData::initialize() {
 
 
 void AppData::connect() {
-    c = (struct client *) malloc(sizeof(*c));
-    while(1) {
-        if ((fd = setupConnection(c)) == ANET_ERR) {
-            fprintf(stderr, "Waiting on %s:%d\n", server, modes.net_input_beast_port);     
-            sleep(1);      
-        } else {
-            break;
-        }
+
+    if(connected) {
+        return;
     }
 
+    c = (struct client *) malloc(sizeof(*c));
+
+    if ((fd = setupConnection(c)) == ANET_ERR) {
+        fprintf(stderr, "Waiting on %s:%d\n", server, modes.net_input_beast_port);     
+        return;
+    } 
+
+    connected = true;
+    fprintf(stderr, "Connected to %s:%d\n", server, modes.net_input_beast_port);     
 }
 
 
@@ -82,6 +86,10 @@ void AppData::disconnect() {
 
 
 void AppData::update() {
+    if(!connected) {
+        return;
+    }
+
     if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
         free(c);
         usleep(1000000);
@@ -154,4 +162,6 @@ AppData::AppData(){
 
     modes.interactive             = 0;
     modes.quiet                   = 1;
+
+    connected = false;
 }

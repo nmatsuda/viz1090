@@ -122,7 +122,7 @@ class View {
 		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
 		void drawTrails(int left, int top, int right, int bottom);
 		void drawScaleBars();
-		void drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
+		void drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, SDL_Color color);
 		void drawLines(int left, int top, int right, int bottom, int bailTime);
 		void drawPlaceNames();		
 		void drawGeography();

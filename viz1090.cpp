@@ -114,10 +114,7 @@ int main(int argc, char **argv) {
     }
     
     int go;
-
-    appData.connect();
   
-    
     view.SDL_init();
     view.font_init();
             
@@ -125,6 +122,7 @@ int main(int argc, char **argv) {
           
     while (go == 1)
     {
+        appData.connect();
         input.getInput();
         appData.update();
         view.draw();

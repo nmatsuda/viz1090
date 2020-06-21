@@ -45,6 +45,7 @@ class AppData {
 		//
 
 	    struct client *c;
+	    bool connected;
 	    int fd;
         char pk_buf[8];
 

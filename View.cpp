@@ -647,12 +647,14 @@ void View::drawLines(int left, int top, int right, int bottom, int bailTime) {
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
 
-    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, style.mapInnerColor);
+
+    drawLinesRecursive(&(map.airport_root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, orange);
 
     drawTrails(left, top, right, bottom);
 }
 
-void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max) {
+void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, SDL_Color color) {
     if(tree == NULL) {
         return;
     }
@@ -665,13 +667,13 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
         return; 
     }
     
-    drawLinesRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawLinesRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, color);
     
-    drawLinesRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawLinesRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, color);
     
-    drawLinesRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawLinesRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, color);
     
-    drawLinesRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
+    drawLinesRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, color);
 
     std::vector<Line*>::iterator currentLine;
 
@@ -695,7 +697,7 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
             continue;
         }
 
-        lineRGBA(renderer, x1, y1, x2, y2, style.mapInnerColor.r, style.mapInnerColor.g, style.mapInnerColor.b, 255);     
+        lineRGBA(renderer, x1, y1, x2, y2, color.r, color.g, color.b, 255);     
     }
 
     // //Debug quadtree
@@ -741,6 +743,20 @@ void View::drawPlaceNames() {
         }
 
         drawString((*label)->text, x, y, mapFont, grey);
+    }
+
+    for(std::vector<Label*>::iterator label = map.airportnames.begin(); label != map.airportnames.end(); ++label) {
+        float dx, dy;
+        int x,y;
+
+        pxFromLonLat(&dx, &dy, (*label)->location.lon, (*label)->location.lat);
+        screenCoords(&x, &y, dx, dy);
+
+        if(outOfBounds(x,y)) {
+            continue;
+        }
+
+        drawString((*label)->text, x, y, listFont, red);
     }
 }
 
@@ -1202,6 +1218,13 @@ void View::drawPlanes() {
 
     while(p) {
         if (p->lon && p->lat) {
+
+            // if lon lat argments were not provided, start by snapping to the first plane we see
+            if(centerLon == 0 && centerLat == 0) {
+                mapTargetLon = p->lon;
+                mapTargetLat = p->lat;
+            }
+
             int x, y;
 
             float dx, dy;
@@ -1256,6 +1279,10 @@ void View::drawPlanes() {
                         drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
                     } else {
                         drawPlaneIcon(usex, usey, p->track, planeColor);
+
+                        p->x += usex - p->cx;
+                        p->y += usey - p->cy;
+
                         p->cx = usex;
                         p->cy = usey;
                     }
@@ -1516,6 +1543,9 @@ View::View(AppData *appData){
     screen_depth            = 32;
     fullscreen              = 0;
     screen_index              = 0;
+
+    centerLon   = 0;
+    centerLat   = 0;
 
     maxDist                 = 25.0;
 
