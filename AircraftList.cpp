@@ -104,6 +104,12 @@ void AircraftList::update(Modes *modes) {
         if(p->lon == 0) {
             p->created = now();
         }
+
+        if(p->lon == a->lon && p->lat == a->lat) {
+            a = a->next;
+            continue;            
+        }
+
         p->lon = a->lon;
         p->lat = a->lat;
 

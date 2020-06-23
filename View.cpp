@@ -34,7 +34,6 @@
 
 //color schemes
 #include "parula.h"
-#include "monokai.h"
 
 #include "View.h"
 
@@ -318,25 +317,6 @@ void View::font_init() {
 
     labelFontWidth = 6 * screen_uiscale;
     labelFontHeight = 12 * screen_uiscale; 
-
-    //
-    // todo separate style stuff
-    //
-
-    SDL_Color bgcolor = {0,0,20,255};
-    SDL_Color greenblue = {236,192,68,255};
-    SDL_Color lightblue = {211,208,203,255};
-    SDL_Color mediumblue ={110,136,152,255};
-    SDL_Color darkblue =  {23,41,51,255};
-
-    style.backgroundColor = bgcolor;
-    style.selectedColor = pink;
-    style.planeColor = greenblue;
-    style.planeGoneColor = grey;
-    style.mapInnerColor = darkblue;
-    style.mapOuterColor = darkblue;
-    style.scaleBarColor = lightGrey;
-    style.buttonColor =  lightblue;
 }
 
 void View::drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color)
@@ -411,7 +391,7 @@ void View::drawStatusBox(int *left, int *top, std::string label, std::string mes
 
     // filled black background
     if(messageWidth) {
-        roundedBoxRGBA(renderer, *left, *top, *left + labelWidth + messageWidth, *top + messageFontHeight, ROUND_RADIUS, black.r, black.g, black.b, SDL_ALPHA_OPAQUE);
+        roundedBoxRGBA(renderer, *left, *top, *left + labelWidth + messageWidth, *top + messageFontHeight, ROUND_RADIUS, style.buttonBackground.r, style.buttonBackground.g, style.buttonBackground.b, SDL_ALPHA_OPAQUE);
     }
 
     // filled label box
@@ -424,7 +404,7 @@ void View::drawStatusBox(int *left, int *top, std::string label, std::string mes
         roundedRectangleRGBA(renderer, *left, *top, *left + labelWidth + messageWidth, *top + messageFontHeight, ROUND_RADIUS,color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
     }
 
-    drawString(label, *left + labelFontWidth/2, *top, labelFont, black);
+    drawString(label, *left + labelFontWidth/2, *top, labelFont, style.buttonBackground);
 
     //message
     drawString(message, *left + labelWidth + messageFontWidth/2, *top, messageFont, color);
@@ -582,9 +562,9 @@ void View::drawTrails(int left, int top, int right, int bottom) {
                 std::vector<float>::iterator lat_idx = p->latHistory.begin();
                 std::vector<float>::iterator heading_idx = p->headingHistory.begin();
 
-                int idx = p->lonHistory.size();
+                float age = 0;
 
-                for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx) {
+                for(; std::next(lon_idx) != p->lonHistory.end(); ++lon_idx, ++lat_idx, ++heading_idx, age += 1.0) {
 
                     pxFromLonLat(&dx, &dy, *(std::next(lon_idx)), *(std::next(lat_idx)));
                     screenCoords(&currentX, &currentY, dx, dy);
@@ -596,14 +576,11 @@ void View::drawTrails(int left, int top, int right, int bottom) {
                         continue;
                     }
 
-                    // float age = pow(1.0 - (float)idx / (float)p->lonHistory.size(), 2.2);
-                    float age = 1.0 - (float)idx / (float)p->lonHistory.size();
-
-                    uint8_t colorVal = (uint8_t)floor(255.0 * clamp(age,0,0.5));
+                    uint8_t colorVal = 255;//(uint8_t)floor(255.0 * (0.5 + age / (float)p->lonHistory.size()));
                                
-                    thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
+                    //thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
+                    lineRGBA(renderer, prevX, prevY, currentX, currentY, style.trailColor.r, style.trailColor.g, style.trailColor.b, colorVal); 
 
-                    idx--;
                 }
         }
         p = p->next;
@@ -647,9 +624,9 @@ void View::drawLines(int left, int top, int right, int bottom, int bailTime) {
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
     latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom);
 
-    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, style.mapInnerColor);
+    drawLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, style.geoColor);
 
-    drawLinesRecursive(&(map.airport_root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, orange);
+    drawLinesRecursive(&(map.airport_root), screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max, style.airportColor);
 
     drawTrails(left, top, right, bottom);
 }
@@ -742,7 +719,7 @@ void View::drawPlaceNames() {
             continue;
         }
 
-        drawString((*label)->text, x, y, mapFont, grey);
+        drawString((*label)->text, x, y, mapFont, style.geoColor);
     }
 
     for(std::vector<Label*>::iterator label = map.airportnames.begin(); label != map.airportnames.end(); ++label) {
@@ -756,7 +733,7 @@ void View::drawPlaceNames() {
             continue;
         }
 
-        drawString((*label)->text, x, y, listFont, red);
+        drawString((*label)->text, x, y, listFont, style.airportColor);
     }
 }
 
@@ -884,7 +861,7 @@ void View::drawPlaneText(Aircraft *p) {
         maxCharCount = snprintf(flight,10," %s", p->flight);
 
         if(maxCharCount > 1) {
-            drawStringBG(flight, p->x, p->y, mapBoldFont, white, black); 
+            drawStringBG(flight, p->x, p->y, mapBoldFont, style.labelColor, style.labelBackground); 
             //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
             //drawString(flight, p->x, p->y, mapBoldFont, white); 
             currentLine++;             
@@ -900,7 +877,7 @@ void View::drawPlaneText(Aircraft *p) {
         }
 
         if(currentCharCount > 1) {
-            drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, grey, black);   
+            drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
             currentLine++;                              
         }
 
@@ -916,7 +893,7 @@ void View::drawPlaneText(Aircraft *p) {
         }
 
         if(currentCharCount > 1) {
-            drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, grey, black);  
+            drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
             currentLine++;               
         }
 
@@ -944,10 +921,10 @@ void View::drawPlaneText(Aircraft *p) {
             vy[3] = p->y + currentLine * mapFontHeight;
         } 
 
-        bezierRGBA(renderer,vx,vy,4,2,200,200,200,SDL_ALPHA_OPAQUE);
+        bezierRGBA(renderer,vx,vy,4,2,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
 
 
-        thickLineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,screen_uiscale,200,200,200,SDL_ALPHA_OPAQUE);
+        thickLineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,screen_uiscale,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
     }
     
     p->w = maxCharCount * mapFontWidth;
@@ -977,7 +954,7 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     maxCharCount = snprintf(flight,10," %s", p->flight);
 
     if(maxCharCount > 1) {
-        drawStringBG(flight, x, y, mapBoldFont, white, black); 
+        drawStringBG(flight, x, y, mapBoldFont, style.labelColor, style.labelBackground); 
         //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
         //drawString(flight, p->x, p->y, mapBoldFont, white); 
         currentLine++;             
@@ -991,7 +968,7 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     }
 
     if(currentCharCount > 1) {
-        drawStringBG(alt, x, y + currentLine * mapFontHeight, mapFont, grey, black);   
+        drawStringBG(alt, x, y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
         currentLine++;                              
     }
 
@@ -1007,7 +984,7 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     }
 
     if(currentCharCount > 1) {
-        drawStringBG(speed, x, y + currentLine * mapFontHeight, mapFont, grey, black);  
+        drawStringBG(speed, x, y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
         currentLine++;               
     }
 }
@@ -1402,21 +1379,21 @@ void View::moveMapToTarget() {
     }
 }
 
-void View::drawMouse() {
-    if(!mouseMoved) {
-        return;
-    }
+// void View::drawMouse() {
+//     if(!mouseMoved) {
+//         return;
+//     }
     
-    if(elapsed(mouseMovedTime) > 1000) {
-        mouseMoved = false;
-        return;
-    }
+//     if(elapsed(mouseMovedTime) > 1000) {
+//         mouseMoved = false;
+//         return;
+//     }
 
-    int alpha =  (int)(255.0f - 255.0f * (float)elapsed(mouseMovedTime) / 1000.0f);
+//     int alpha =  (int)(255.0f - 255.0f * (float)elapsed(mouseMovedTime) / 1000.0f);
 
-    lineRGBA(renderer, mousex - 10 * screen_uiscale, mousey,  mousex + 10 * screen_uiscale, mousey, white.r, white.g, white.b, alpha);
-    lineRGBA(renderer, mousex,  mousey - 10 * screen_uiscale,  mousex,  mousey + 10 * screen_uiscale, white.r, white.g, white.b, alpha);
-}
+//     lineRGBA(renderer, mousex - 10 * screen_uiscale, mousey,  mousex + 10 * screen_uiscale, mousey, white.r, white.g, white.b, alpha);
+//     lineRGBA(renderer, mousex,  mousey - 10 * screen_uiscale,  mousex,  mousey + 10 * screen_uiscale, white.r, white.g, white.b, alpha);
+// }
 
 void View::drawClick() {
     if(clickx && clicky) {
@@ -1429,7 +1406,7 @@ void View::drawClick() {
             clicky = 0;
         }
 
-        filledCircleRGBA(renderer, clickx, clicky, radius,  white.r, white.g, white.b, alpha);      
+        filledCircleRGBA(renderer, clickx, clicky, radius,  style.clickColor.r, style.clickColor.g, style.clickColor.b, alpha);      
     }
 
 
@@ -1453,7 +1430,7 @@ void View::drawClick() {
         lineRGBA(renderer, selectedAircraft->cx + boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx + boxSize, selectedAircraft->cy + boxSize/2, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
 
         lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx - boxSize/2, selectedAircraft->cy + boxSize, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
-        lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize/2, style.selectedColor.r, style.selectedColor.g, pink.b, 255);
+        lineRGBA(renderer, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize, selectedAircraft->cx - boxSize, selectedAircraft->cy + boxSize/2, style.selectedColor.r, style.selectedColor.g, style.selectedColor.b, 255);
     } 
 }
 
@@ -1507,7 +1484,7 @@ void View::draw() {
     moveMapToTarget();
     zoomMapToTarget();
 
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i <8; i++) {
         resolveLabelConflicts();
     }
 
@@ -1522,7 +1499,7 @@ void View::draw() {
 
     char fps[40] = " ";
     snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
-    drawStringBG(fps, 0,0, mapFont, grey, black);  
+    drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);  
 
     SDL_RenderPresent(renderer);  
 
