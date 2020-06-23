@@ -1,10 +1,8 @@
 # viz1090
 
-![demo gif](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/source.gif)
-
+![](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/giphy-downsized.gif)
 
 **This is work in progress**
-
 
 There are some major fixes and cleanup that need to happen before a relase:
 * Everything is a grab bag of C and C++, need to more consistently modernize
