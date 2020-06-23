@@ -1,6 +1,6 @@
 # viz1090
 
-![demo gif](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/giphy.gif)
+![demo gif](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/source.gif)
 
 
 **This is work in progress**
