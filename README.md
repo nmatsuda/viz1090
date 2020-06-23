@@ -1,5 +1,8 @@
 # viz1090
 
+![demo gif](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/giphy.gif)
+
+
 **This is work in progress**
 
 
@@ -42,21 +45,17 @@ make clean; make
 ```
 
 3. Download and process map data
-Grab a shapefile with your desired level of detail from https://www.naturalearthdata.com/downloads
-
-[This](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip) is a good place to start.
-
-Unzip and copy the .shp and .shx files. 
 
 ```
 sudo apt install python3 python3-pip
-pip3 install geopandas tqdm
-python3 mapconverter.py ne_10m_admin_1_states_provinces.shp
+pip3 install fiona tqdm
+./getmap.sh
 ```
 
-This will produce a file mapdata.bin that viz1090 reads. If the file doesn't exist then visualizer will show planes and trails without any geography.
+This will produce files for map and airport geometry, with labels, that viz1090 reads. If any of these files don't exist then visualizer will show planes and trails without any geography.
 
-The default parameters for mapconverter should render resonably quickly on a Raspberri Pi 4. See the mapconverter section below for other options.
+The default parameters for mapconverter should render resonably quickly on a Raspberri Pi 4. See the mapconverter section below for other options and more information about map sources.
+
 
 
 3. (Windows only)
@@ -98,6 +97,31 @@ viz1090 will open an SDL window set to the resolution of your screen.
 | --screensize [width] [height]	| Specify a resolution, otherwise use resolution of display | 
 | --uiscale [scale]				| Scale up UI elements by integer amounts for high resolution screen | 
 | --fullscreen					| Render fullscreen rather than in a window | 
+
+### MAPS
+
+The best map data source I've found so far is https://www.naturalearthdata.com. This has a lot of useful GIS data, but not airport runways, which you can get from the FAA Aeronautical Data Delivery Service (https://adds-faa.opendata.arcgis.com/)
+
+
+I've been using these files:
+
+* [Map geometry](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip) 
+* [Place names](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places.zip) 
+* [Airport IATA codes](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_airports.zip) 
+* [Airport runway geometry](https://opendata.arcgis.com/datasets/4d8fa46181aa470d809776c57a8ab1f6_0.zip)  
+
+The bash script getmap.sh will download (so long as the links don't break) and convert these. Alternatiely, you can pass shapefiles and other arguments to mapconverter.py directly
+
+### MAPCONVERTER.PY RUNTIME OPTIONS
+
+| Argument						| Description |
+| ----------------------------- | ----------- |
+| --mapfile | shapefile for main map |
+| --mapnames | shapefile for map place names |
+| --airportfile | shapefile for airport runway outlines |
+| --airportnames | shapefile for airport IATA names |
+| --minpop | minimum population to show place names for (defaults to 100000) |
+| --tolerance" | map simplification tolerance (defaults to 0.001, which works well on a Raspberry Pi 4 - smaller values will produce more detail but slow down the map refresh rate) |
 
 ### HARDWARE NOTES
 
