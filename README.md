@@ -2,9 +2,9 @@
 
 ![](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/giphy-downsized.gif)
 
-**This is work in progress**
+**This is a work in progress**
 
-There are some major fixes and cleanup that need to happen before a relase:
+There are some major fixes and cleanup that need to happen before a release:
 * Everything is a grab bag of C and C++, need to more consistently modernize
 * A full refactor, especially View.cpp, necessary for many of the new features below.
 * A working Android build, as this is the best way to run this on portable hardware.
@@ -27,18 +27,18 @@ Tested and working on Ubuntu 18.04, Raspbian Stretch / Buster, Windows Subsystem
 sudo apt-get install build-essential
 ```
 
-1. Install SDL and RTL-SDR libararies
+1. Install SDL and RTL-SDR libraries
 ```
 sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
 
 Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
 
-2. Download and build spidr
+2. Download and build viz1090
 ```
 cd ~
-git clone https://www.github.com/nmatsuda/spidr
-cd spidr
+git clone https://www.github.com/nmatsuda/viz1090
+cd viz1090
 make clean; make
 ```
 
@@ -52,7 +52,7 @@ pip3 install fiona tqdm
 
 This will produce files for map and airport geometry, with labels, that viz1090 reads. If any of these files don't exist then visualizer will show planes and trails without any geography.
 
-The default parameters for mapconverter should render resonably quickly on a Raspberri Pi 4. See the mapconverter section below for other options and more information about map sources.
+The default parameters for mapconverter should render reasonably quickly on a Raspberry Pi 4. See the mapconverter section below for other options and more information about map sources.
 
 
 
@@ -91,7 +91,7 @@ viz1090 will open an SDL window set to the resolution of your screen.
 | --port [port number]			| Specify dump1090 server port | 
 | --metric						| Display metric units | 
 | --lat                         | Specify your latitude in degrees | 
-| --lon                         | Specify your longitiude in degrees | 
+| --lon                         | Specify your longitude in degrees | 
 | --screensize [width] [height]	| Specify a resolution, otherwise use resolution of display | 
 | --uiscale [scale]				| Scale up UI elements by integer amounts for high resolution screen | 
 | --fullscreen					| Render fullscreen rather than in a window | 
@@ -108,7 +108,7 @@ I've been using these files:
 * [Airport IATA codes](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_airports.zip) 
 * [Airport runway geometry](https://opendata.arcgis.com/datasets/4d8fa46181aa470d809776c57a8ab1f6_0.zip)  
 
-The bash script getmap.sh will download (so long as the links don't break) and convert these. Alternatiely, you can pass shapefiles and other arguments to mapconverter.py directly
+The bash script getmap.sh will download (so long as the links don't break) and convert these. Alternatively, you can pass shapefiles and other arguments to mapconverter.py directly
 
 ### MAPCONVERTER.PY RUNTIME OPTIONS
 

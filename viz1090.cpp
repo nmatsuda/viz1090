@@ -50,7 +50,7 @@ void showHelp(void) {
 "-----------------------------------------------------------------------------\n"
   "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
   "--port <port>                    TCP Beast output listen port (default: 30005)\n"
-  "--lat <latitude>                 Latitide in degrees\n"
+  "--lat <latitude>                 Latitude in degrees\n"
   "--lon <longitude>                Longitude in degrees\n"
   "--metric                         Use metric units\n"
   "--help                           Show this help\n"
