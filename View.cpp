@@ -1497,9 +1497,9 @@ void View::draw() {
     //drawMouse();
     drawClick();
 
-    char fps[40] = " ";
-    snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
-    drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);  
+    // char fps[40] = " ";
+    // snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
+    // drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);  
 
     SDL_RenderPresent(renderer);  
 
