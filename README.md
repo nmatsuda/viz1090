@@ -29,7 +29,7 @@ sudo apt-get install build-essential
 
 1. Install SDL and RTL-SDR libraries
 ```
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev libgdal-dev
 ```
 
 Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
@@ -46,7 +46,7 @@ make clean; make
 
 ```
 sudo apt install python3 python3-pip
-pip3 install fiona tqdm
+pip3 install fiona tqdm shapely
 ./getmap.sh
 ```
 
@@ -60,14 +60,19 @@ The default parameters for mapconverter should render reasonably quickly on a Ra
 
 As WSL does not have an X server built in, you will need to install a 3rd party X server, such as https://sourceforge.net/projects/vcxsrv/
 
-	* run Xlaunch from the start menu
-	* Uncheck "Use Native openGL"
-	* Open the Ubuntu WSL terminal
-	* Specify the X display to use
-	```
-	export DISPLAY=:0
-	```
-	* Start viz1090 as described below.
+        * run Xlaunch from the start menu
+        * Uncheck "Use Native openGL"
+        * Add parameter ```-ac``` (WSL 2 only)
+        * Open the Ubuntu WSL terminal
+        * Specify the X display to use (WSL 1)
+        ```
+        export DISPLAY=:0
+        ```
+        * or for (WSL 2)
+        ```
+        export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
+        ```
+        * Start viz1090 as described below.
 
 ### RUNNING
 
