@@ -60,19 +60,19 @@ The default parameters for mapconverter should render reasonably quickly on a Ra
 
 As WSL does not have an X server built in, you will need to install a 3rd party X server, such as https://sourceforge.net/projects/vcxsrv/
 
-    * run Xlaunch from the start menu
-    * Uncheck "Use Native openGL"
-    * Add parameter ```-ac``` (WSL 2 only)
-    * Open the Ubuntu WSL terminal
-    * Specify the X display to use (WSL 1)
+* run Xlaunch from the start menu
+* Uncheck "Use Native openGL"
+* Add parameter ```-ac``` (WSL 2 only)
+* Open the Ubuntu WSL terminal
+* Specify the X display to use (WSL 1)
         ```
         export DISPLAY=:0
         ```
-    * or for (WSL 2)
+* or for (WSL 2)
         ```
         export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
         ```
-    * Start viz1090 as described below.
+* Start viz1090 as described below.
 
 ### RUNNING
 
