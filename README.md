@@ -1,6 +1,6 @@
 # viz1090
 
-![](https://media.giphy.com/media/VGh0nJHerUFFNxeAZo/giphy-downsized.gif)
+![image](https://media.giphy.com/media/dJnFpEDGi1swmb3L05/giphy.gif)
 
 **This is a work in progress**
 
@@ -143,6 +143,7 @@ This software was originally intended for Raspberry Pi devices, and it is curren
 	* [Noelec Nano V3](https://www.nooelec.com/store/nesdr-nano-three.html)
 	* Stratux V2 \*very low power but hard to find
 
+If you want to print the case in the GIF shown above, you can [download it here](https://github.com/nmatsuda/viz1090_case).
 
 If running as a front end only, with a separate dump1090 server, the best option is to use an Android phone, such as the Pixel 2, which significantly outperforms a Raspberry Pi 4.
 
