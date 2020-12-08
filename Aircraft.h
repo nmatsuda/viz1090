@@ -40,7 +40,7 @@ public:
     uint32_t        addr;           // ICAO address
     char            flight[16];     // Flight number
     unsigned char   signalLevel[8]; // Last 8 Signal Amplitudes
-    double          messageRate;
+    float          messageRate;
     int             altitude;       // Altitude
     int             speed;          // Velocity
     int             track;          // Angle of flight
@@ -48,7 +48,7 @@ public:
     time_t          seen;           // Time at which the last packet was received
     time_t          seenLatLon;           // Time at which the last packet was received
     time_t          prev_seen;
-    double          lat, lon;       // Coordinated obtained from CPR encoded data
+    float          lat, lon;       // Coordinated obtained from CPR encoded data
     
     //history
 

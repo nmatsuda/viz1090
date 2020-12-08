@@ -49,6 +49,8 @@ Aircraft::Aircraft(uint32_t addr) {
 
     lon = 0;
     lat = 0;
+
+    next = NULL;
 }
 
 

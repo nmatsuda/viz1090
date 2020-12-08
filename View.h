@@ -192,7 +192,7 @@ class View {
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);
 		void drawSelectedAircraftText(Aircraft *p);
-		void resolveLabelConflicts();
+		float resolveLabelConflicts();
 		void drawPlanes();
 		void animateCenterAbsolute(float x, float y);
 		void moveCenterAbsolute(float x, float y);

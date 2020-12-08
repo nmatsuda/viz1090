@@ -53,9 +53,13 @@ void AircraftList::update(Modes *modes) {
     Aircraft *p = head;
 
     while(p) {
-        p->live = 0;
+        p->live = 0;                
         p = p->next;
     }
+
+    //debug
+    //find(1)->live = 1;
+
 
     while(a) {
 
@@ -144,6 +148,10 @@ void AircraftList::update(Modes *modes) {
 
 AircraftList::AircraftList() {
     head = nullptr;
+
+    // //debug aircraft attached to mouse
+    // head = new Aircraft(1);
+    // memcpy(head->flight, "mouse", sizeof("mouse"));
 }
 
 AircraftList::~AircraftList() {

@@ -874,6 +874,12 @@ void View::drawSignalMarks(Aircraft *p, int x, int y) {
 
 
 void View::drawPlaneText(Aircraft *p) {
+
+    //don't draw first time
+    if(p->x == 0) {
+        return;
+    }
+
     int maxCharCount = 0;
     int currentCharCount;
 
@@ -963,6 +969,7 @@ void View::drawSelectedAircraftText(Aircraft *p) {
         return;
     }
 
+
     int x = p->cx - 20;
     int y = p->cy + 22;
 
@@ -1016,16 +1023,34 @@ void View::drawSelectedAircraftText(Aircraft *p) {
     }
 }
 
-void View::resolveLabelConflicts() {
-    Aircraft *p = appData->aircraftList.head;
-
-    float label_force = 0.01f;
-    float plane_force = 0.01f;
+float View::resolveLabelConflicts() {
+    float label_force = 0.001f;
+    float icon_force = 0.001f;
+    float boundary_force = 0.001f;
     float damping_force = 0.95f;
-    float spring_force = 0.02f;
+    float spring_force = 0.001f;
     float spring_length = 10.0f;
 
+    float maxV = 0.0f;
+
+
+    Aircraft *p = appData->aircraftList.head;
+
     while(p) {
+        p->ddox = 0;
+        p->ddoy = 0;
+        p = p->next;
+    }
+
+    p = appData->aircraftList.head;
+
+    while(p) {
+
+        //don't update on first run
+        if(p->x == 0) {
+            p = p->next;
+            continue;
+        }
 
         Aircraft *check_p = appData->aircraftList.head;
 
@@ -1033,14 +1058,7 @@ void View::resolveLabelConflicts() {
         int p_right = p->x + p->w + 10 * screen_uiscale;
         int p_top = p->y - 10 * screen_uiscale;
         int p_bottom = p->y + p->h + 10 * screen_uiscale;
-
-        //debug box 
-        //rectangleRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
-        //lineRGBA(renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);
         
-        p->ddox = 0;
-        p->ddoy = 0;
-
         float o_mag = sqrt(p->ox*p->ox + p->oy*p->oy);
 
         //spring back to origin
@@ -1053,19 +1071,19 @@ void View::resolveLabelConflicts() {
         // // //screen edge 
 
         if(p_left < 10 * screen_uiscale) {
-            p->ox += (float)(10 * screen_uiscale - p_left);
+            p->ddox += boundary_force * (float)(10 * screen_uiscale - p_left);
         }
 
         if(p_right > (screen_width - 10 * screen_uiscale)) {
-            p->ox -= (float)(p_right - (screen_width - 10 * screen_uiscale));
+            p->ddox -= boundary_force * (float)(p_right - (screen_width - 10 * screen_uiscale));
         }
 
         if(p_top < 10 * screen_uiscale) {
-            p->oy += (float)(10 * screen_uiscale - p_top);
+            p->ddoy += boundary_force * (float)(10 * screen_uiscale - p_top);
         }
 
         if(p_bottom > (screen_height - 10 * screen_uiscale)) {
-            p->oy -= (float)(p_bottom - (screen_height - 10 * screen_uiscale));
+            p->ddoy -= boundary_force * (float)(p_bottom - (screen_height - 10 * screen_uiscale));
         }
 
         p->pressure = 0;
@@ -1073,16 +1091,13 @@ void View::resolveLabelConflicts() {
 
         //check against other labels
         while(check_p) {
+            int check_left = check_p->x - 5 * screen_uiscale;
+            int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
+            int check_top = check_p->y - 5 * screen_uiscale; 
+            int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
+
             if(check_p->addr != p->addr) {
-
-                int check_left = check_p->x - 5 * screen_uiscale;
-                int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
-                int check_top = check_p->y - 5 * screen_uiscale; 
-                int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
-
-
                 p->pressure += 1.0f / ((check_p->cx - p->cx) * (check_p->cx - p->cx) + (check_p->cy - p->cy) * (check_p->cy - p->cy));
-
 
                 //if(check_left > (p_right + 10) || check_right < (p_left - 10)) {
                 if(check_left > p_right || check_right < p_left) {
@@ -1098,72 +1113,48 @@ void View::resolveLabelConflicts() {
 
                 //left collision
                 if(check_left > p_left && check_left < p_right) {
-                    check_p->ddox -= label_force * (float)(check_left - p_right);   
+                    //check_p->ddox -= label_force * (float)(check_left - p_right);   
+                    p->ddox += label_force * (float)(check_left - p_right);   
                 }
 
                 //right collision
                 if(check_right > p_left && check_right < p_right) {
-                    check_p->ddox -= label_force * (float)(check_right - p_left);   
+                    //check_p->ddox -= label_force * (float)(check_right - p_left);   
+                    p->ddox += label_force * (float)(check_right - p_left);   
                 }
 
                 //top collision
                 if(check_top > p_top && check_top < p_bottom) {
-                    check_p->ddoy -= label_force * (float)(check_top - p_bottom);   
+                    //check_p->ddoy -= label_force * (float)(check_top - p_bottom);  
+                    p->ddoy += label_force * (float)(check_top - p_bottom);  
                 }
 
                 //bottom collision
                 if(check_bottom > p_top && check_bottom < p_bottom) {
-                    check_p->ddoy -= label_force * (float)(check_bottom - p_top);   
+                    //check_p->ddoy -= label_force * (float)(check_bottom - p_top);   
+                    p->ddoy += label_force * (float)(check_bottom - p_top);                      
                 }    
             }
-            check_p = check_p -> next;
-        }
 
-        check_p = appData->aircraftList.head;
+            float icon_x = (float)check_p->x;
+            float icon_y = (float)check_p->y;
+            
+            float boxmid_x = (float)(check_left + check_right) / 2.0f;
+            float boxmid_y = (float)(check_top + check_bottom) / 2.0f;
 
-        //check against plane icons (include self)
-
-        p_left = p->x - 5 * screen_uiscale;
-        p_right = p->x + 5 * screen_uiscale;
-        p_top = p->y - 5 * screen_uiscale;
-        p_bottom = p->y + 5 * screen_uiscale;
-
-        while(check_p) {
-
-            int check_left = check_p->x - 5 * screen_uiscale;
-            int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
-            int check_top = check_p->y - 5 * screen_uiscale; 
-            int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
-
-            if(check_left > p_right || check_right < p_left) {
+            //check against icons
+            if(icon_x > p_right + 10 * screen_uiscale || icon_x < p_left - 10 * screen_uiscale) {
                 check_p = check_p -> next;
                 continue;
             }
 
-            if(check_top > p_bottom || check_bottom < p_top) {
+            if(icon_y > p_bottom + 10 * screen_uiscale || icon_y < p_top - 10 * screen_uiscale) {
                 check_p = check_p -> next;
                 continue;
             }
 
-            //left collision
-            if(check_left > p_left && check_left < p_right) {
-                check_p->ddox -= plane_force * (float)(check_left - p_right);   
-            }
-
-            //right collision
-            if(check_right > p_left && check_right < p_right) {
-                check_p->ddox -= plane_force * (float)(check_right - p_left);   
-            }
-
-            //top collision
-            if(check_top > p_top && check_top < p_bottom) {
-                check_p->ddoy -= plane_force * (float)(check_top - p_bottom);   
-            }
-
-            //bottom collision
-            if(check_bottom > p_top && check_bottom < p_bottom) {
-                check_p->ddoy -= plane_force * (float)(check_bottom - p_top);   
-            }            
+            p->ddox += icon_force * (boxmid_x - icon_x);
+            p->ddoy += icon_force * (boxmid_y - icon_y);                   
         
             check_p = check_p -> next;
         }
@@ -1176,6 +1167,16 @@ void View::resolveLabelConflicts() {
     p = appData->aircraftList.head;
 
     while(p) {
+
+        // if this is the first update don't update based on physics
+        if(p->x == 0) {
+            p->x = p->cx;
+            p->y = p->cy + 20*screen_uiscale;      
+
+            p = p->next;
+            continue;
+        }
+
         p->dox += p->ddox;
         p->doy += p->ddoy;
 
@@ -1190,22 +1191,39 @@ void View::resolveLabelConflicts() {
             p->doy = sign(p->doy) * 10.0f;
         }
 
-        if(fabs(p->dox) < 1.0f) {
+        if(fabs(p->dox) < 0.01f) {
             p->dox = 0;
         }
 
-        if(fabs(p->doy) < 1.0f) {
+        if(fabs(p->doy) < 0.01f) {
             p->doy = 0;
         }
 
         p->ox += p->dox;
-        p->oy += p->doy;
-
+        p->oy += p->doy;        
+    
         p->x = p->cx + (int)round(p->ox);
         p->y = p->cy + (int)round(p->oy);
+    
+
+        if(fabs(p->dox) > maxV) {
+            maxV = fabs(p->dox);
+        }
+
+        if(fabs(p->doy) > maxV) {
+            maxV = fabs(p->doy);
+        }
+
+        //debug box 
+        // rectangleRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 255,0,0, SDL_ALPHA_OPAQUE);
+        // lineRGBA(renderer, p->cx, p->cy, p->x, p->y, 0,255,0, SDL_ALPHA_OPAQUE);    
+        // lineRGBA(renderer,p->x, p->y,  p->x + p->ddox, p->y+p->ddoy, 255,0,255,255);
+        // lineRGBA(renderer,p->x, p->y,  p->x + p->dox, p->y+p->doy, 0,255,255,255);
 
         p = p->next;
     }
+
+    return maxV;
 }
 
 
@@ -1283,9 +1301,6 @@ void View::drawPlanes() {
                         drawPlaneOffMap(x, y, &(p->cx), &(p->cy), planeColor);
                     } else {
                         drawPlaneIcon(usex, usey, p->track, planeColor);
-
-                        p->x += usex - p->cx;
-                        p->y += usey - p->cy;
 
                         p->cx = usex;
                         p->cy = usey;
@@ -1499,6 +1514,13 @@ void View::registerMouseMove(int x, int y) {
     mouseMovedTime = now();
     this->mousex = x;
     this->mousey = y;
+
+    // aircraft debug
+    // Aircraft *mouse = appData->aircraftList.find(1);
+    // if(mouse != NULL) {
+    //     latLonFromScreenCoords(&(mouse->lat), &(mouse->lon), x, screen_height-y);
+    //     mouse->live = 1;
+    // }    
 }
 
 //
@@ -1511,8 +1533,10 @@ void View::draw() {
     moveMapToTarget();
     zoomMapToTarget();
 
-    for(int i = 0; i <8; i++) {
-        resolveLabelConflicts();
+    for(int i = 0; i < 8; i++) {
+        if(resolveLabelConflicts() <  0.001f) {            
+            break;
+        }
     }
 
     lineCount = 0;
@@ -1524,9 +1548,9 @@ void View::draw() {
     //drawMouse();
     drawClick();
 
-    //char fps[60] = " ";
-    //snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
-    //drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);  
+    char fps[60] = " ";
+    snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
+    drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);  
 
     SDL_RenderPresent(renderer);  
 
