@@ -1548,10 +1548,12 @@ void View::draw() {
     //drawMouse();
     drawClick();
 
-    char fps[60] = " ";
-    snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
-    drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);  
-
+    if(fps) {
+        char fps[60] = " ";
+        snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
+        drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);      
+    }
+    
     SDL_RenderPresent(renderer);  
 
    if (elapsed(drawStartTime) < FRAMETIME) {
@@ -1569,6 +1571,7 @@ View::View(AppData *appData){
     screen_width            = 0;
     screen_height           = 0;    
     screen_depth            = 32;
+    fps                     = 0;
     fullscreen              = 0;
     screen_index              = 0;
 

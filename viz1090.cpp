@@ -48,16 +48,17 @@ void showHelp(void) {
 "-----------------------------------------------------------------------------\n"
 "|                        viz1090 ADSB Viewer        Ver : 0.1 |\n"
 "-----------------------------------------------------------------------------\n"
-  "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
-  "--port <port>                    TCP Beast output listen port (default: 30005)\n"
-  "--lat <latitude>                 Latitude in degrees\n"
-  "--lon <longitude>                Longitude in degrees\n"
-  "--metric                         Use metric units\n"
-  "--help                           Show this help\n"
-  "--uiscale <factor>               UI global scaling (default: 1)\n"  
-  "--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
-  "--screenindex <i>                Set the index of the display to use (default: 0)\n"
-  "--fullscreen                     Start fullscreen\n"
+"--fps                            Show current framerate\n"
+"--fullscreen                     Start fullscreen\n"
+"--help                           Show this help\n"
+"--lat <latitude>                 Latitude in degrees\n"
+"--lon <longitude>                Longitude in degrees\n"
+"--metric                         Use metric units\n"
+"--port <port>                    TCP Beast output listen port (default: 30005)\n"
+"--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
+"--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
+"--screenindex <i>                Set the index of the display to use (default: 0)\n"
+"--uiscale <factor>               UI global scaling (default: 1)\n"  
     );
 }
 
@@ -94,6 +95,8 @@ int main(int argc, char **argv) {
             view.centerLon = appData.modes.fUserLon;
         } else if (!strcmp(argv[j],"--metric")) {
             view.metric = 1;
+        } else if (!strcmp(argv[j],"--fps")) {
+            view.fps = 1;         
         } else if (!strcmp(argv[j],"--fullscreen")) {
             view.fullscreen = 1;         
         } else if (!strcmp(argv[j],"--screenindex")) {

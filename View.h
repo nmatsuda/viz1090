@@ -215,6 +215,8 @@ class View {
 	////////////////
 		bool metric;
 
+		bool fps;
+
 	    float maxDist;
 	    float currentMaxDist;
 
