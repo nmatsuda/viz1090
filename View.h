@@ -165,8 +165,8 @@ class View {
 
 	    TTF_Font* loadFont(const char *name, int size);
 	    void closeFont(TTF_Font *font);
-		void drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color);
-		void drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
+		SDL_Rect drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color);
+		SDL_Rect drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
 		void drawStatusBox(int *left, int *top, std::string label, std::string message, SDL_Color color);
 		void drawStatus();
 
@@ -191,7 +191,6 @@ class View {
 		void drawGeography();
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);
-		void drawSelectedAircraftText(Aircraft *p);
 		float resolveLabelConflicts();
 		void drawPlanes();
 		void animateCenterAbsolute(float x, float y);

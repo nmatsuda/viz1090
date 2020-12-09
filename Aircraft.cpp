@@ -39,6 +39,8 @@ Aircraft::Aircraft(uint32_t addr) {
     y = 0;
     cx = 0;
     cy = 0;
+    w = 0;
+    h = 0;
 
     ox = 0;
     oy = 0;
@@ -49,6 +51,8 @@ Aircraft::Aircraft(uint32_t addr) {
 
     lon = 0;
     lat = 0;
+
+    drawLevel = 0;
 
     next = NULL;
 }

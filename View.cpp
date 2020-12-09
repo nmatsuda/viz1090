@@ -319,14 +319,15 @@ void View::font_init() {
     labelFontHeight = 12 * screen_uiscale; 
 }
 
-void View::drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color)
+SDL_Rect View::drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color)
 {
+    SDL_Rect dest = {0,0,0,0};
+
     if(!text.length()) { 
-        return;
+        return dest;
     }
 
     SDL_Surface *surface;
-    SDL_Rect dest;
 
     surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);
 
@@ -334,7 +335,7 @@ void View::drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color 
     {
         printf("Couldn't create String %s: %s\n", text.c_str(), SDL_GetError());
 
-        return;
+        return dest;
     }
     
     dest.x = x;
@@ -346,15 +347,18 @@ void View::drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color 
     SDL_RenderCopy(renderer, texture, NULL, &dest);
     SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);
+
+    return dest;
 }
 
-void View::drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
+SDL_Rect View::drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor) {
+    SDL_Rect dest = {0,0,0,0};
+
     if(!text.length()) { 
-        return;
+        return dest;
     }
         
     SDL_Surface *surface;
-    SDL_Rect dest;
 
     surface = TTF_RenderUTF8_Shaded(font, text.c_str(), color, bgColor);
 
@@ -362,7 +366,7 @@ void View::drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Colo
     {
         printf("Couldn't create String %s: %s\n", text.c_str(), SDL_GetError());
 
-        return;
+        return dest;
     }
     
     dest.x = x;
@@ -374,6 +378,8 @@ void View::drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Colo
     SDL_RenderCopy(renderer, texture, NULL, &dest);
     SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);
+
+    return dest;
 }
 
 //
@@ -876,163 +882,110 @@ void View::drawSignalMarks(Aircraft *p, int x, int y) {
 void View::drawPlaneText(Aircraft *p) {
 
     //don't draw first time
-    if(p->x == 0) {
+    if(p->x == 0 || p->y == 0) {
         return;
     }
 
-    int maxCharCount = 0;
-    int currentCharCount;
+    int charCount;
+    int totalWidth = 0;
+    int totalHeight = 0;
 
-    int currentLine = 0;
+    int margin = 4 * screen_uiscale;
 
-    float pressure_scale = 2.0f; //this should be set  by a UI slider eventually
+    SDL_Rect outRect;
 
-    if(p->pressure * screen_width < pressure_scale) {
-        drawSignalMarks(p, p->x, p->y);
+    if(p->w != 0) {
+        lineRGBA(renderer,p->cx,p->cy,p->x + p->w / 2, p->y + p->h / 2, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);
+        boxRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, 0, 0, 0, 255);
+        rectangleRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);    
+    }
+    
+    if(p->drawLevel < 2) {
+        // drawSignalMarks(p, p->x, p->y);
 
         char flight[10] = " ";
-        maxCharCount = snprintf(flight,10," %s", p->flight);
+        charCount = snprintf(flight,10," %s", p->flight);
 
-        if(maxCharCount > 1) {
-            drawStringBG(flight, p->x, p->y, mapBoldFont, style.labelColor, style.labelBackground); 
-            //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
-            //drawString(flight, p->x, p->y, mapBoldFont, white); 
-            currentLine++;             
-        }
+        if(charCount > 1) {
+            outRect = drawString(flight, p->x, p->y, mapBoldFont, style.labelColor); 
+
+            totalWidth = std::max(totalWidth,outRect.w);  
+            totalHeight += outRect.h;            
+        }        
     }
 
-  if(p->pressure * screen_width < 0.5f * pressure_scale) {
+    if(p->drawLevel < 1) {
         char alt[10] = " ";
         if (metric) {
-            currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
+            charCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
         } else {
-            currentCharCount = snprintf(alt,10," %d'", p->altitude); 
+            charCount = snprintf(alt,10," %d'", p->altitude); 
         }
 
-        if(currentCharCount > 1) {
-            drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
-            currentLine++;                              
-        }
+        if(charCount > 1) {
+            // drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
+            outRect = drawString(alt, p->x, p->y + totalHeight, mapFont, style.subLabelColor);   
 
-        if(currentCharCount > maxCharCount) {
-            maxCharCount = currentCharCount;
-        }   
+            totalWidth = std::max(totalWidth,outRect.w);  
+            totalHeight += outRect.h;                              
+        }
 
         char speed[10] = " ";
         if (metric) {
-            currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
+            charCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
         } else {
-            currentCharCount = snprintf(speed,10," %dmph", p->speed);
+            charCount = snprintf(speed,10," %dmph", p->speed);
         }
 
-        if(currentCharCount > 1) {
-            drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
-            currentLine++;               
-        }
+        if(charCount > 1) {
+            // drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
+            outRect = drawString(speed, p->x, p->y + totalHeight, mapFont, style.subLabelColor);  
 
-        if(currentCharCount > maxCharCount) {
-            maxCharCount = currentCharCount;
+            totalWidth = std::max(totalWidth,outRect.w);  
+            totalHeight += outRect.h;      
         }
     }
 
-    if(maxCharCount > 1) {
+    // if(maxCharCount > 1) {
 
-        Sint16 vx[4] = {
-            static_cast<Sint16>(p->cx), 
-            static_cast<Sint16>(p->cx + (p->x - p->cx) / 2), 
-            static_cast<Sint16>(p->x), 
-            static_cast<Sint16>(p->x)};
+    //     Sint16 vx[4] = {
+    //         static_cast<Sint16>(p->cx), 
+    //         static_cast<Sint16>(p->cx + (p->x - p->cx) / 2), 
+    //         static_cast<Sint16>(p->x), 
+    //         static_cast<Sint16>(p->x)};
 
-        Sint16 vy[4] = {
-            static_cast<Sint16>(p->cy), 
-            static_cast<Sint16>(p->cy + (p->y - p->cy) / 2), 
-            static_cast<Sint16>(p->y - mapFontHeight), 
-            static_cast<Sint16>(p->y)};
+    //     Sint16 vy[4] = {
+    //         static_cast<Sint16>(p->cy), 
+    //         static_cast<Sint16>(p->cy + (p->y - p->cy) / 2), 
+    //         static_cast<Sint16>(p->y - mapFontHeight), 
+    //         static_cast<Sint16>(p->y)};
         
-        if(p->cy > p->y + currentLine * mapFontHeight) {
-            vy[2] = p->y + currentLine * mapFontHeight + mapFontHeight;
-            vy[3] = p->y + currentLine * mapFontHeight;
-        } 
+    //     if(p->cy > p->y + currentLine * mapFontHeight) {
+    //         vy[2] = p->y + currentLine * mapFontHeight + mapFontHeight;
+    //         vy[3] = p->y + currentLine * mapFontHeight;
+    //     } 
 
-        bezierRGBA(renderer,vx,vy,4,2,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
-
-
-        lineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
-    }
-    
-    p->w = maxCharCount * mapFontWidth;
-    p->h = currentLine * mapFontHeight;         
-}
-
-void View::drawSelectedAircraftText(Aircraft *p) {
-    if(p == NULL) {
-        return;
-    }
+    //     bezierRGBA(renderer,vx,vy,4,2,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
 
 
-    int x = p->cx - 20;
-    int y = p->cy + 22;
+        // lineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
+    // }
 
-    int maxCharCount = 0;
-    int currentCharCount;
-
-    int currentLine = 0;
-
-    if(elapsed(p->msSeenLatLon) < 500) {
-        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 255,255, 255, 64 - (uint8_t)(64.0 * elapsed(p->msSeenLatLon) / 500.0));   
-    }
-
-    drawSignalMarks(p, x, y);
-
-    char flight[10] = " ";
-    maxCharCount = snprintf(flight,10," %s", p->flight);
-
-    if(maxCharCount > 1) {
-        drawStringBG(flight, x, y, mapBoldFont, style.labelColor, style.labelBackground); 
-        //roundedRectangleRGBA(renderer, p->x, p->y, p->x + maxCharCount * mapFontWidth, p->y + mapFontHeight, ROUND_RADIUS, white.r, white.g, white.b, SDL_ALPHA_OPAQUE);
-        //drawString(flight, p->x, p->y, mapBoldFont, white); 
-        currentLine++;             
-    }
-
-    char alt[10] = " ";
-    if (metric) {
-        currentCharCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
-    } else {
-        currentCharCount = snprintf(alt,10," %d'", p->altitude); 
-    }
-
-    if(currentCharCount > 1) {
-        drawStringBG(alt, x, y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
-        currentLine++;                              
-    }
-
-    if(currentCharCount > maxCharCount) {
-        maxCharCount = currentCharCount;
-    }   
-
-    char speed[10] = " ";
-    if (metric) {
-        currentCharCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
-    } else {
-        currentCharCount = snprintf(speed,10," %dmph", p->speed);
-    }
-
-    if(currentCharCount > 1) {
-        drawStringBG(speed, x, y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
-        currentLine++;               
-    }
+    p->w = totalWidth;
+    p->h = totalHeight;         
 }
 
 float View::resolveLabelConflicts() {
     float label_force = 0.001f;
+    float label_dist = 15.0f;
+    float density_force = 0.001f;
     float icon_force = 0.001f;
+    float icon_dist = 15.0f;
     float boundary_force = 0.001f;
-    float damping_force = 0.95f;
-    float spring_force = 0.001f;
-    float spring_length = 10.0f;
+    float damping_force = 0.85f;
+    float velocity_limit = 2.0f;
 
-    float maxV = 0.0f;
-
+    float maxV = 0.0f;    
 
     Aircraft *p = appData->aircraftList.head;
 
@@ -1046,6 +999,8 @@ float View::resolveLabelConflicts() {
 
     while(p) {
 
+        float labelDensity = 0;
+
         //don't update on first run
         if(p->x == 0) {
             p = p->next;
@@ -1054,20 +1009,27 @@ float View::resolveLabelConflicts() {
 
         Aircraft *check_p = appData->aircraftList.head;
 
-        int p_left = p->x - 10 * screen_uiscale;
-        int p_right = p->x + p->w + 10 * screen_uiscale;
-        int p_top = p->y - 10 * screen_uiscale;
-        int p_bottom = p->y + p->h + 10 * screen_uiscale;
-        
-        float o_mag = sqrt(p->ox*p->ox + p->oy*p->oy);
+        int p_left = p->x;
+        int p_right = p->x + p->w;
+        int p_top = p->y;
+        int p_bottom = p->y + p->h;
 
-        //spring back to origin
-
-        if(o_mag > 0) {
-            p->ddox -= p->ox / o_mag * spring_force * (o_mag - spring_length);
-            p->ddoy -= p->oy / o_mag * spring_force * (o_mag - spring_length);
-        }
+           
+        float boxmid_x = (float)(p_left + p_right) / 2.0f;
+        float boxmid_y = (float)(p_top + p_bottom) / 2.0f;
         
+        float offset_x = boxmid_x - p->cx;
+        float offset_y = boxmid_y - p->cy;
+
+        float target_length_x = icon_dist + p->w / 2.0f;
+        float target_length_y = icon_dist + p->h / 2.0f;
+
+        // stay icon_dist away from own icon
+    
+        p->ddox -= sign(offset_x) * icon_force * (fabs(offset_x) - target_length_x);
+        p->ddoy -= sign(offset_y) * icon_force * (fabs(offset_y) - target_length_y);
+        
+
         // // //screen edge 
 
         if(p_left < 10 * screen_uiscale) {
@@ -1086,78 +1048,96 @@ float View::resolveLabelConflicts() {
             p->ddoy -= boundary_force * (float)(p_bottom - (screen_height - 10 * screen_uiscale));
         }
 
-        p->pressure = 0;
 
+        float all_x = 0;
+        float all_y = 0;
 
         //check against other labels
         while(check_p) {
-            int check_left = check_p->x - 5 * screen_uiscale;
-            int check_right = check_p->x + check_p->w + 5 * screen_uiscale;
-            int check_top = check_p->y - 5 * screen_uiscale; 
-            int check_bottom = check_p->y + check_p->h + 5 * screen_uiscale;
+
+            if(check_p->x == 0 || check_p->cx == 0) {
+                check_p = check_p -> next;
+                continue;
+            }
+
+            int check_left = check_p->x;
+            int check_right = check_p->x + check_p->w;
+            int check_top = check_p->y;
+            int check_bottom = check_p->y + check_p->h;
+
+            float icon_x = (float)check_p->cx;
+            float icon_y = (float)check_p->cy;
+ 
+            float checkboxmid_x = (float)(check_left + check_right) / 2.0f;
+            float checkboxmid_y = (float)(check_top + check_bottom) / 2.0f;
 
             if(check_p->addr != p->addr) {
-                p->pressure += 1.0f / ((check_p->cx - p->cx) * (check_p->cx - p->cx) + (check_p->cy - p->cy) * (check_p->cy - p->cy));
+                float offset_x = boxmid_x - checkboxmid_x;
+                float offset_y = boxmid_y - checkboxmid_y;
 
-                //if(check_left > (p_right + 10) || check_right < (p_left - 10)) {
-                if(check_left > p_right || check_right < p_left) {
-                    check_p = check_p -> next;
-                    continue;
-                }
+                labelDensity += 1.0f / (offset_x * offset_x + offset_y * offset_y);
 
-                //if(check_top > (p_bottom + 10) || check_bottom < (p_top - 10)) {
-                if(check_top > p_bottom || check_bottom < p_top) {
-                    check_p = check_p -> next;
-                    continue;
-                }
 
-                //left collision
-                if(check_left > p_left && check_left < p_right) {
-                    //check_p->ddox -= label_force * (float)(check_left - p_right);   
-                    p->ddox += label_force * (float)(check_left - p_right);   
-                }
-
-                //right collision
-                if(check_right > p_left && check_right < p_right) {
-                    //check_p->ddox -= label_force * (float)(check_right - p_left);   
-                    p->ddox += label_force * (float)(check_right - p_left);   
-                }
-
-                //top collision
-                if(check_top > p_top && check_top < p_bottom) {
-                    //check_p->ddoy -= label_force * (float)(check_top - p_bottom);  
-                    p->ddoy += label_force * (float)(check_top - p_bottom);  
-                }
-
-                //bottom collision
-                if(check_bottom > p_top && check_bottom < p_bottom) {
-                    //check_p->ddoy -= label_force * (float)(check_bottom - p_top);   
-                    p->ddoy += label_force * (float)(check_bottom - p_top);                      
-                }    
-            }
-
-            float icon_x = (float)check_p->x;
-            float icon_y = (float)check_p->y;
+                float target_length_x = label_dist + (float)(check_p->w + p->w) / 2.0f;
+                float target_length_y = label_dist + (float)(check_p->h + p->h) / 2.0f;
             
-            float boxmid_x = (float)(check_left + check_right) / 2.0f;
-            float boxmid_y = (float)(check_top + check_bottom) / 2.0f;
+                float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
+                float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
 
-            //check against icons
-            if(icon_x > p_right + 10 * screen_uiscale || icon_x < p_left - 10 * screen_uiscale) {
-                check_p = check_p -> next;
-                continue;
+                // stay at least label_dist away from other icons
+
+                p->ddox += sign(offset_x) * label_force * x_mag;                        
+                p->ddoy += sign(offset_y) * label_force * y_mag;
+           
+                // stay at least icon_dist away from other icons
+
+                offset_x = boxmid_x - check_p->cx;
+                offset_y = boxmid_y - check_p->cy;
+
+                labelDensity += 1.0f / (offset_x * offset_x + offset_y * offset_y);
+
+
+                target_length_x = icon_dist + (float)check_p->w / 2.0f;
+                target_length_y = icon_dist + (float)check_p->h / 2.0f;
+            
+                x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
+                y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
+
+                if(y_mag > 0) {
+                    p->ddox += sign(offset_x) * icon_force * x_mag;    
+                }
+                
+                if(x_mag > 0) {
+                    p->ddoy += sign(offset_y) * icon_force * y_mag;
+                }                
             }
 
-            if(icon_y > p_bottom + 10 * screen_uiscale || icon_y < p_top - 10 * screen_uiscale) {
-                check_p = check_p -> next;
-                continue;
-            }
-
-            p->ddox += icon_force * (boxmid_x - icon_x);
-            p->ddoy += icon_force * (boxmid_y - icon_y);                   
-        
             check_p = check_p -> next;
         }
+
+
+        // //bump static labels to unstick
+        // if(p->dox == 0) {
+        //     p->ddox += density_force * sign(all_x);
+        //     p->ddoy += density_force * sign(all_y);
+        // }
+
+        //drawlevel hysteresis
+
+        if(labelDensity > 0){
+            // printf("%f\n",(labelDensity * screen_width * screen_height) / 100.0f);    
+            // newDrawLevel = floor(100.0f / (labelDensity * screen_width * screen_height));
+
+            if((float)p->drawLevel > 1.1f * (labelDensity * screen_width * screen_height) / 100.0f) {
+                p->drawLevel++;                
+            } else if ((float)p->drawLevel > 0.9f * (labelDensity * screen_width * screen_height) / 100.0f) {
+                p->drawLevel--;                
+            }
+        }
+
+
+        
+
 
         p = p->next;
     }
@@ -1177,18 +1157,23 @@ float View::resolveLabelConflicts() {
             continue;
         }
 
-        p->dox += p->ddox;
-        p->doy += p->ddoy;
+        //add noise to acceleration to help with resonance and stuck labels
+        float noise_x = ((float) rand() / (float) RAND_MAX) - 0.5f;
+        float noise_y =  ((float) rand() / (float) RAND_MAX) - 0.5f;
+
+
+        p->dox += p->ddox;// + 0.001f;// * noise_x;
+        p->doy += p->ddoy;// + 0.001f;//. * noise_y;
 
         p->dox *= damping_force;
         p->doy *= damping_force;
   
-        if(fabs(p->dox) > 10.0f) {
-            p->dox = sign(p->dox) * 10.0f;
+        if(fabs(p->dox) > velocity_limit) {
+            p->dox = sign(p->dox) * velocity_limit;
         }
 
-        if(fabs(p->doy) > 10.0f) {
-            p->doy = sign(p->doy) * 10.0f;
+        if(fabs(p->doy) > velocity_limit) {
+            p->doy = sign(p->doy) * velocity_limit;
         }
 
         if(fabs(p->dox) < 0.01f) {
@@ -1200,8 +1185,8 @@ float View::resolveLabelConflicts() {
         }
 
         p->ox += p->dox;
-        p->oy += p->doy;        
-    
+        p->oy += p->doy;
+
         p->x = p->cx + (int)round(p->ox);
         p->y = p->cy + (int)round(p->oy);
     
@@ -1267,29 +1252,31 @@ void View::drawPlanes() {
                     int usey = y;
 
                     //draw predicted position
-                    // if(p->timestampHistory.size() > 2) {
+                    if(p->timestampHistory.size() > 2) {
 
-                    //     int x1, y1, x2, y2;
+                        int x1, y1, x2, y2;
 
-                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-1], p->latHistory.end()[-1]);
-                    //     screenCoords(&x1, &y1, dx, dy);
+                        pxFromLonLat(&dx, &dy, p->lonHistory.end()[-1], p->latHistory.end()[-1]);
+                        screenCoords(&x1, &y1, dx, dy);
                         
-                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-2], p->latHistory.end()[-2]);
-                    //     screenCoords(&x2, &y2, dx, dy);
+                        pxFromLonLat(&dx, &dy, p->lonHistory.end()[-2], p->latHistory.end()[-2]);
+                        screenCoords(&x2, &y2, dx, dy);
 
-                    //     //printf("latlon: [%f %f] -> [%f %f], px: [%d %d] -> [%d  %d]\n",p->lonHistory.end()[-1], p->latHistory.end()[-1],p->lonHistory.end()[-2], p->latHistory.end()[-2], x1,y1,x2,y2);
+                        //printf("latlon: [%f %f] -> [%f %f], px: [%d %d] -> [%d  %d]\n",p->lonHistory.end()[-1], p->latHistory.end()[-1],p->lonHistory.end()[-2], p->latHistory.end()[-2], x1,y1,x2,y2);
 
 
-                    //     float velx = float(x1 - x2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
-                    //     float vely = float(y1 - y2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
+                        float velx = float(x1 - x2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
+                        float vely = float(y1 - y2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
 
-                    //     //printf("diff: %f\n",(fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count());
+                        //printf("diff: %f\n",(fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count());
 
-                    //     //printf("%f %f, %d - %d \n", velx,vely,p->timestampHistory.end()[-1], p->timestampHistory.end()[-2]);
+                        //printf("%f %f, %d - %d \n", velx,vely,p->timestampHistory.end()[-1], p->timestampHistory.end()[-2]);
 
-                    //     usex = x + float(elapsed(p->msSeenLatLon)) * velx;
-                    //     usey = y + float(elapsed(p->msSeenLatLon)) * vely;
-                    // }
+                        float predx = x + float(elapsed(p->msSeenLatLon)) * velx;
+                        float predy = y + float(elapsed(p->msSeenLatLon)) * vely;
+                        circleRGBA(renderer, predx, predy, 4 * screen_uiscale, 127,127, 127, 255);
+                        lineRGBA(renderer, p->cx, p->cy, predx, predy, 127,127, 127, 255);
+                    }
 
                     planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->msSeen)) / (float) DISPLAY_ACTIVE);
                     
@@ -1306,22 +1293,18 @@ void View::drawPlanes() {
                         p->cy = usey;
                     }
                       
-                    if(p != selectedAircraft) {
-                        //show latlon ping
-                        if(elapsed(p->msSeenLatLon) < 500) {
-                            circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
-                        }
-
-                        drawPlaneText(p);
+                
+                    //show latlon ping
+                    if(elapsed(p->msSeenLatLon) < 500) {
+                        circleRGBA(renderer, p->cx, p->cy, elapsed(p->msSeenLatLon) * screen_width / (8192), 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
                     }
 
+                    drawPlaneText(p);            
                 }
             }
         }
         p = p->next;
     }
-
-    drawSelectedAircraftText(selectedAircraft);    
 }
 
 void View::animateCenterAbsolute(float x, float y) {
@@ -1532,6 +1515,7 @@ void View::draw() {
 
     moveMapToTarget();
     zoomMapToTarget();
+    drawGeography();
 
     for(int i = 0; i < 8; i++) {
         if(resolveLabelConflicts() <  0.001f) {            
@@ -1541,7 +1525,6 @@ void View::draw() {
 
     lineCount = 0;
 
-    drawGeography();
     drawScaleBars();
     drawPlanes();  
     drawStatus();
