@@ -536,7 +536,6 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     trigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
     trigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
-
     // x1 = x + round(-body*vec[0] - bodyWidth*out[0]);
     // y1 = y + round(-body*vec[1] - bodyWidth*out[1]);
     // x2 = x + round(body*vec[0] - bodyWidth*out[0]);
@@ -895,15 +894,63 @@ void View::drawPlaneText(Aircraft *p) {
     SDL_Rect outRect;
 
     if(p->w != 0) {
-        lineRGBA(renderer,p->cx,p->cy,p->x + p->w / 2, p->y + p->h / 2, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);
-        boxRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, 0, 0, 0, 255);
-        rectangleRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);    
+
+        int tick = 4;
+
+        int anchor_x, anchor_y, exit_x, exit_y;
+
+        if(p->x + p->w / 2 > p->cx) {
+            anchor_x = p->x;
+        } else {
+            anchor_x = p->x + p->w;
+        }
+
+        if(p->y + p->h / 2 > p->cy) {
+            anchor_y = p->y - margin;
+        } else {
+            anchor_y = p->y + p->h + margin;
+        }
+
+        if(abs(anchor_x - p->cx) > abs(anchor_y - p->cy)) {
+            exit_x = (anchor_x + p->cx) / 2;
+            exit_y = anchor_y;
+        } else {
+            exit_x = anchor_x;
+            exit_y = (anchor_y + p->cy) / 2;            
+        }
+
+        Sint16 vx[3] = {
+            static_cast<Sint16>(p->cx), 
+            static_cast<Sint16>(exit_x), 
+            static_cast<Sint16>(anchor_x)};
+
+        Sint16 vy[3] = {
+            static_cast<Sint16>(p->cy), 
+            static_cast<Sint16>(exit_y), 
+            static_cast<Sint16>(anchor_y)};        
+
+        bezierRGBA(renderer,vx,vy,3,2,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
+        // lineRGBA(renderer, p->cx, p->cy, anchor_x, anchor_y, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);
+
+        // boxRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, 0, 0, 0, 255);
+        // rectangleRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);    
+        lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
+        lineRGBA(renderer, p->x,p->y - margin, p->x, p->y - margin + tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                
+
+        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x  + p->w - tick, p->y - margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
+        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w, p->y  + margin + tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                
+
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x, p->y + p->h + margin - tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                
+
+        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
+        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                        
     }
     
     if(p->drawLevel < 2) {
         // drawSignalMarks(p, p->x, p->y);
 
-        char flight[10] = " ";
+        char flight[10] = "";
         charCount = snprintf(flight,10," %s", p->flight);
 
         if(charCount > 1) {
@@ -915,7 +962,7 @@ void View::drawPlaneText(Aircraft *p) {
     }
 
     if(p->drawLevel < 1) {
-        char alt[10] = " ";
+        char alt[10] = "";
         if (metric) {
             charCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
         } else {
@@ -930,7 +977,7 @@ void View::drawPlaneText(Aircraft *p) {
             totalHeight += outRect.h;                              
         }
 
-        char speed[10] = " ";
+        char speed[10] = "";
         if (metric) {
             charCount = snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
         } else {
@@ -977,12 +1024,14 @@ void View::drawPlaneText(Aircraft *p) {
 
 float View::resolveLabelConflicts() {
     float label_force = 0.001f;
-    float label_dist = 15.0f;
-    float density_force = 0.001f;
+    float label_dist = 2.0f;
+    float density_force = 0.005f;
+    float attachment_force = 0.0015f;
+    float attachment_dist = 10.0f;
     float icon_force = 0.001f;
     float icon_dist = 15.0f;
-    float boundary_force = 0.001f;
-    float damping_force = 0.85f;
+    float boundary_force = 0.01f;
+    float damping_force = 0.8f;
     float velocity_limit = 2.0f;
 
     float maxV = 0.0f;    
@@ -998,9 +1047,6 @@ float View::resolveLabelConflicts() {
     p = appData->aircraftList.head;
 
     while(p) {
-
-        float labelDensity = 0;
-
         //don't update on first run
         if(p->x == 0) {
             p = p->next;
@@ -1021,13 +1067,13 @@ float View::resolveLabelConflicts() {
         float offset_x = boxmid_x - p->cx;
         float offset_y = boxmid_y - p->cy;
 
-        float target_length_x = icon_dist + p->w / 2.0f;
-        float target_length_y = icon_dist + p->h / 2.0f;
+        float target_length_x = attachment_dist + p->w / 2.0f;
+        float target_length_y = attachment_dist + p->h / 2.0f;
 
         // stay icon_dist away from own icon
     
-        p->ddox -= sign(offset_x) * icon_force * (fabs(offset_x) - target_length_x);
-        p->ddoy -= sign(offset_y) * icon_force * (fabs(offset_y) - target_length_y);
+        p->ddox -= sign(offset_x) * attachment_force * (fabs(offset_x) - target_length_x);
+        p->ddoy -= sign(offset_y) * attachment_force * (fabs(offset_y) - target_length_y);
         
 
         // // //screen edge 
@@ -1051,11 +1097,13 @@ float View::resolveLabelConflicts() {
 
         float all_x = 0;
         float all_y = 0;
-
+        int count = 0;
         //check against other labels
-        while(check_p) {
 
-            if(check_p->x == 0 || check_p->cx == 0) {
+        int collision_count = 0;
+
+        while(check_p) {
+            if(check_p->addr != p->addr) {
                 check_p = check_p -> next;
                 continue;
             }
@@ -1071,73 +1119,63 @@ float View::resolveLabelConflicts() {
             float checkboxmid_x = (float)(check_left + check_right) / 2.0f;
             float checkboxmid_y = (float)(check_top + check_bottom) / 2.0f;
 
-            if(check_p->addr != p->addr) {
-                float offset_x = boxmid_x - checkboxmid_x;
-                float offset_y = boxmid_y - checkboxmid_y;
+            float offset_x = boxmid_x - checkboxmid_x;
+            float offset_y = boxmid_y - checkboxmid_y;
 
-                labelDensity += 1.0f / (offset_x * offset_x + offset_y * offset_y);
+            float target_length_x = label_dist + (float)(check_p->w + p->w) / 2.0f;
+            float target_length_y = label_dist + (float)(check_p->h + p->h) / 2.0f;
+        
+            float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
+            float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
 
-
-                float target_length_x = label_dist + (float)(check_p->w + p->w) / 2.0f;
-                float target_length_y = label_dist + (float)(check_p->h + p->h) / 2.0f;
-            
-                float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
-                float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
-
-                // stay at least label_dist away from other icons
-
-                p->ddox += sign(offset_x) * label_force * x_mag;                        
-                p->ddoy += sign(offset_y) * label_force * y_mag;
-           
-                // stay at least icon_dist away from other icons
-
-                offset_x = boxmid_x - check_p->cx;
-                offset_y = boxmid_y - check_p->cy;
-
-                labelDensity += 1.0f / (offset_x * offset_x + offset_y * offset_y);
-
-
-                target_length_x = icon_dist + (float)check_p->w / 2.0f;
-                target_length_y = icon_dist + (float)check_p->h / 2.0f;
-            
-                x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
-                y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
-
-                if(y_mag > 0) {
-                    p->ddox += sign(offset_x) * icon_force * x_mag;    
-                }
-                
-                if(x_mag > 0) {
-                    p->ddoy += sign(offset_y) * icon_force * y_mag;
-                }                
+            if(x_mag > 0 || y_mag > 0) {
+                collision_count ++;
             }
 
+            // stay at least label_dist away from other icons
+
+            p->ddox += sign(offset_x) * label_force * x_mag;                        
+            p->ddoy += sign(offset_y) * label_force * y_mag;
+       
+            // stay at least icon_dist away from other icons
+
+            offset_x = boxmid_x - check_p->cx;
+            offset_y = boxmid_y - check_p->cy;
+
+            target_length_x = icon_dist + (float)check_p->w / 2.0f;
+            target_length_y = icon_dist + (float)check_p->h / 2.0f;
+        
+            x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
+            y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
+
+            if(x_mag > 0 || y_mag > 0) {
+                collision_count ++;
+            }
+
+            p->ddox += sign(offset_x) * icon_force * x_mag;    
+            p->ddoy += sign(offset_y) * icon_force * y_mag;
+
+            all_x += sign(boxmid_x - checkboxmid_x);
+            all_y += sign(boxmid_y - checkboxmid_y);
+
+            count++;
+        
             check_p = check_p -> next;
         }
 
 
-        // //bump static labels to unstick
-        // if(p->dox == 0) {
-        //     p->ddox += density_force * sign(all_x);
-        //     p->ddoy += density_force * sign(all_y);
-        // }
+        // move away from others
+        p->ddox += density_force * all_x / count;
+        p->ddoy += density_force * all_y / count;
 
         //drawlevel hysteresis
 
-        if(labelDensity > 0){
-            // printf("%f\n",(labelDensity * screen_width * screen_height) / 100.0f);    
-            // newDrawLevel = floor(100.0f / (labelDensity * screen_width * screen_height));
-
-            if((float)p->drawLevel > 1.1f * (labelDensity * screen_width * screen_height) / 100.0f) {
-                p->drawLevel++;                
-            } else if ((float)p->drawLevel > 0.9f * (labelDensity * screen_width * screen_height) / 100.0f) {
-                p->drawLevel--;                
-            }
+        float densityScale = 85.0f;
+        if(p->drawLevel < 0.6f * (float)collision_count / 4.0f) {
+            p->drawLevel += 0.1f;                
+        } else if (p->drawLevel > 1.4f * (float)collision_count / 4.0f) {
+            p->drawLevel -= 0.1f;                
         }
-
-
-        
-
 
         p = p->next;
     }
@@ -1158,8 +1196,8 @@ float View::resolveLabelConflicts() {
         }
 
         //add noise to acceleration to help with resonance and stuck labels
-        float noise_x = ((float) rand() / (float) RAND_MAX) - 0.5f;
-        float noise_y =  ((float) rand() / (float) RAND_MAX) - 0.5f;
+        // float noise_x = ((float) rand() / (float) RAND_MAX) - 0.5f;
+        // float noise_y =  ((float) rand() / (float) RAND_MAX) - 0.5f;
 
 
         p->dox += p->ddox;// + 0.001f;// * noise_x;
@@ -1252,31 +1290,31 @@ void View::drawPlanes() {
                     int usey = y;
 
                     //draw predicted position
-                    if(p->timestampHistory.size() > 2) {
+                    // if(p->timestampHistory.size() > 2) {
 
-                        int x1, y1, x2, y2;
+                    //     int x1, y1, x2, y2;
 
-                        pxFromLonLat(&dx, &dy, p->lonHistory.end()[-1], p->latHistory.end()[-1]);
-                        screenCoords(&x1, &y1, dx, dy);
+                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-1], p->latHistory.end()[-1]);
+                    //     screenCoords(&x1, &y1, dx, dy);
                         
-                        pxFromLonLat(&dx, &dy, p->lonHistory.end()[-2], p->latHistory.end()[-2]);
-                        screenCoords(&x2, &y2, dx, dy);
+                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-2], p->latHistory.end()[-2]);
+                    //     screenCoords(&x2, &y2, dx, dy);
 
-                        //printf("latlon: [%f %f] -> [%f %f], px: [%d %d] -> [%d  %d]\n",p->lonHistory.end()[-1], p->latHistory.end()[-1],p->lonHistory.end()[-2], p->latHistory.end()[-2], x1,y1,x2,y2);
+                    //     //printf("latlon: [%f %f] -> [%f %f], px: [%d %d] -> [%d  %d]\n",p->lonHistory.end()[-1], p->latHistory.end()[-1],p->lonHistory.end()[-2], p->latHistory.end()[-2], x1,y1,x2,y2);
 
 
-                        float velx = float(x1 - x2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
-                        float vely = float(y1 - y2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
+                    //     float velx = float(x1 - x2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
+                    //     float vely = float(y1 - y2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
 
-                        //printf("diff: %f\n",(fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count());
+                    //     //printf("diff: %f\n",(fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count());
 
-                        //printf("%f %f, %d - %d \n", velx,vely,p->timestampHistory.end()[-1], p->timestampHistory.end()[-2]);
+                    //     //printf("%f %f, %d - %d \n", velx,vely,p->timestampHistory.end()[-1], p->timestampHistory.end()[-2]);
 
-                        float predx = x + float(elapsed(p->msSeenLatLon)) * velx;
-                        float predy = y + float(elapsed(p->msSeenLatLon)) * vely;
-                        circleRGBA(renderer, predx, predy, 4 * screen_uiscale, 127,127, 127, 255);
-                        lineRGBA(renderer, p->cx, p->cy, predx, predy, 127,127, 127, 255);
-                    }
+                    //     float predx = x + float(elapsed(p->msSeenLatLon)) * velx;
+                    //     float predy = y + float(elapsed(p->msSeenLatLon)) * vely;
+                    //     circleRGBA(renderer, predx, predy, 4 * screen_uiscale, 127,127, 127, 255);
+                    //     lineRGBA(renderer, p->cx, p->cy, predx, predy, 127,127, 127, 255);
+                    // }
 
                     planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->msSeen)) / (float) DISPLAY_ACTIVE);
                     

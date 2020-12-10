@@ -71,7 +71,7 @@ public:
 
     int             x, y, cx, cy, w, h;
     float           ox, oy, dox, doy, ddox, ddoy;
-    int             drawLevel;
+    float             drawLevel;
 
 /// methods
 
