@@ -52,7 +52,8 @@ Aircraft::Aircraft(uint32_t addr) {
     lon = 0;
     lat = 0;
 
-    drawLevel = 0;
+    labelLevel = 0;
+    dlabelLevel = 0.0f;
 
     next = NULL;
 }

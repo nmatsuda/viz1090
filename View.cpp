@@ -895,6 +895,12 @@ void View::drawPlaneText(Aircraft *p) {
 
     if(p->w != 0) {
 
+
+        SDL_Color boxColor = style.labelLineColor;
+        if(p == selectedAircraft) {
+            boxColor = style.selectedColor;
+        }
+
         int tick = 4;
 
         int anchor_x, anchor_y, exit_x, exit_y;
@@ -929,25 +935,22 @@ void View::drawPlaneText(Aircraft *p) {
             static_cast<Sint16>(exit_y), 
             static_cast<Sint16>(anchor_y)};        
 
-        bezierRGBA(renderer,vx,vy,3,2,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
-        // lineRGBA(renderer, p->cx, p->cy, anchor_x, anchor_y, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);
+        bezierRGBA(renderer, vx, vy, 3, 2, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        // boxRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, 0, 0, 0, 255);
-        // rectangleRGBA(renderer, p->x, p->y - margin, p->x + p->w, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);    
-        lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
-        lineRGBA(renderer, p->x,p->y - margin, p->x, p->y - margin + tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                
+        lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x,p->y - margin, p->x, p->y - margin + tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x  + p->w - tick, p->y - margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
-        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w, p->y  + margin + tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                
+        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w - tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w, p->y - margin + tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
-        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x, p->y + p->h + margin - tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);        
-        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, style.labelLineColor.r, style.labelLineColor.g, style.labelLineColor.b,255);                        
+        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
     }
     
-    if(p->drawLevel < 2) {
+    if(p->labelLevel < 2 || p == selectedAircraft) {
         // drawSignalMarks(p, p->x, p->y);
 
         char flight[10] = "";
@@ -961,7 +964,7 @@ void View::drawPlaneText(Aircraft *p) {
         }        
     }
 
-    if(p->drawLevel < 1) {
+    if(p->labelLevel < 1 || p == selectedAircraft) {
         char alt[10] = "";
         if (metric) {
             charCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
@@ -1103,7 +1106,7 @@ float View::resolveLabelConflicts() {
         int collision_count = 0;
 
         while(check_p) {
-            if(check_p->addr != p->addr) {
+            if(check_p->addr == p->addr) {
                 check_p = check_p -> next;
                 continue;
             }
@@ -1128,9 +1131,9 @@ float View::resolveLabelConflicts() {
             float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
             float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
 
-            if(x_mag > 0 || y_mag > 0) {
-                collision_count ++;
-            }
+            // if(x_mag > 0 || y_mag > 0) {
+            //     collision_count ++;
+            // }
 
             // stay at least label_dist away from other icons
 
@@ -1168,13 +1171,22 @@ float View::resolveLabelConflicts() {
         p->ddox += density_force * all_x / count;
         p->ddoy += density_force * all_y / count;
 
-        //drawlevel hysteresis
+        //label drawlevel hysteresis
+        
+        if((float)p->labelLevel < (float)collision_count / 4.0f) {
+            p->dlabelLevel += 0.002f;
 
-        float densityScale = 85.0f;
-        if(p->drawLevel < 0.6f * (float)collision_count / 4.0f) {
-            p->drawLevel += 0.1f;                
-        } else if (p->drawLevel > 1.4f * (float)collision_count / 4.0f) {
-            p->drawLevel -= 0.1f;                
+            if(p->dlabelLevel > 1.0f) {
+                p->labelLevel++;
+                p->dlabelLevel = 0;                
+            }
+        } else if (p->labelLevel > (float)collision_count / 4.0f) {
+            p->dlabelLevel -= 0.002f;                
+
+            if(p->dlabelLevel < 0.0f) {
+                p->labelLevel--;
+                p->dlabelLevel = 0;
+            }            
         }
 
         p = p->next;
