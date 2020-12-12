@@ -86,7 +86,11 @@ typedef struct Style {
 
     SDL_Color clickColor;
 
-
+	SDL_Color black;
+	SDL_Color white;
+	SDL_Color red;
+	SDL_Color green;
+	SDL_Color blue;
 
     //
     // todo separate style stuff
@@ -112,9 +116,11 @@ typedef struct Style {
 		SDL_Color grey_light	= {196,196,196,255};
 		SDL_Color grey 		= {127,127,127,255};
 		SDL_Color grey_dark 	= {64,64,64,255};
-		SDL_Color black		= {0,0,0,255};
-		SDL_Color white	    = {255,255,255,255};
-		SDL_Color red		= {255,0,0,255};
+		black		= {0,0,0,255};
+		white	    = {255,255,255,255};
+		red			= {255,0,0,255};
+		green		= {0,255,0,255};
+		blue		= {0,0,255,255};
 
 
 	    backgroundColor = black;

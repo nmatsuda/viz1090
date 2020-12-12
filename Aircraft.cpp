@@ -41,6 +41,8 @@ Aircraft::Aircraft(uint32_t addr) {
     cy = 0;
     w = 0;
     h = 0;
+    target_w = 0;
+    target_h = 0;
 
     ox = 0;
     oy = 0;
@@ -53,7 +55,6 @@ Aircraft::Aircraft(uint32_t addr) {
     lat = 0;
 
     labelLevel = 0;
-    dlabelLevel = 0.0f;
 
     next = NULL;
 }

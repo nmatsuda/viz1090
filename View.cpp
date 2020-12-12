@@ -895,7 +895,6 @@ void View::drawPlaneText(Aircraft *p) {
 
     if(p->w != 0) {
 
-
         SDL_Color boxColor = style.labelLineColor;
         if(p == selectedAircraft) {
             boxColor = style.selectedColor;
@@ -935,19 +934,23 @@ void View::drawPlaneText(Aircraft *p) {
             static_cast<Sint16>(exit_y), 
             static_cast<Sint16>(anchor_y)};        
 
+        boxRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 0, 0, 0, 255);
+
         bezierRGBA(renderer, vx, vy, 3, 2, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        //lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x,p->y - margin, p->x + p->w, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
         lineRGBA(renderer, p->x,p->y - margin, p->x, p->y - margin + tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w - tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        // lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w - tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
         lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w, p->y - margin + tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        //lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + p->w, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
         lineRGBA(renderer, p->x, p->y + p->h + margin, p->x, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
 
-        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        // lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a); 
     }
     
     if(p->labelLevel < 2 || p == selectedAircraft) {
@@ -996,6 +999,11 @@ void View::drawPlaneText(Aircraft *p) {
         }
     }
 
+    //label debug
+    // char debug[25] = "";
+    // snprintf(debug,25,"%1.2f", p->labelLevel); 
+    // drawString(debug, p->x, p->y + totalHeight, mapFont, style.red);   
+
     // if(maxCharCount > 1) {
 
     //     Sint16 vx[4] = {
@@ -1021,20 +1029,31 @@ void View::drawPlaneText(Aircraft *p) {
         // lineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
     // }
 
-    p->w = totalWidth;
-    p->h = totalHeight;         
+    p->target_w = totalWidth;
+    p->target_h = totalHeight;
+
+    p->w += 0.1f * (p->target_w - p->w);
+    p->h += 0.1f * (p->target_h - p->h);
+
+    if(p->w < 0.05f) {
+        p->w = 0;
+    }
+
+    if(p->h < 0.05f) {
+        p->h = 0;
+    }
 }
 
 float View::resolveLabelConflicts() {
     float label_force = 0.001f;
     float label_dist = 2.0f;
-    float density_force = 0.005f;
+    float density_force = 0.05f;
     float attachment_force = 0.0015f;
     float attachment_dist = 10.0f;
     float icon_force = 0.001f;
     float icon_dist = 15.0f;
     float boundary_force = 0.01f;
-    float damping_force = 0.8f;
+    float damping_force = 0.85f;
     float velocity_limit = 2.0f;
 
     float maxV = 0.0f;    
@@ -1081,20 +1100,20 @@ float View::resolveLabelConflicts() {
 
         // // //screen edge 
 
-        if(p_left < 10 * screen_uiscale) {
-            p->ddox += boundary_force * (float)(10 * screen_uiscale - p_left);
+        if(p_left < 0) {
+            p->ddox += boundary_force * (float)(-p_left);
         }
 
-        if(p_right > (screen_width - 10 * screen_uiscale)) {
-            p->ddox -= boundary_force * (float)(p_right - (screen_width - 10 * screen_uiscale));
+        if(p_right > screen_width ) {
+            p->ddox += boundary_force * (float)(screen_width - p_right);
         }
 
-        if(p_top < 10 * screen_uiscale) {
-            p->ddoy += boundary_force * (float)(10 * screen_uiscale - p_top);
+        if(p_top < 0) {
+            p->ddoy += boundary_force * (float)(-p_top);
         }
 
-        if(p_bottom > (screen_height - 10 * screen_uiscale)) {
-            p->ddoy -= boundary_force * (float)(p_bottom - (screen_height - 10 * screen_uiscale));
+        if(p_bottom > screen_height) {
+            p->ddoy += boundary_force * (float)(screen_height - p_bottom);
         }
 
 
@@ -1103,12 +1122,26 @@ float View::resolveLabelConflicts() {
         int count = 0;
         //check against other labels
 
-        int collision_count = 0;
+        float density_max = 0;
 
         while(check_p) {
             if(check_p->addr == p->addr) {
                 check_p = check_p -> next;
                 continue;
+            }
+
+
+            //calculate density for label display level (inversely proportional to area of smallest box connecting this to neighbor)
+            float density = 1.0 / (0.001f + fabs(p->x - check_p->x) * fabs (p->x - check_p->y));
+
+            if(density > density_max) {
+                density_max = density;
+            }
+
+            density = 1.0 / (0.001f + fabs(p->x - check_p->cx) * fabs(p->x - check_p->cy));
+            
+            if(density > density_max) {
+                density_max = density;
             }
 
             int check_left = check_p->x;
@@ -1131,14 +1164,12 @@ float View::resolveLabelConflicts() {
             float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
             float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
 
-            // if(x_mag > 0 || y_mag > 0) {
-            //     collision_count ++;
-            // }
-
             // stay at least label_dist away from other icons
 
-            p->ddox += sign(offset_x) * label_force * x_mag;                        
-            p->ddoy += sign(offset_y) * label_force * y_mag;
+            if(x_mag > 0 && y_mag > 0) {
+                p->ddox += sign(offset_x) * label_force * x_mag;                        
+                p->ddoy += sign(offset_y) * label_force * y_mag;    
+            }            
        
             // stay at least icon_dist away from other icons
 
@@ -1151,12 +1182,10 @@ float View::resolveLabelConflicts() {
             x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
             y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
 
-            if(x_mag > 0 || y_mag > 0) {
-                collision_count ++;
+            if(x_mag > 0 && y_mag > 0) {
+                p->ddox += sign(offset_x) * icon_force * x_mag;    
+                p->ddoy += sign(offset_y) * icon_force * y_mag;
             }
-
-            p->ddox += sign(offset_x) * icon_force * x_mag;    
-            p->ddoy += sign(offset_y) * icon_force * y_mag;
 
             all_x += sign(boxmid_x - checkboxmid_x);
             all_y += sign(boxmid_y - checkboxmid_y);
@@ -1171,22 +1200,15 @@ float View::resolveLabelConflicts() {
         p->ddox += density_force * all_x / count;
         p->ddoy += density_force * all_y / count;
 
-        //label drawlevel hysteresis
+        // label drawlevel hysteresis
         
-        if((float)p->labelLevel < (float)collision_count / 4.0f) {
-            p->dlabelLevel += 0.002f;
+        float density_mult = 100.0f;
+        float level_rate = 0.0005f;
 
-            if(p->dlabelLevel > 1.0f) {
-                p->labelLevel++;
-                p->dlabelLevel = 0;                
-            }
-        } else if (p->labelLevel > (float)collision_count / 4.0f) {
-            p->dlabelLevel -= 0.002f;                
-
-            if(p->dlabelLevel < 0.0f) {
-                p->labelLevel--;
-                p->dlabelLevel = 0;
-            }            
+        if(p->labelLevel < -0.75f + density_mult * density_max) {
+            p->labelLevel += level_rate;
+        } else if (p->labelLevel > 0.75f + density_mult * density_max) {
+            p->labelLevel -= level_rate;                         
         }
 
         p = p->next;
