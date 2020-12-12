@@ -73,6 +73,7 @@ public:
     float w, h, target_w, target_h;
     float           ox, oy, dox, doy, ddox, ddoy;
     float             labelLevel;
+    float  opacity, target_opacity;
 
 /// methods
 

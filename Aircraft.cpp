@@ -44,6 +44,9 @@ Aircraft::Aircraft(uint32_t addr) {
     target_w = 0;
     target_h = 0;
 
+    opacity = 0;
+    target_opacity = 0;
+
     ox = 0;
     oy = 0;
     dox = 0;

@@ -893,11 +893,28 @@ void View::drawPlaneText(Aircraft *p) {
 
     SDL_Rect outRect;
 
+    if(p->opacity == 0 && p->labelLevel < 2) {
+        p->target_opacity = 1.0f;
+    }
+
+    if(p->opacity > 0 && p->labelLevel >= 2) {
+        p->target_opacity = 0.0f;
+    }
+
+    p->opacity += 0.25f * (p->target_opacity - p->opacity);
+
+    if(p->opacity < 0.05f) {
+        p->opacity = 0;
+    }
+
     if(p->w != 0) {
 
-        SDL_Color boxColor = style.labelLineColor;
+        SDL_Color drawColor = style.labelLineColor;
+
+        drawColor.a = (int) (255.0f * p->opacity);
+
         if(p == selectedAircraft) {
-            boxColor = style.selectedColor;
+            drawColor = style.selectedColor;
         }
 
         int tick = 4;
@@ -936,31 +953,34 @@ void View::drawPlaneText(Aircraft *p) {
 
         boxRGBA(renderer, p->x, p->y, p->x + p->w, p->y + p->h, 0, 0, 0, 255);
 
-        bezierRGBA(renderer, vx, vy, 3, 2, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        bezierRGBA(renderer, vx, vy, 3, 2, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
 
-        //lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x,p->y - margin, p->x + p->w, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x,p->y - margin, p->x, p->y - margin + tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        //lineRGBA(renderer, p->x,p->y - margin, p->x + tick, p->y - margin, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+        lineRGBA(renderer, p->x,p->y - margin, p->x + p->w, p->y - margin, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+        lineRGBA(renderer, p->x,p->y - margin, p->x, p->y - margin + tick, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
 
-        // lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w - tick, p->y - margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w, p->y - margin + tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        // lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w - tick, p->y - margin, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+        lineRGBA(renderer, p->x + p->w, p->y - margin, p->x + p->w, p->y - margin + tick, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
 
-        //lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + p->w, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
+        //lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + tick, p->y + p->h + margin, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x + p->w, p->y + p->h + margin, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+        lineRGBA(renderer, p->x, p->y + p->h + margin, p->x, p->y + p->h + margin - tick, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
 
-        // lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
-        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, boxColor.r, boxColor.g, boxColor.b, boxColor.a); 
+        // lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w - tick, p->y + p->h + margin, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+        lineRGBA(renderer, p->x + p->w, p->y + p->h + margin,p->x + p->w, p->y + p->h + margin - tick, drawColor.r, drawColor.g, drawColor.b, drawColor.a); 
     }
     
     if(p->labelLevel < 2 || p == selectedAircraft) {
         // drawSignalMarks(p, p->x, p->y);
 
+        SDL_Color drawColor = style.labelColor;
+        drawColor.a = (int) (255.0f * p->opacity);
+
         char flight[10] = "";
         charCount = snprintf(flight,10," %s", p->flight);
 
         if(charCount > 1) {
-            outRect = drawString(flight, p->x, p->y, mapBoldFont, style.labelColor); 
+            outRect = drawString(flight, p->x, p->y, mapBoldFont, drawColor); 
 
             totalWidth = std::max(totalWidth,outRect.w);  
             totalHeight += outRect.h;            
@@ -968,6 +988,9 @@ void View::drawPlaneText(Aircraft *p) {
     }
 
     if(p->labelLevel < 1 || p == selectedAircraft) {
+        SDL_Color drawColor = style.subLabelColor;
+        drawColor.a = (int) (255.0f * p->opacity);
+
         char alt[10] = "";
         if (metric) {
             charCount = snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
@@ -977,7 +1000,7 @@ void View::drawPlaneText(Aircraft *p) {
 
         if(charCount > 1) {
             // drawStringBG(alt, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
-            outRect = drawString(alt, p->x, p->y + totalHeight, mapFont, style.subLabelColor);   
+            outRect = drawString(alt, p->x, p->y + totalHeight, mapFont, drawColor);   
 
             totalWidth = std::max(totalWidth,outRect.w);  
             totalHeight += outRect.h;                              
@@ -992,12 +1015,13 @@ void View::drawPlaneText(Aircraft *p) {
 
         if(charCount > 1) {
             // drawStringBG(speed, p->x, p->y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
-            outRect = drawString(speed, p->x, p->y + totalHeight, mapFont, style.subLabelColor);  
+            outRect = drawString(speed, p->x, p->y + totalHeight, mapFont, drawColor);  
 
             totalWidth = std::max(totalWidth,outRect.w);  
             totalHeight += outRect.h;      
         }
     }
+
 
     //label debug
     // char debug[25] = "";
@@ -1032,8 +1056,8 @@ void View::drawPlaneText(Aircraft *p) {
     p->target_w = totalWidth;
     p->target_h = totalHeight;
 
-    p->w += 0.1f * (p->target_w - p->w);
-    p->h += 0.1f * (p->target_h - p->h);
+    p->w += 0.25f * (p->target_w - p->w);
+    p->h += 0.25f * (p->target_h - p->h);
 
     if(p->w < 0.05f) {
         p->w = 0;
@@ -1055,6 +1079,7 @@ float View::resolveLabelConflicts() {
     float boundary_force = 0.01f;
     float damping_force = 0.85f;
     float velocity_limit = 2.0f;
+    float edge_margin = 15.0f;
 
     float maxV = 0.0f;    
 
@@ -1100,20 +1125,20 @@ float View::resolveLabelConflicts() {
 
         // // //screen edge 
 
-        if(p_left < 0) {
-            p->ddox += boundary_force * (float)(-p_left);
+        if(p_left < edge_margin) {
+            p->ddox += boundary_force * (float)(edge_margin - p_left);
         }
 
-        if(p_right > screen_width ) {
-            p->ddox += boundary_force * (float)(screen_width - p_right);
+        if(p_right > screen_width - edge_margin) {
+            p->ddox += boundary_force * (float)(screen_width - edge_margin - p_right);
         }
 
-        if(p_top < 0) {
-            p->ddoy += boundary_force * (float)(-p_top);
+        if(p_top < edge_margin) {
+            p->ddoy += boundary_force * (float)(edge_margin - p_top);
         }
 
-        if(p_bottom > screen_height) {
-            p->ddoy += boundary_force * (float)(screen_height - p_bottom);
+        if(p_bottom > screen_height - edge_margin) {
+            p->ddoy += boundary_force * (float)(screen_height - edge_margin - p_bottom);
         }
 
 
@@ -1205,9 +1230,9 @@ float View::resolveLabelConflicts() {
         float density_mult = 100.0f;
         float level_rate = 0.0005f;
 
-        if(p->labelLevel < -0.75f + density_mult * density_max) {
+        if(p->labelLevel < -1.25f + density_mult * density_max) {
             p->labelLevel += level_rate;
-        } else if (p->labelLevel > 0.75f + density_mult * density_max) {
+        } else if (p->labelLevel > 0.5f + density_mult * density_max) {
             p->labelLevel -= level_rate;                         
         }
 
