@@ -332,13 +332,13 @@ void View::drawStatusBox(int *left, int *top, std::string label, std::string mes
 
     Label currentLabel;
     currentLabel.setFont(labelFont);
-    currentLabel.setFGColor(style.buttonBackground);
+    currentLabel.setColor(style.buttonBackground);
     currentLabel.setPosition(*left + labelFontWidth/2, *top);
     currentLabel.setText(label);
     currentLabel.draw(renderer);
     
     currentLabel.setFont(messageFont);
-    currentLabel.setFGColor(color);
+    currentLabel.setColor(color);
     currentLabel.setPosition(*left + labelWidth + messageFontWidth/2, *top);
     currentLabel.setText(message);
     currentLabel.draw(renderer);
@@ -565,7 +565,7 @@ void View::drawScaleBars()
 
         Label currentLabel;
         currentLabel.setFont(mapFont);
-        currentLabel.setFGColor(style.scaleBarColor);
+        currentLabel.setColor(style.scaleBarColor);
         currentLabel.setPosition(10+scaleBarDist, 15*screen_uiscale);
         currentLabel.setText(scaleLabel);
         currentLabel.draw(renderer);
@@ -673,9 +673,11 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
 
 void View::drawPlaceNames() {
 
+    //pre-generating labels in map will trade memory for TTF calls - need to compare when there are a lot of labels on screen
+
     Label currentLabel;    
     currentLabel.setFont(mapFont);
-    currentLabel.setFGColor(style.geoColor);
+    currentLabel.setColor(style.geoColor);
 
     for(std::vector<MapLabel*>::iterator label = map.mapnames.begin(); label != map.mapnames.end(); ++label) {
         float dx, dy;

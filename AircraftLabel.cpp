@@ -8,6 +8,33 @@ static float sign(float x) {
     return (x > 0) - (x < 0);
 }
 
+SDL_Rect AircraftLabel::getFullRect(int labelLevel) {
+    SDL_Rect rect = {x,y,0,0};
+
+   	SDL_Rect currentRect;
+
+    if(labelLevel < 2) {
+	   	currentRect = speedLabel.getRect();
+
+        rect.w = std::max(rect.w,currentRect.w);  
+        rect.h += currentRect.h; 
+	}
+
+    if(labelLevel < 1) {
+	   	currentRect = altitudeLabel.getRect();
+
+        rect.w = std::max(rect.w,currentRect.w);  
+        rect.h += currentRect.h; 
+
+	   	currentRect = speedLabel.getRect();
+
+        rect.w = std::max(rect.w,currentRect.w);  
+        rect.h += currentRect.h; 
+	}
+
+	return rect;
+}
+
 void AircraftLabel::update() {
     char flight[10] = "";
     snprintf(flight,10," %s", p->flight);
@@ -38,7 +65,60 @@ void AircraftLabel::clearAcceleration() {
 	ddy = 0;
 }
 
+float AircraftLabel::calculateDensity(Aircraft *check_p, int labelLevel) {
+    float density_max = 0;
+
+    while(check_p) {
+        if(check_p->addr == p->addr) {
+            check_p = check_p->next;
+            continue;
+        }
+
+        if(!check_p->label) {
+            check_p = check_p->next;
+        	continue;
+        }
+
+     	if(check_p->label->x + check_p->label->w < 0) {
+            check_p = check_p->next;
+        	continue;
+	    }
+
+     	if(check_p->label->y + check_p->label->h < 0) {
+            check_p = check_p->next;
+        	continue;
+	    }
+
+     	if(check_p->label->x > screen_width) {
+            check_p = check_p->next;
+        	continue;
+	    }
+
+     	if(check_p->label->y > screen_height) {
+            check_p = check_p->next;
+        	continue;
+	    }
+
+        SDL_Rect currentRect = getFullRect(labelLevel);
+
+        float width_proportion = (currentRect.w  + check_p->label->w) / fabs(x - check_p->label->x);
+        float height_proportion = (currentRect.h + check_p->label->h) / fabs(y - check_p->label->y);
+
+        float density = width_proportion * height_proportion;
+        
+        if(density > density_max) {
+            density_max = density;
+        }
+
+        check_p = check_p -> next;
+    }
+
+    return density_max;
+}
+
 void AircraftLabel::calculateForces(Aircraft *check_p) {
+	Aircraft *head = check_p;
+
     int p_left = x;
     int p_right = x + w;
     int p_top = y;
@@ -60,7 +140,7 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     ddy -= sign(offset_y) * attachment_force * (fabs(offset_y) - target_length_y);
     
 
-    // // //screen edge 
+    // screen edge 
 
     if(p_left < edge_margin) {
         ddx += boundary_force * (float)(edge_margin - p_left);
@@ -84,7 +164,6 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     int count = 0;
     //check against other labels
 
-    float density_max = 0;
 
     while(check_p) {
         if(check_p->addr == p->addr) {
@@ -95,19 +174,6 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         if(!check_p->label) {
             check_p = check_p->next;
         	continue;
-        }
-
-        //calculate density for label display level (inversely proportional to area of smallest box connecting this to neighbor)
-        float density = 1.0 / (0.001f + fabs(x - check_p->label->x) * fabs (x - check_p->label->y));
-
-        if(density > density_max) {
-            density_max = density;
-        }
-
-        density = 1.0 / (0.001f + fabs(x - check_p->x) * fabs(x - check_p->y));
-        
-        if(density > density_max) {
-            density_max = density;
         }
 
         int check_left = check_p->label->x;
@@ -161,6 +227,7 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         check_p = check_p -> next;
     }
 
+	// float density_max = calculateDensity(head, labelLevel);
 
     // move away from others
     ddx += density_force * all_x / count;
@@ -168,13 +235,30 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
 
     // label drawlevel hysteresis
     
-    float density_mult = 100.0f;
-    float level_rate = 0.0005f;
+    // float density_mult = 100.0f;
+    // float level_rate = 0.0005f;
 
-    if(labelLevel < -1.25f + density_mult * density_max) {
-        labelLevel += level_rate;
-    } else if (labelLevel > 0.5f + density_mult * density_max) {
-        labelLevel -= level_rate;                         
+    // if(labelLevel < -1.25f + density_mult * density_max) {
+    //     labelLevel += level_rate;
+    // } else if (labelLevel > 0.5f + density_mult * density_max) {
+    //     labelLevel -= level_rate;                         
+    // }
+
+	char buff[100];
+	snprintf(buff, sizeof(buff), "%2.2f", labelLevel);
+	debugLabel.setText(buff);
+
+ 	float density_mult = 0.5f;
+ 	float level_rate = 0.001f;
+
+    if(labelLevel < 0.8f * density_mult * calculateDensity(head, labelLevel+1)) {
+        if(labelLevel <= 2) {
+	        labelLevel += level_rate;
+        }
+	} else if (labelLevel > 1.2f * density_mult * calculateDensity(head, labelLevel)) {
+	    if(labelLevel >= 0) {
+      		labelLevel -= level_rate;
+  		}	                         
     }
 
 }
@@ -346,7 +430,7 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         SDL_Color drawColor = style.labelColor;
         drawColor.a = (int) (255.0f * opacity);
 
-        flightLabel.setFGColor(drawColor);
+        flightLabel.setColor(drawColor);
         flightLabel.setPosition(x,y);
     	flightLabel.draw(renderer);
         // outRect = drawString(flight, x, y, mapBoldFont, drawColor); 
@@ -361,7 +445,7 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         SDL_Color drawColor = style.subLabelColor;
         drawColor.a = (int) (255.0f * opacity);
 
-        altitudeLabel.setFGColor(drawColor);
+        altitudeLabel.setColor(drawColor);
         altitudeLabel.setPosition(x,y + totalHeight);
 		altitudeLabel.draw(renderer);
     	outRect = altitudeLabel.getRect();
@@ -369,7 +453,7 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         totalWidth = std::max(totalWidth,outRect.w);  
         totalHeight += outRect.h;                              
 
-        speedLabel.setFGColor(drawColor);
+        speedLabel.setColor(drawColor);
         speedLabel.setPosition(x,y + totalHeight);
 		speedLabel.draw(renderer);
     	outRect = speedLabel.getRect();
@@ -378,6 +462,9 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         totalHeight += outRect.h;      
     
     }
+
+    debugLabel.setPosition(x,y + totalHeight);
+    debugLabel.draw(renderer);
 
     target_w = totalWidth;
     target_h = totalHeight;
@@ -422,4 +509,5 @@ AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int scr
     flightLabel.setFont(font);
 	altitudeLabel.setFont(font);
 	speedLabel.setFont(font);
+	debugLabel.setFont(font);
 }

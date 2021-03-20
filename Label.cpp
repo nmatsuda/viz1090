@@ -1,7 +1,6 @@
 #include "Label.h"
 #include <string>
 
-
 void Label::draw(SDL_Renderer *renderer) {
     SDL_Rect rect = getRect();
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -11,19 +10,8 @@ void Label::draw(SDL_Renderer *renderer) {
 
 
 void Label::makeSurface() {
-//    if(BGColor.a = 0) {
-        surface = TTF_RenderUTF8_Solid(font, text.c_str(), FGColor);   
-    // } else {
-    //     surface = TTF_RenderUTF8_Shaded(font, text.c_str(), FGColor, BGColor);
-    // }
-
-    
-    if (surface == NULL)
-    {
-        printf("Couldn't create surface for String %s: %s\n", text.c_str(), SDL_GetError());
-    }
+    surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);   
 }
-
 
 SDL_Rect Label::getRect() {
     SDL_Rect rect = {0,0,0,0};
@@ -58,16 +46,12 @@ void Label::setFont(TTF_Font *font) {
     this->font = font;
 }
 
-void Label::setFGColor(SDL_Color color) {
-    this->FGColor = color;
+void Label::setColor(SDL_Color color) {
+    this->color = color;
 }
-
-void Label::setBGColor(SDL_Color color) {
-    this->BGColor = color;  
-}
-
+// 
 Label::Label() {
-    BGColor = {0, 0, 0, 0};
+    this->color = {255,255,255,255};
     surface = NULL;
 }
 

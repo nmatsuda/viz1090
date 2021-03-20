@@ -20,14 +20,17 @@ class AircraftLabel {
 		AircraftLabel(Aircraft *p, bool metric, int screen_width, int screen_height, TTF_Font *font);
 
 	private:
+		SDL_Rect getFullRect(int labelLevel);
+		float calculateDensity(Aircraft *check_p, int labelLevel);
 
 		Aircraft *p;
 		
 		Label flightLabel;
 		Label altitudeLabel;
 		Label speedLabel;
+		Label debugLabel;
 
-		int labelLevel;
+		float labelLevel;
 
 		bool metric;
 
