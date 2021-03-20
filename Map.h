@@ -40,16 +40,16 @@ typedef struct Point{
 	float lon;
 } Point;
 
-typedef struct Label{
+typedef struct MapLabel{
 	Point location;
 	std::string text;
 
-	Label(float lon, float lat, std::string text) {
+	MapLabel(float lon, float lat, std::string text) {
 		this->location.lon = lon;
 		this->location.lat = lat;
 		this->text = text;
 	}
-} Label;
+} MapLabel;
 
 typedef struct Line{
 	float lat_min;
@@ -125,8 +125,8 @@ public:
 	std::vector<Line*> getLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 	std::vector<Line*> getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max);
 
-	std::vector<Label*> mapnames;
-	std::vector<Label*> airportnames;
+	std::vector<MapLabel*> mapnames;
+	std::vector<MapLabel*> airportnames;
 
 	Map(); 
 

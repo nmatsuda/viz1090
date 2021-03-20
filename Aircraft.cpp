@@ -30,34 +30,16 @@
 //
 
 #include "Aircraft.h"
+#include "AircraftLabel.h"
 
 Aircraft::Aircraft(uint32_t addr) {
     this->addr = addr;
     prev_seen = 0;
 
-    x = 0;
-    y = 0;
-    cx = 0;
-    cy = 0;
-    w = 0;
-    h = 0;
-    target_w = 0;
-    target_h = 0;
-
-    opacity = 0;
-    target_opacity = 0;
-
-    ox = 0;
-    oy = 0;
-    dox = 0;
-    doy  = 0;
-    ddox = 0;
-    ddoy = 0;
-
     lon = 0;
     lat = 0;
 
-    labelLevel = 0;
+    label = NULL;
 
     next = NULL;
 }

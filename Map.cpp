@@ -342,7 +342,7 @@ Map::Map() {
     }
 
     // std::cout << "[" << x << "," << y << "] " << assemble << "\n";
-    Label *label = new Label(lon,lat,assemble); 
+    MapLabel *label = new MapLabel(lon,lat,assemble); 
     mapnames.push_back(label);
   }
 
@@ -371,7 +371,7 @@ Map::Map() {
     }
 
     // std::cout << "[" << x << "," << y << "] " << assemble << "\n";
-    Label *label = new Label(lon,lat,assemble); 
+    MapLabel *label = new MapLabel(lon,lat,assemble); 
     airportnames.push_back(label);
   }
 

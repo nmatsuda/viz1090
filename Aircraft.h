@@ -35,6 +35,8 @@
 #include <vector> 
 #include <chrono>
 
+class AircraftLabel;
+
 class Aircraft {
 public:	
     uint32_t        addr;           // ICAO address
@@ -55,6 +57,9 @@ public:
     std::vector <float>   lonHistory, latHistory, headingHistory;
     std::vector <std::chrono::high_resolution_clock::time_point> timestampHistory;
 
+
+    AircraftLabel *label;
+
     // float           oldLon[TRAIL_LENGTH];
     // float           oldLat[TRAIL_LENGTH];
     // float           oldHeading[TRAIL_LENGTH];
@@ -69,11 +74,12 @@ public:
 
 //// label stuff -> should go to aircraft icon  class
 
-    int             x, y, cx, cy;
-    float w, h, target_w, target_h;
-    float           ox, oy, dox, doy, ddox, ddoy;
-    float             labelLevel;
-    float  opacity, target_opacity;
+    // int             x, y, cx, cy;
+    int x, y;
+    // float w, h, target_w, target_h;
+    // float           ox, oy, dox, doy, ddox, ddoy;
+    // float             labelLevel;
+    // float  opacity, target_opacity;
 
 /// methods
 
