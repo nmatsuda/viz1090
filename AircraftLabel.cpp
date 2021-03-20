@@ -209,12 +209,50 @@ void AircraftLabel::applyForces() {
         // y = p->cy + (int)round(p->oy);
 }
 
+// SDL_Color signalToColor(int signal) {
+//     SDL_Color planeColor;
 
-void AircraftLabel::draw(SDL_Renderer *renderer) {
-    //don't draw first time
-    if(x == 0 || y == 0) {
-        return;
-    }
+//     if(signal > 127) {
+//         signal = 127;
+//     }
+
+//     if(signal < 0) {
+//         planeColor = setColor(96, 96, 96);      
+//     } else {
+//         planeColor = setColor(parula[signal][0], parula[signal][1], parula[signal][2]);                 
+//     }
+
+//     return planeColor;
+// }
+// void View::drawSignalMarks(Aircraft *p, int x, int y) {
+//     unsigned char * pSig       = p->signalLevel;
+//     unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+//                                               pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
+
+//     SDL_Color barColor = signalToColor(signalAverage);
+
+//     Uint8 seenFade;
+
+//     if(elapsed(p->msSeen) < 1024) {
+//         seenFade = (Uint8) (255.0 - elapsed(p->msSeen) / 4.0);
+
+//         circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
+//     }
+
+//     if(elapsed(p->msSeenLatLon) < 1024) {
+//         seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
+
+//         hlineRGBA(renderer, x + mapFontWidth + 5 * screen_uiscale, x + mapFontWidth + 9 * screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
+//         vlineRGBA(renderer, x + mapFontWidth + 7 * screen_uiscale, y - 2 * screen_uiscale - 5, y + 2 * screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
+//     }
+// }
+
+
+void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
+    // //don't draw first time
+    // if(x == 0 || y == 0) {
+    //     return;
+    // }
 
     int totalWidth = 0;
     int totalHeight = 0;
@@ -245,10 +283,9 @@ void AircraftLabel::draw(SDL_Renderer *renderer) {
 
         drawColor.a = (int) (255.0f * opacity);
 
-        //this would need to be set in view (settable label level etc)
-        // if(p == selectedAircraft) {
-        //     drawColor = style.selectedColor;
-        // }
+        if(selected) {
+            drawColor = style.selectedColor;
+        }
 
         int tick = 4;
 
@@ -303,15 +340,14 @@ void AircraftLabel::draw(SDL_Renderer *renderer) {
         lineRGBA(renderer, x + w, y + h + margin,x + w, y + h + margin - tick, drawColor.r, drawColor.g, drawColor.b, drawColor.a); 
     }
    
-    // if(labelLevel < 2 || p == selectedAircraft) {
-    //need externally settable label level
-    if(labelLevel < 2) {
+    if(labelLevel < 2 || selected) {
         // drawSignalMarks(p, x, y);
 
         SDL_Color drawColor = style.labelColor;
         drawColor.a = (int) (255.0f * opacity);
 
         flightLabel.setFGColor(drawColor);
+        flightLabel.setPosition(x,y);
     	flightLabel.draw(renderer);
         // outRect = drawString(flight, x, y, mapBoldFont, drawColor); 
     	outRect = flightLabel.getRect();
@@ -321,24 +357,20 @@ void AircraftLabel::draw(SDL_Renderer *renderer) {
     
     }
 
-    // if(labelLevel < 1 || p == selectedAircraft) {
-    if(labelLevel < 1) {
+    if(labelLevel < 1 || selected) {
         SDL_Color drawColor = style.subLabelColor;
         drawColor.a = (int) (255.0f * opacity);
 
-        // drawStringBG(alt, x, y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);   
-        // outRect = drawString(alt, x, y + totalHeight, mapFont, drawColor);   
         altitudeLabel.setFGColor(drawColor);
+        altitudeLabel.setPosition(x,y + totalHeight);
 		altitudeLabel.draw(renderer);
     	outRect = altitudeLabel.getRect();
 
         totalWidth = std::max(totalWidth,outRect.w);  
         totalHeight += outRect.h;                              
 
-
-        // drawStringBG(speed, x, y + currentLine * mapFontHeight, mapFont, style.subLabelColor, style.labelBackground);  
-        // outRect = drawString(speed, x, y + totalHeight, mapFont, drawColor);  
         speedLabel.setFGColor(drawColor);
+        speedLabel.setPosition(x,y + totalHeight);
 		speedLabel.draw(renderer);
     	outRect = speedLabel.getRect();
 
@@ -346,37 +378,6 @@ void AircraftLabel::draw(SDL_Renderer *renderer) {
         totalHeight += outRect.h;      
     
     }
-
-
-    //label debug
-    // char debug[25] = "";
-    // snprintf(debug,25,"%1.2f", p->labelLevel); 
-    // drawString(debug, p->x, p->y + totalHeight, mapFont, style.red);   
-
-    // if(maxCharCount > 1) {
-
-    //     Sint16 vx[4] = {
-    //         static_cast<Sint16>(p->cx), 
-    //         static_cast<Sint16>(p->cx + (p->x - p->cx) / 2), 
-    //         static_cast<Sint16>(p->x), 
-    //         static_cast<Sint16>(p->x)};
-
-    //     Sint16 vy[4] = {
-    //         static_cast<Sint16>(p->cy), 
-    //         static_cast<Sint16>(p->cy + (p->y - p->cy) / 2), 
-    //         static_cast<Sint16>(p->y - mapFontHeight), 
-    //         static_cast<Sint16>(p->y)};
-        
-    //     if(p->cy > p->y + currentLine * mapFontHeight) {
-    //         vy[2] = p->y + currentLine * mapFontHeight + mapFontHeight;
-    //         vy[3] = p->y + currentLine * mapFontHeight;
-    //     } 
-
-    //     bezierRGBA(renderer,vx,vy,4,2,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
-
-
-        // lineRGBA(renderer,p->x,p->y,p->x,p->y+currentLine*mapFontHeight,style.labelLineColor.r,style.labelLineColor.g,style.labelLineColor.b,SDL_ALPHA_OPAQUE);
-    // }
 
     target_w = totalWidth;
     target_h = totalHeight;

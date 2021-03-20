@@ -15,7 +15,7 @@ class AircraftLabel {
 		void calculateForces(Aircraft *check_p);
 		void applyForces();
 
-		void draw(SDL_Renderer *renderer);
+		void draw(SDL_Renderer *renderer, bool selected);
 
 		AircraftLabel(Aircraft *p, bool metric, int screen_width, int screen_height, TTF_Font *font);
 

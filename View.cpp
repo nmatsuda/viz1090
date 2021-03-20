@@ -32,9 +32,6 @@
 #include "SDL2/SDL2_rotozoom.h"
 #include "SDL2/SDL2_gfxPrimitives.h"
 
-//color schemes
-#include "parula.h"
-
 #include "View.h"
 
 #include "AircraftLabel.h"
@@ -86,22 +83,6 @@ SDL_Color setColor(uint8_t r, uint8_t g, uint8_t b) {
     return out;
 }
 
-SDL_Color signalToColor(int signal) {
-    SDL_Color planeColor;
-
-    if(signal > 127) {
-        signal = 127;
-    }
-
-    if(signal < 0) {
-        planeColor = setColor(96, 96, 96);      
-    } else {
-        planeColor = setColor(parula[signal][0], parula[signal][1], parula[signal][2]);                 
-    }
-
-    return planeColor;
-}
-
 SDL_Color lerpColor(SDL_Color aColor, SDL_Color bColor, float factor) {
     if(factor > 1.0f) {
         factor = 1.0f;
@@ -119,63 +100,63 @@ SDL_Color lerpColor(SDL_Color aColor, SDL_Color bColor, float factor) {
     return out;
 }
 
-SDL_Color hsv2SDLColor(float h, float s, float v)
-{
-    float      hh, p, q, t, ff;
-    long        i;
-    SDL_Color         out;
+// SDL_Color hsv2SDLColor(float h, float s, float v)
+// {
+//     float      hh, p, q, t, ff;
+//     long        i;
+//     SDL_Color         out;
 
-    if(s <= 0.0) {       
-        out.r = (uint8_t)v;
-        out.g = (uint8_t)v;
-        out.b = (uint8_t)v;
-        return out;
-    }
-    hh = h;
-    if(hh >= 360.0) hh = 0.0;
-    hh /= 60.0;
-    i = (long)hh;
-    ff = hh - i;
-    p = v * (1.0 - s);
-    q = v * (1.0 - (s * ff));
-    t = v * (1.0 - (s * (1.0 - ff)));
+//     if(s <= 0.0) {       
+//         out.r = (uint8_t)v;
+//         out.g = (uint8_t)v;
+//         out.b = (uint8_t)v;
+//         return out;
+//     }
+//     hh = h;
+//     if(hh >= 360.0) hh = 0.0;
+//     hh /= 60.0;
+//     i = (long)hh;
+//     ff = hh - i;
+//     p = v * (1.0 - s);
+//     q = v * (1.0 - (s * ff));
+//     t = v * (1.0 - (s * (1.0 - ff)));
 
-    switch(i) {
-    case 0:
-        out.r = (uint8_t)v;
-        out.g = (uint8_t)t;
-        out.b = (uint8_t)p;
-        break;
-    case 1:
-        out.r = (uint8_t)q;
-        out.g = (uint8_t)v;
-        out.b = (uint8_t)p;
-        break;
-    case 2:
-        out.r = (uint8_t)p;
-        out.g = (uint8_t)v;
-        out.b = (uint8_t)t;
-        break;
+//     switch(i) {
+//     case 0:
+//         out.r = (uint8_t)v;
+//         out.g = (uint8_t)t;
+//         out.b = (uint8_t)p;
+//         break;
+//     case 1:
+//         out.r = (uint8_t)q;
+//         out.g = (uint8_t)v;
+//         out.b = (uint8_t)p;
+//         break;
+//     case 2:
+//         out.r = (uint8_t)p;
+//         out.g = (uint8_t)v;
+//         out.b = (uint8_t)t;
+//         break;
 
-    case 3:
-        out.r = (uint8_t)p;
-        out.g = (uint8_t)q;
-        out.b = (uint8_t)v;
-        break;
-    case 4:
-        out.r = (uint8_t)t;
-        out.g = (uint8_t)p;
-        out.b = (uint8_t)v;
-        break;
-    case 5:
-    default:
-        out.r = (uint8_t)v;
-        out.g = (uint8_t)p;
-        out.b = (uint8_t)q;
-        break;
-    }
-    return out;     
-}
+//     case 3:
+//         out.r = (uint8_t)p;
+//         out.g = (uint8_t)q;
+//         out.b = (uint8_t)v;
+//         break;
+//     case 4:
+//         out.r = (uint8_t)t;
+//         out.g = (uint8_t)p;
+//         out.b = (uint8_t)v;
+//         break;
+//     case 5:
+//     default:
+//         out.r = (uint8_t)v;
+//         out.g = (uint8_t)p;
+//         out.b = (uint8_t)q;
+//         break;
+//     }
+//     return out;     
+// }
 
 int View::screenDist(float d) {
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
@@ -223,6 +204,9 @@ int View::outOfBounds(int x, int y, int left, int top, int right, int bottom) {
     }
 }
 
+//
+// Fonts should probably go in Style
+//
 
 TTF_Font* View::loadFont(const char *name, int size)
 {
@@ -752,8 +736,6 @@ void View::drawGeography() {
         currentMaxDist = maxDist;
     }
     
-
-
     SDL_SetRenderDrawColor(renderer, style.backgroundColor.r, style.backgroundColor.g, style.backgroundColor.b, 255);
 
     SDL_RenderClear(renderer);
@@ -811,37 +793,13 @@ void View::drawGeography() {
     }
 }
 
-void View::drawSignalMarks(Aircraft *p, int x, int y) {
-    unsigned char * pSig       = p->signalLevel;
-    unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                              pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
-
-    SDL_Color barColor = signalToColor(signalAverage);
-
-    Uint8 seenFade;
-
-    if(elapsed(p->msSeen) < 1024) {
-        seenFade = (Uint8) (255.0 - elapsed(p->msSeen) / 4.0);
-
-        circleRGBA(renderer, x + mapFontWidth, y - 5, 2 * screen_uiscale, barColor.r, barColor.g, barColor.b, seenFade);
-    }
-
-    if(elapsed(p->msSeenLatLon) < 1024) {
-        seenFade = (Uint8) (255.0 - elapsed(p->msSeenLatLon) / 4.0);
-
-        hlineRGBA(renderer, x + mapFontWidth + 5 * screen_uiscale, x + mapFontWidth + 9 * screen_uiscale, y - 5, barColor.r, barColor.g, barColor.b, seenFade);
-        vlineRGBA(renderer, x + mapFontWidth + 7 * screen_uiscale, y - 2 * screen_uiscale - 5, y + 2 * screen_uiscale - 5, barColor.r, barColor.g, barColor.b, seenFade);
-    }
-}
-
-
 void View::drawPlaneText(Aircraft *p) {
     if(!p->label) {
         p->label = new AircraftLabel(p,metric,screen_width, screen_height, mapFont);
     }
 
     p->label->update();
-    p->label->draw(renderer);
+    p->label->draw(renderer, (p == selectedAircraft));
 }
 
 float View::resolveLabelConflicts() {
@@ -880,7 +838,6 @@ float View::resolveLabelConflicts() {
 
     return maxV;
 }
-
 
 void View::drawPlanes() {
     Aircraft *p = appData->aircraftList.head;
@@ -997,7 +954,6 @@ void View::animateCenterAbsolute(float x, float y) {
 
     mapMoved = 1;
 }
-
 
 void View::moveCenterAbsolute(float x, float y) {
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
@@ -1202,13 +1158,12 @@ void View::draw() {
     //drawMouse();
     drawClick();
 
-    if(fps) {
-        char fps[60] = " ";
-        snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
+    // if(fps) {
+    //     char fps[60] = " ";
+    //     snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
 
-
-        //drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);      
-    }
+    //     drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);      
+    // }
     
     SDL_RenderPresent(renderer);  
 
