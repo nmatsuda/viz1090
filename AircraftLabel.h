@@ -1,6 +1,7 @@
 
 #include <string>
 #include "SDL2/SDL_ttf.h" 
+#include <chrono>
 
 #include "Label.h"
 #include "Style.h" 
@@ -54,6 +55,8 @@ class AircraftLabel {
 
 		int screen_width;
 		int screen_height;
+
+		std::chrono::high_resolution_clock::time_point lastLevelChange;
 
 		///////////
 

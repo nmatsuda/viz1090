@@ -3,13 +3,21 @@
 
 void Label::draw(SDL_Renderer *renderer) {
     SDL_Rect rect = getRect();
+
+    if(rect.h == 0 || rect.w == 0) {
+        return;
+    }
+
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     SDL_RenderCopy(renderer, texture, NULL, &rect);
     SDL_DestroyTexture(texture);
 }
 
-
 void Label::makeSurface() {
+    if(surface != NULL) {
+        SDL_FreeSurface(surface);
+    }
+    
     surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);   
 }
 

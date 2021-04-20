@@ -1,15 +1,26 @@
 #include "AircraftLabel.h"
 #include "Aircraft.h"
 
+#include <algorithm> 
+
 #include "SDL2/SDL2_gfxPrimitives.h"
 
+using fmilliseconds = std::chrono::duration<float, std::milli>;
+
+static std::chrono::high_resolution_clock::time_point now() {
+    return std::chrono::high_resolution_clock::now();
+}
+
+static float elapsed(std::chrono::high_resolution_clock::time_point ref) {
+            return (fmilliseconds {now() - ref}).count();
+}
 
 static float sign(float x) {
     return (x > 0) - (x < 0);
 }
 
 SDL_Rect AircraftLabel::getFullRect(int labelLevel) {
-    SDL_Rect rect = {x,y,0,0};
+    SDL_Rect rect = {static_cast<int>(x),static_cast<int>(y),0,0};
 
    	SDL_Rect currentRect;
 
@@ -36,14 +47,18 @@ SDL_Rect AircraftLabel::getFullRect(int labelLevel) {
 }
 
 void AircraftLabel::update() {
-    char flight[10] = "";
-    snprintf(flight,10," %s", p->flight);
+    char flight[17] = "";
+    snprintf(flight,17," %s", p->flight);
 
-    flightLabel.setText(flight);
+
+	std::string flightString = flight;
+	flightString.erase(std::remove_if(flightString.begin(), flightString.end(), isspace), flightString.end());
+
+    flightLabel.setText(flightString);
 
 	char alt[10] = "";
     if (metric) {
-        snprintf(alt,10," %dm", (int) (p->altitude / 3.2828)); 
+        snprintf(alt,10," %dm", static_cast<int>(p->altitude / 3.2828)); 
     } else {
         snprintf(alt,10," %d'", p->altitude); 
     }
@@ -52,7 +67,7 @@ void AircraftLabel::update() {
 
     char speed[10] = "";
     if (metric) {
-        snprintf(speed,10," %dkm/h", (int) (p->speed * 1.852));
+        snprintf(speed,10," %dkm/h", static_cast<int>(p->speed * 1.852));
     } else {
         snprintf(speed,10," %dmph", p->speed);
     }
@@ -117,6 +132,10 @@ float AircraftLabel::calculateDensity(Aircraft *check_p, int labelLevel) {
 }
 
 void AircraftLabel::calculateForces(Aircraft *check_p) {
+	if(w == 0 || h == 0) {
+		return;
+	}
+
 	Aircraft *head = check_p;
 
     int p_left = x;
@@ -125,8 +144,8 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     int p_bottom = y + h;
 
        
-    float boxmid_x = (float)(p_left + p_right) / 2.0f;
-    float boxmid_y = (float)(p_top + p_bottom) / 2.0f;
+    float boxmid_x = static_cast<float>(p_left + p_right) / 2.0f;
+    float boxmid_y = static_cast<float>(p_top + p_bottom) / 2.0f;
     
     float offset_x = boxmid_x - p->x;
     float offset_y = boxmid_y - p->y;
@@ -143,19 +162,19 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     // screen edge 
 
     if(p_left < edge_margin) {
-        ddx += boundary_force * (float)(edge_margin - p_left);
+        ddx += boundary_force * static_cast<float>(edge_margin - p_left);
     }
 
     if(p_right > screen_width - edge_margin) {
-        ddx += boundary_force * (float)(screen_width - edge_margin - p_right);
+        ddx += boundary_force * static_cast<float>(screen_width - edge_margin - p_right);
     }
 
     if(p_top < edge_margin) {
-        ddy += boundary_force * (float)(edge_margin - p_top);
+        ddy += boundary_force * static_cast<float>(edge_margin - p_top);
     }
 
     if(p_bottom > screen_height - edge_margin) {
-        ddy += boundary_force * (float)(screen_height - edge_margin - p_bottom);
+        ddy += boundary_force * static_cast<float>(screen_height - edge_margin - p_bottom);
     }
 
 
@@ -163,7 +182,6 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     float all_y = 0;
     int count = 0;
     //check against other labels
-
 
     while(check_p) {
         if(check_p->addr == p->addr) {
@@ -181,17 +199,17 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         int check_top = check_p->label->y;
         int check_bottom = check_p->label->y + check_p->label->h;
 
-        float icon_x = (float)check_p->x;
-        float icon_y = (float)check_p->y;
+        float icon_x = static_cast<float>(check_p->x);
+        float icon_y = static_cast<float>(check_p->y);
 
-        float checkboxmid_x = (float)(check_left + check_right) / 2.0f;
-        float checkboxmid_y = (float)(check_top + check_bottom) / 2.0f;
+        float checkboxmid_x = static_cast<float>(check_left + check_right) / 2.0f;
+        float checkboxmid_y = static_cast<float>(check_top + check_bottom) / 2.0f;
 
         float offset_x = boxmid_x - checkboxmid_x;
         float offset_y = boxmid_y - checkboxmid_y;
 
-        float target_length_x = label_dist + (float)(check_p->label->w + w) / 2.0f;
-        float target_length_y = label_dist + (float)(check_p->label->h + h) / 2.0f;
+        float target_length_x = label_dist + static_cast<float>(check_p->label->w + w) / 2.0f;
+        float target_length_y = label_dist + static_cast<float>(check_p->label->h + h) / 2.0f;
     
         float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
         float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
@@ -208,8 +226,8 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         offset_x = boxmid_x - check_p->x;
         offset_y = boxmid_y - check_p->y;
 
-        target_length_x = icon_dist + (float)check_p->label->w / 2.0f;
-        target_length_y = icon_dist + (float)check_p->label->h / 2.0f;
+        target_length_x = icon_dist + static_cast<float>(check_p->label->w) / 2.0f;
+        target_length_y = icon_dist + static_cast<float>(check_p->label->h) / 2.0f;
     
         x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
         y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
@@ -227,40 +245,30 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         check_p = check_p -> next;
     }
 
-	// float density_max = calculateDensity(head, labelLevel);
-
     // move away from others
     ddx += density_force * all_x / count;
     ddy += density_force * all_y / count;
 
-    // label drawlevel hysteresis
-    
-    // float density_mult = 100.0f;
-    // float level_rate = 0.0005f;
-
-    // if(labelLevel < -1.25f + density_mult * density_max) {
-    //     labelLevel += level_rate;
-    // } else if (labelLevel > 0.5f + density_mult * density_max) {
-    //     labelLevel -= level_rate;                         
-    // }
-
-	char buff[100];
-	snprintf(buff, sizeof(buff), "%2.2f", labelLevel);
-	debugLabel.setText(buff);
+	// char buff[100];
+	// snprintf(buff, sizeof(buff), "%2.2f", labelLevel);
+	// debugLabel.setText(buff);
 
  	float density_mult = 0.5f;
- 	float level_rate = 0.001f;
+ 	float level_rate = 0.25f;
 
-    if(labelLevel < 0.8f * density_mult * calculateDensity(head, labelLevel+1)) {
-        if(labelLevel <= 2) {
-	        labelLevel += level_rate;
-        }
-	} else if (labelLevel > 1.2f * density_mult * calculateDensity(head, labelLevel)) {
-	    if(labelLevel >= 0) {
-      		labelLevel -= level_rate;
-  		}	                         
-    }
-
+ 	if(elapsed(lastLevelChange) > 1000.0) {
+		if(labelLevel < 0.8f * density_mult * calculateDensity(head, labelLevel + 1)) {
+		    if(labelLevel <= 2) {
+		        labelLevel += level_rate;
+		        lastLevelChange = now();
+		    }
+		} else if (labelLevel > 1.2f * density_mult * calculateDensity(head, labelLevel - 1)) {
+		    if(labelLevel >= 0) {
+		  		labelLevel -= level_rate;
+		        lastLevelChange = now();
+				}	                         
+		}
+ 	}
 }
 
 void AircraftLabel::applyForces() {
@@ -288,6 +296,14 @@ void AircraftLabel::applyForces() {
 
         x += dx;
         y += dy;
+
+        if(isnan(x)) {
+        	x = 0;
+        }
+
+        if(isnan(y)) {
+        	y = 0;
+        }
 
         // x = p->cx + (int)round(p->ox);
         // y = p->cy + (int)round(p->oy);
@@ -333,10 +349,13 @@ void AircraftLabel::applyForces() {
 
 
 void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
-    // //don't draw first time
-    // if(x == 0 || y == 0) {
-    //     return;
-    // }
+    if(x == 0 || y == 0) {
+        return;
+    }
+
+	// char buff[100];
+	// snprintf(buff, sizeof(buff), "%f %f", x, y);
+	// debugLabel.setText(buff);
 
     int totalWidth = 0;
     int totalHeight = 0;
@@ -361,11 +380,11 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         opacity = 0;
     }
 
-    if(w != 0) {
+    if(w != 0 && h != 0 && opacity > 0) {
 
         SDL_Color drawColor = style.labelLineColor;
 
-        drawColor.a = (int) (255.0f * opacity);
+        drawColor.a = static_cast<int>(255.0f * opacity);
 
         if(selected) {
             drawColor = style.selectedColor;
@@ -405,7 +424,11 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
             static_cast<Sint16>(exit_y), 
             static_cast<Sint16>(anchor_y)};        
 
-        boxRGBA(renderer, x, y, x + w, y + h, 0, 0, 0, 255);
+        boxRGBA(renderer, x, y, x + w, y + h, 0, 0, 0, drawColor.a);
+
+  //       char buff[100];
+		// snprintf(buff, sizeof(buff), "%d", drawColor.a);
+		// debugLabel.setText(buff);
 
         bezierRGBA(renderer, vx, vy, 3, 2, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
 
@@ -428,7 +451,7 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         // drawSignalMarks(p, x, y);
 
         SDL_Color drawColor = style.labelColor;
-        drawColor.a = (int) (255.0f * opacity);
+        drawColor.a = static_cast<int>(255.0f * opacity);
 
         flightLabel.setColor(drawColor);
         flightLabel.setPosition(x,y);
@@ -443,7 +466,7 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
 
     if(labelLevel < 1 || selected) {
         SDL_Color drawColor = style.subLabelColor;
-        drawColor.a = (int) (255.0f * opacity);
+        drawColor.a = static_cast<int>(255.0f * opacity);
 
         altitudeLabel.setColor(drawColor);
         altitudeLabel.setPosition(x,y + totalHeight);
@@ -510,4 +533,6 @@ AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int scr
 	altitudeLabel.setFont(font);
 	speedLabel.setFont(font);
 	debugLabel.setFont(font);
+
+	lastLevelChange = now();
 }

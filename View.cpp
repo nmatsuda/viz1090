@@ -180,7 +180,7 @@ void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
     float dx = maxDist * (x  - (screen_width>>1)) / (0.95 * scale_factor * 0.5 );       
-    float dy = maxDist * (y  - (screen_height * CENTEROFFSET)) / (0.95 * scale_factor * 0.5 );
+    float dy = maxDist * (y  - (screen_height>>1)) / (0.95 * scale_factor * 0.5 );
 
     *lat = 180.0f * dy / (6371.0 * M_PI) + centerLat;
     *lon = 180.0 * dx / (cos(((*lat + centerLat)/2.0f) * M_PI / 180.0f) * 6371.0 * M_PI) + centerLon;
@@ -189,7 +189,7 @@ void View::latLonFromScreenCoords(float *lat, float *lon, int x, int y) {
 
 void View::screenCoords(int *outX, int *outY, float dx, float dy) {
     *outX = (screen_width>>1) + ((dx>0) ? 1 : -1) * screenDist(dx);    
-    *outY = (screen_height * CENTEROFFSET) + ((dy>0) ? -1 : 1) * screenDist(dy);        
+    *outY = (screen_height>>1) + ((dy>0) ? -1 : 1) * screenDist(dy);        
 }
 
 int View::outOfBounds(int x, int y) {
@@ -380,17 +380,17 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
     float arrowWidth = 6.0 * screen_uiscale;
 
     float inx = x - (screen_width>>1);
-    float iny = y - screen_height * CENTEROFFSET;
+    float iny = y - (screen_height>>1);
     
     float outx, outy;
     outx = inx;
     outy = iny;
 
-    if(abs(inx) > abs(y - (screen_height>>1)) * (float)(screen_width>>1) / (float)(screen_height * CENTEROFFSET)) { //left / right quadrants
+    if(abs(inx) > abs(y - (screen_height>>1)) *  static_cast<float>(screen_width>>1) / static_cast<float>(screen_height>>1)) { //left / right quadrants
         outx = (screen_width>>1) * ((inx > 0) ? 1.0 : -1.0);
         outy = (outx) * iny / (inx);
     } else { // up / down quadrants
-        outy = screen_height * ((iny > 0) ? 1.0-CENTEROFFSET : -CENTEROFFSET );
+        outy = screen_height * ((iny > 0) ? 0.5 : -0.5 );
         outx = (outy) * inx / (iny);
     }
 
@@ -413,20 +413,20 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
 
     // arrow 1
     x1 = (screen_width>>1) + outx - 2.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
-    y1 = (screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
+    y1 = (screen_height>>1) + outy - 2.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
     x2 = (screen_width>>1) + outx - 2.0 * arrowWidth * vec[0] + round(arrowWidth*out[0]);
-    y2 = (screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
+    y2 = (screen_height>>1) + outy - 2.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
     x3 = (screen_width>>1) +  outx - arrowWidth * vec[0];
-    y3 = (screen_height * CENTEROFFSET) + outy - arrowWidth * vec[1];
+    y3 = (screen_height>>1) + outy - arrowWidth * vec[1];
     trigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     // arrow 2
     x1 = (screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
-    y1 = (screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
+    y1 = (screen_height>>1) + outy - 3.0 * arrowWidth * vec[1] + round(-arrowWidth*out[1]);
     x2 = (screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(arrowWidth*out[0]);
-    y2 = (screen_height * CENTEROFFSET) + outy - 3.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
+    y2 = (screen_height>>1) + outy - 3.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
     x3 = (screen_width>>1) +  outx - 2.0 * arrowWidth * vec[0];
-    y3 = (screen_height * CENTEROFFSET) + outy - 2.0 * arrowWidth * vec[1];
+    y3 = (screen_height>>1) + outy - 2.0 * arrowWidth * vec[1];
     trigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     *returnx = x3;
@@ -510,7 +510,7 @@ void View::drawTrails(int left, int top, int right, int bottom) {
                     return;
                 }
 
-                SDL_Color color = lerpColor(style.trailColor, style.planeGoneColor, float(elapsed_s(p->msSeen)) / (float) DISPLAY_ACTIVE);
+                SDL_Color color = lerpColor(style.trailColor, style.planeGoneColor, static_cast<float>(elapsed_s(p->msSeen)) / DISPLAY_ACTIVE);
                 
                 if(p == selectedAircraft) {
                     color = style.selectedColor;
@@ -534,7 +534,7 @@ void View::drawTrails(int left, int top, int right, int bottom) {
                         continue;
                     }
 
-                    uint8_t colorVal = (uint8_t)floor(127.0 * (age / (float)p->lonHistory.size()));
+                    uint8_t colorVal = (uint8_t)floor(127.0 * (age / static_cast<float>(p->lonHistory.size())));
                                
                     //thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
                     lineRGBA(renderer, prevX, prevY, currentX, currentY, color.r, color.g, color.b, colorVal); 
@@ -558,9 +558,9 @@ void View::drawScaleBars()
         lineRGBA(renderer,10+scaleBarDist,8,10+scaleBarDist,16*screen_uiscale,style.scaleBarColor.r, style.scaleBarColor.g, style.scaleBarColor.b, 255);
 
         if (metric) {
-            snprintf(scaleLabel,13,"%dkm", (int)pow(10,scalePower));
+            snprintf(scaleLabel,13,"%dkm", static_cast<int>(pow(10,scalePower)));
         } else {
-            snprintf(scaleLabel,13,"%dmi", (int)pow(10,scalePower));
+            snprintf(scaleLabel,13,"%dmi", static_cast<int>(pow(10,scalePower)));
         }
 
         Label currentLabel;
@@ -571,11 +571,11 @@ void View::drawScaleBars()
         currentLabel.draw(renderer);
         
         scalePower++;
-        scaleBarDist = screenDist((float)pow(10,scalePower));
+        scaleBarDist = screenDist(powf(10,scalePower));
     }
 
     scalePower--;
-    scaleBarDist = screenDist((float)pow(10,scalePower));
+    scaleBarDist = screenDist(powf(10,scalePower));
 
     lineRGBA(renderer,10,10+5*screen_uiscale,10+scaleBarDist,10+5*screen_uiscale, style.scaleBarColor.r, style.scaleBarColor.g, style.  scaleBarColor.b, 255);
 }
@@ -907,7 +907,7 @@ void View::drawPlanes() {
                     //     lineRGBA(renderer, p->x, p->y, predx, predy, 127,127, 127, 255);
                     // }
 
-                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, float(elapsed_s(p->msSeen)) / (float) DISPLAY_ACTIVE);
+                    planeColor = lerpColor(style.planeColor, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
                     
                     if(p == selectedAircraft) {
                         planeColor = style.selectedColor;
@@ -1052,7 +1052,7 @@ void View::drawClick() {
     if(clickx && clicky) {
 
         int radius = .25 * elapsed(clickTime);
-        int alpha = 128 - (int)(0.5 * elapsed(clickTime));
+        int alpha = 128 - static_cast<int>(0.5 * elapsed(clickTime));
         if(alpha < 0 ) {
             alpha = 0;
             clickx = 0;
@@ -1068,7 +1068,7 @@ void View::drawClick() {
 
         int boxSize;
         if(elapsed(clickTime) < 300) {
-            boxSize = (int)(20.0 * (1.0 - (1.0 - float(elapsed(clickTime)) / 300.0) * cos(sqrt(float(elapsed(clickTime)))))); 
+            boxSize = static_cast<int>(20.0 * (1.0 - (1.0 - elapsed(clickTime) / 300.0) * cos(sqrt(elapsed(clickTime))))); 
         } else {
             boxSize = 20;
         }

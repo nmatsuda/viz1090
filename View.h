@@ -44,11 +44,9 @@
 //defs - should all move to config file setup
 #define ROUND_RADIUS 3 //radius of text box corners
 
-#define CENTEROFFSET .5 //vertical offset for middle of screen
-
 #define TRAIL_LENGTH 120
 #define TRAIL_TTL   240.0 
-#define DISPLAY_ACTIVE   30 
+#define DISPLAY_ACTIVE   30.0
 #define TRAIL_TTL_STEP   2
 
 #define MIN_MAP_FEATURE 2
