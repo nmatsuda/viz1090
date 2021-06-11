@@ -100,64 +100,6 @@ SDL_Color lerpColor(SDL_Color aColor, SDL_Color bColor, float factor) {
     return out;
 }
 
-// SDL_Color hsv2SDLColor(float h, float s, float v)
-// {
-//     float      hh, p, q, t, ff;
-//     long        i;
-//     SDL_Color         out;
-
-//     if(s <= 0.0) {       
-//         out.r = (uint8_t)v;
-//         out.g = (uint8_t)v;
-//         out.b = (uint8_t)v;
-//         return out;
-//     }
-//     hh = h;
-//     if(hh >= 360.0) hh = 0.0;
-//     hh /= 60.0;
-//     i = (long)hh;
-//     ff = hh - i;
-//     p = v * (1.0 - s);
-//     q = v * (1.0 - (s * ff));
-//     t = v * (1.0 - (s * (1.0 - ff)));
-
-//     switch(i) {
-//     case 0:
-//         out.r = (uint8_t)v;
-//         out.g = (uint8_t)t;
-//         out.b = (uint8_t)p;
-//         break;
-//     case 1:
-//         out.r = (uint8_t)q;
-//         out.g = (uint8_t)v;
-//         out.b = (uint8_t)p;
-//         break;
-//     case 2:
-//         out.r = (uint8_t)p;
-//         out.g = (uint8_t)v;
-//         out.b = (uint8_t)t;
-//         break;
-
-//     case 3:
-//         out.r = (uint8_t)p;
-//         out.g = (uint8_t)q;
-//         out.b = (uint8_t)v;
-//         break;
-//     case 4:
-//         out.r = (uint8_t)t;
-//         out.g = (uint8_t)p;
-//         out.b = (uint8_t)v;
-//         break;
-//     case 5:
-//     default:
-//         out.r = (uint8_t)v;
-//         out.g = (uint8_t)p;
-//         out.b = (uint8_t)q;
-//         break;
-//     }
-//     return out;     
-// }
-
 int View::screenDist(float d) {
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
     // return round(0.95 * scale_factor * 0.5 * fabs(d) / maxDist);        
@@ -368,8 +310,6 @@ void View::drawStatus() {
     drawStatusBox(&left, &top, "sAvg", strSig, style.buttonColor);
 
 }
-
-//
 
 //
 // Main drawing
@@ -880,33 +820,6 @@ void View::drawPlanes() {
                     int usex = x;   
                     int usey = y;
 
-                    //draw predicted position
-                    // if(p->timestampHistory.size() > 2) {
-
-                    //     int x1, y1, x2, y2;
-
-                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-1], p->latHistory.end()[-1]);
-                    //     screenCoords(&x1, &y1, dx, dy);
-                        
-                    //     pxFromLonLat(&dx, &dy, p->lonHistory.end()[-2], p->latHistory.end()[-2]);
-                    //     screenCoords(&x2, &y2, dx, dy);
-
-                    //     //printf("latlon: [%f %f] -> [%f %f], px: [%d %d] -> [%d  %d]\n",p->lonHistory.end()[-1], p->latHistory.end()[-1],p->lonHistory.end()[-2], p->latHistory.end()[-2], x1,y1,x2,y2);
-
-
-                    //     float velx = float(x1 - x2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
-                    //     float vely = float(y1 - y2) / (fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count();
-
-                    //     //printf("diff: %f\n",(fmilliseconds{p->timestampHistory.end()[-1] - p->timestampHistory.end()[-2]}).count());
-
-                    //     //printf("%f %f, %d - %d \n", velx,vely,p->timestampHistory.end()[-1], p->timestampHistory.end()[-2]);
-
-                    //     float predx = x + float(elapsed(p->msSeenLatLon)) * velx;
-                    //     float predy = y + float(elapsed(p->msSeenLatLon)) * vely;
-                    //     circleRGBA(renderer, predx, predy, 4 * screen_uiscale, 127,127, 127, 255);
-                    //     lineRGBA(renderer, p->x, p->y, predx, predy, 127,127, 127, 255);
-                    // }
-
                     planeColor = lerpColor(style.planeColor, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
                     
                     if(p == selectedAircraft) {
@@ -946,9 +859,6 @@ void View::animateCenterAbsolute(float x, float y) {
 
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
 
-    //double outLon, outLat;
-    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
-
     mapTargetLon = centerLon - outLon;
     mapTargetLat = centerLat - outLat;
 
@@ -966,9 +876,6 @@ void View::moveCenterAbsolute(float x, float y) {
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
-
-    //double outLon, outLat;
-    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
 
     centerLon += outLon;
     centerLat += outLat;
@@ -992,10 +899,7 @@ void View::moveCenterRelative(float dx, float dy) {
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
-
-    //double outLon, outLat;
-    //latLonFromScreenCoords(&outLat, &outLon, event.tfinger.dx, event.tfinger.dy);
-
+    
     centerLon += outLon;
     centerLat += outLat;
 

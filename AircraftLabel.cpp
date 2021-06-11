@@ -424,7 +424,7 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
             static_cast<Sint16>(exit_y), 
             static_cast<Sint16>(anchor_y)};        
 
-        boxRGBA(renderer, x, y, x + w, y + h, 0, 0, 0, drawColor.a);
+        boxRGBA(renderer, x, y, x + w, y + h, style.labelBackground.r, style.labelBackground.g, style.labelBackground.b, drawColor.a);
 
   //       char buff[100];
 		// snprintf(buff, sizeof(buff), "%d", drawColor.a);
