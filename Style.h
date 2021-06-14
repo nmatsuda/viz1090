@@ -39,11 +39,11 @@ typedef struct Style {
     //
     // todo separate style stuff
     //
-
+	
     Style() {
 
     	SDL_Color pink 		= {249,38,114,255};
-		
+
 		SDL_Color purple 	= {85, 0, 255,255};
 		SDL_Color purple_dark 	= {33, 0, 122,255};
 
@@ -68,20 +68,20 @@ typedef struct Style {
 		blue		= {0,0,255,255};
 
 
-	    backgroundColor = {200,200,200,255};
+	    backgroundColor = black;
 
 	    selectedColor = pink;
-	    planeColor = black;
+	    planeColor = yellow;
 	    planeGoneColor = grey;
-	    trailColor = grey;
+	    trailColor = yellow_dark;
 
-	    geoColor = grey_dark;
-	    airportColor = grey;
+	    geoColor = purple_dark;
+	    airportColor = purple;
 
-	    labelColor = black;
+	    labelColor = white;
 	    labelLineColor = grey_dark;
 	    subLabelColor = grey;
-	   	labelBackground = grey_light;
+	   	labelBackground = black;
 	    scaleBarColor = grey_light;
 	    buttonColor = grey_light;
    		buttonBackground = black;
