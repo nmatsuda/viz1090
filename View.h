@@ -97,6 +97,7 @@ class View {
 		void screenCoords(int *outX, int *outY, float dx, float dy);
 		int outOfBounds(int x, int y);
 		int outOfBounds(int x, int y, int left, int top, int right, int bottom);
+		int outOfBounds(int x, int y, int radius);
 		void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor);
 		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
 		void drawTrails(int left, int top, int right, int bottom);
@@ -129,6 +130,8 @@ class View {
 
 	////////////////
 		bool metric;
+
+		bool roundScreen;
 
 		bool fps;
 

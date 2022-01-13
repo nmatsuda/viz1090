@@ -55,6 +55,7 @@ void showHelp(void) {
 "--lon <longitude>                Longitude in degrees\n"
 "--metric                         Use metric units\n"
 "--port <port>                    TCP Beast output listen port (default: 30005)\n"
+"--round                          Use round display outline (assumes square screen size\n"
 "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
 "--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
 "--screenindex <i>                Set the index of the display to use (default: 0)\n"
@@ -99,6 +100,8 @@ int main(int argc, char **argv) {
             view.fps = 1;         
         } else if (!strcmp(argv[j],"--fullscreen")) {
             view.fullscreen = 1;         
+        } else if (!strcmp(argv[j],"--round")) {
+            view.roundScreen = 1;                     
         } else if (!strcmp(argv[j],"--screenindex")) {
             view.screen_index = atoi(argv[++j]);         
         } else if (!strcmp(argv[j],"--uiscale") && more) {

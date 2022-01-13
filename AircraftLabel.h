@@ -18,7 +18,7 @@ class AircraftLabel {
 
 		void draw(SDL_Renderer *renderer, bool selected);
 
-		AircraftLabel(Aircraft *p, bool metric, int screen_width, int screen_height, TTF_Font *font);
+		AircraftLabel(Aircraft *p, bool metric, bool roundScreen, int screen_width, int screen_height, TTF_Font *font);
 
 	private:
 		SDL_Rect getFullRect(int labelLevel);
@@ -34,6 +34,8 @@ class AircraftLabel {
 		float labelLevel;
 
 		bool metric;
+
+		bool roundScreen;
 
 		float x;
 		float y;

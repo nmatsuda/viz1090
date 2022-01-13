@@ -135,7 +135,11 @@ void View::screenCoords(int *outX, int *outY, float dx, float dy) {
 }
 
 int View::outOfBounds(int x, int y) {
-    return outOfBounds(x, y, 0, 0, screen_width, screen_height);
+    if(roundScreen) {
+        return outOfBounds(x, y, screen_width >> 1);
+    } else {
+        return outOfBounds(x, y, 0, 0, screen_width, screen_height);
+    }    
 }
 
 int View::outOfBounds(int x, int y, int left, int top, int right, int bottom) {
@@ -145,6 +149,21 @@ int View::outOfBounds(int x, int y, int left, int top, int right, int bottom) {
         return 0;
     }
 }
+
+
+int View::outOfBounds(int x, int y, int radius) {
+    float f_radius = static_cast<float>(radius);
+    float f_x = static_cast<float>(x);
+    float f_y = static_cast<float>(y);
+
+    if((f_x - f_radius) * (f_x - f_radius) + (f_y - f_radius)  * (f_y - f_radius)  > (f_radius * f_radius)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
 
 //
 // Fonts should probably go in Style
@@ -290,6 +309,10 @@ void View::drawStatusBox(int *left, int *top, std::string label, std::string mes
 
 void View::drawStatus() {
 
+    if(roundScreen) {
+        return;
+    }
+
     int left = PAD; 
     int top = screen_height - messageFontHeight - PAD;
 
@@ -321,27 +344,34 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
 
     float inx = x - (screen_width>>1);
     float iny = y - (screen_height>>1);
-    
+
     float outx, outy;
     outx = inx;
     outy = iny;
-
-    if(abs(inx) > abs(y - (screen_height>>1)) *  static_cast<float>(screen_width>>1) / static_cast<float>(screen_height>>1)) { //left / right quadrants
-        outx = (screen_width>>1) * ((inx > 0) ? 1.0 : -1.0);
-        outy = (outx) * iny / (inx);
-    } else { // up / down quadrants
-        outy = screen_height * ((iny > 0) ? 0.5 : -0.5 );
-        outx = (outy) * inx / (iny);
-    }
-
-    // circleRGBA (renderer,(screen_width>>1) + outx, screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    // thickLineRGBA(renderer,screen_width>>1,screen_height * CENTEROFFSET, (screen_width>>1) + outx, screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     float inmag = sqrt(inx *inx + iny*iny);
     float vec[3];
     vec[0] = inx / inmag;
     vec[1] = iny /inmag;
     vec[2] = 0;
+
+    if(roundScreen) {
+        outx = vec[0] * (screen_width>>1);
+        outy = vec[1] * (screen_width>>1);
+    } else {
+        if(abs(inx) > abs(y - (screen_height>>1)) *  static_cast<float>(screen_width>>1) / static_cast<float>(screen_height>>1)) { //left / right quadrants
+            outx = (screen_width>>1) * ((inx > 0) ? 1.0 : -1.0);
+            outy = (outx) * iny / (inx);
+        } else { // up / down quadrants
+            outy = screen_height * ((iny > 0) ? 0.5 : -0.5 );
+            outx = (outy) * inx / (iny);
+        }
+    }
+    
+
+    // circleRGBA (renderer,(screen_width>>1) + outx, screen_height * CENTEROFFSET + outy,50,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    // thickLineRGBA(renderer,screen_width>>1,screen_height * CENTEROFFSET, (screen_width>>1) + outx, screen_height * CENTEROFFSET + outy,arrowWidth,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+
 
     float up[] = {0,0,1};
 
@@ -487,6 +517,10 @@ void View::drawTrails(int left, int top, int right, int bottom) {
 
 void View::drawScaleBars()
 {
+    if(roundScreen) {
+        return;
+    }
+    
     int scalePower = 0;
     int scaleBarDist = screenDist((float)pow(10,scalePower));
 
@@ -737,7 +771,7 @@ void View::drawGeography() {
 
 void View::drawPlaneText(Aircraft *p) {
     if(!p->label) {
-        p->label = new AircraftLabel(p,metric,screen_width, screen_height, mapFont);
+        p->label = new AircraftLabel(p,metric, roundScreen, screen_width, screen_height, mapFont);
     }
 
     p->label->update();
@@ -838,7 +872,7 @@ void View::drawPlanes() {
                 
                     //show latlon ping
                     if(elapsed(p->msSeenLatLon) < 500) {
-                        circleRGBA(renderer, p->x, p->y, elapsed(p->msSeenLatLon) * screen_width / (8192), 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
+                        circleRGBA(renderer, p->x, p->y, 20 * elapsed(p->msSeenLatLon) / 500, 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
                     }
 
                     drawPlaneText(p);            
@@ -1091,6 +1125,10 @@ View::View(AppData *appData){
     fps                     = 0;
     fullscreen              = 0;
     screen_index              = 0;
+
+    metric = 0;
+
+    roundScreen = 0;
 
     centerLon   = 0;
     centerLat   = 0;

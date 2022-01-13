@@ -161,21 +161,63 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
 
     // screen edge 
 
-    if(p_left < edge_margin) {
-        ddx += boundary_force * static_cast<float>(edge_margin - p_left);
+    if(roundScreen) {
+        float radius = screen_width >> 1;
+
+        //left top
+
+        if((p_left - radius) * (p_left - radius) + (p_top - radius) * (p_top - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
+            float pointnorm = sqrt((p_left - radius) * (p_left - radius) + (p_top - radius) * (p_top - radius));
+
+            ddx += boundary_force *  (radius * (p_left - radius) / pointnorm - (p_left - radius));
+            ddy += boundary_force *  (radius * (p_top - radius) / pointnorm - (p_top - radius));
+        }
+
+        //left bottom
+        
+        if((p_left - radius) * (p_left - radius) + (p_bottom - radius) * (p_bottom - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
+            float pointnorm = sqrt((p_left - radius) * (p_left - radius) + (p_bottom - radius) * (p_bottom - radius));
+
+            ddx += boundary_force *  (radius * (p_left - radius) / pointnorm - (p_left - radius));
+            ddy += boundary_force *  (radius * (p_bottom - radius) / pointnorm - (p_bottom - radius));
+        }
+
+        //right top
+        
+        if((p_right - radius) * (p_right - radius) + (p_top - radius) * (p_top - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
+            float pointnorm = sqrt((p_right - radius) * (p_right - radius) + (p_top - radius) * (p_top - radius));
+
+            ddx += boundary_force *  (radius * (p_right - radius) / pointnorm - (p_right - radius));
+            ddy += boundary_force *  (radius * (p_top - radius) / pointnorm - (p_top - radius));
+        }
+
+        //right bottom
+        
+        if((p_right - radius) * (p_right - radius) + (p_bottom - radius) * (p_bottom - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
+            float pointnorm = sqrt((p_right - radius) * (p_right - radius) + (p_bottom - radius) * (p_bottom - radius));
+
+            ddx += boundary_force *  (radius * (p_right - radius) / pointnorm - (p_right- radius));
+            ddy += boundary_force *  (radius * (p_bottom - radius) / pointnorm - (p_bottom - radius));
+        }
+
+    } else {
+        if(p_left < edge_margin) {
+            ddx += boundary_force * static_cast<float>(edge_margin - p_left);
+        }
+
+        if(p_right > screen_width - edge_margin) {
+            ddx += boundary_force * static_cast<float>(screen_width - edge_margin - p_right);
+        }
+
+        if(p_top < edge_margin) {
+            ddy += boundary_force * static_cast<float>(edge_margin - p_top);
+        }
+
+        if(p_bottom > screen_height - edge_margin) {
+            ddy += boundary_force * static_cast<float>(screen_height - edge_margin - p_bottom);
+        }
     }
 
-    if(p_right > screen_width - edge_margin) {
-        ddx += boundary_force * static_cast<float>(screen_width - edge_margin - p_right);
-    }
-
-    if(p_top < edge_margin) {
-        ddy += boundary_force * static_cast<float>(edge_margin - p_top);
-    }
-
-    if(p_bottom > screen_height - edge_margin) {
-        ddy += boundary_force * static_cast<float>(screen_height - edge_margin - p_bottom);
-    }
 
 
     float all_x = 0;
@@ -253,7 +295,7 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
 	// snprintf(buff, sizeof(buff), "%2.2f", labelLevel);
 	// debugLabel.setText(buff);
 
- 	float density_mult = 0.5f;
+ 	float density_mult = 0.9f;
  	float level_rate = 0.25f;
 
  	if(elapsed(lastLevelChange) > 1000.0) {
@@ -504,10 +546,11 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
     }	
 }
 
-AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int screen_height, TTF_Font *font) {
+AircraftLabel::AircraftLabel(Aircraft *p, bool metric, bool roundScreen, int screen_width, int screen_height, TTF_Font *font) {
 	this->p = p;
 
 	this->metric = metric;
+    this->roundScreen = roundScreen;
 
 	x = p->x;
     y = p->y + 20; //*screen_uiscale
