@@ -169,8 +169,8 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         if((p_left - radius) * (p_left - radius) + (p_top - radius) * (p_top - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
             float pointnorm = sqrt((p_left - radius) * (p_left - radius) + (p_top - radius) * (p_top - radius));
 
-            ddx += boundary_force *  (radius * (p_left - radius) / pointnorm - (p_left - radius));
-            ddy += boundary_force *  (radius * (p_top - radius) / pointnorm - (p_top - radius));
+            ddx += boundary_force *  ((radius - edge_margin) * (p_left - radius) / pointnorm - (p_left - radius));
+            ddy += boundary_force *  ((radius - edge_margin) * (p_top - radius) / pointnorm - (p_top - radius));
         }
 
         //left bottom
@@ -178,8 +178,8 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         if((p_left - radius) * (p_left - radius) + (p_bottom - radius) * (p_bottom - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
             float pointnorm = sqrt((p_left - radius) * (p_left - radius) + (p_bottom - radius) * (p_bottom - radius));
 
-            ddx += boundary_force *  (radius * (p_left - radius) / pointnorm - (p_left - radius));
-            ddy += boundary_force *  (radius * (p_bottom - radius) / pointnorm - (p_bottom - radius));
+            ddx += boundary_force *  ((radius - edge_margin) * (p_left - radius) / pointnorm - (p_left - radius));
+            ddy += boundary_force *  ((radius - edge_margin) * (p_bottom - radius) / pointnorm - (p_bottom - radius));
         }
 
         //right top
@@ -187,8 +187,8 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         if((p_right - radius) * (p_right - radius) + (p_top - radius) * (p_top - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
             float pointnorm = sqrt((p_right - radius) * (p_right - radius) + (p_top - radius) * (p_top - radius));
 
-            ddx += boundary_force *  (radius * (p_right - radius) / pointnorm - (p_right - radius));
-            ddy += boundary_force *  (radius * (p_top - radius) / pointnorm - (p_top - radius));
+            ddx += boundary_force *  ((radius - edge_margin) * (p_right - radius) / pointnorm - (p_right - radius));
+            ddy += boundary_force *  ((radius - edge_margin) * (p_top - radius) / pointnorm - (p_top - radius));
         }
 
         //right bottom
@@ -196,8 +196,8 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         if((p_right - radius) * (p_right - radius) + (p_bottom - radius) * (p_bottom - radius) > ((radius - edge_margin) * (radius - edge_margin))) {
             float pointnorm = sqrt((p_right - radius) * (p_right - radius) + (p_bottom - radius) * (p_bottom - radius));
 
-            ddx += boundary_force *  (radius * (p_right - radius) / pointnorm - (p_right- radius));
-            ddy += boundary_force *  (radius * (p_bottom - radius) / pointnorm - (p_bottom - radius));
+            ddx += boundary_force *  ((radius - edge_margin) * (p_right - radius) / pointnorm - (p_right- radius));
+            ddy += boundary_force *  ((radius - edge_margin) * (p_bottom - radius) / pointnorm - (p_bottom - radius));
         }
 
     } else {
