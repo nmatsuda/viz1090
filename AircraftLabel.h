@@ -15,6 +15,7 @@ class AircraftLabel {
 		void clearAcceleration();
 		void calculateForces(Aircraft *check_p);
 		void applyForces();
+		void move(float dx, float dy);
 
 		void draw(SDL_Renderer *renderer, bool selected);
 
@@ -45,6 +46,12 @@ class AircraftLabel {
 
 		float dx;
 		float dy;
+
+		float x_buffer[15];
+		float y_buffer[15];
+		int buffer_idx;
+		int buffer_length = 15;
+
 		float ddx;
 		float ddy;
 
@@ -60,17 +67,19 @@ class AircraftLabel {
 
 		///////////
 
-	    float label_force = 0.001f;
+	    	float label_force = 0.01f;
 		float label_dist = 2.0f;
-		float density_force = 0.05f;
-		float attachment_force = 0.0015f;
+		float density_force = 0.01f;
+		float attachment_force = 0.01f;
 		float attachment_dist = 10.0f;
-		float icon_force = 0.001f;
+		float icon_force = 0.01f;
 		float icon_dist = 15.0f;
 		float boundary_force = 0.01f;
-		float damping_force = 0.85f;
-		float velocity_limit = 2.0f;
+		float damping_force = 0.65f;
+		float velocity_limit = 1.0f;
 		float edge_margin = 15.0f;
+		float drag_force = 0.00f;
+
 
 		Style style;
 };		

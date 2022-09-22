@@ -450,12 +450,6 @@ void View::drawTrails(int left, int top, int right, int bottom) {
                     return;
                 }
 
-                SDL_Color color = lerpColor(style.trailColor, style.planeGoneColor, static_cast<float>(elapsed_s(p->msSeen)) / DISPLAY_ACTIVE);
-                
-                if(p == selectedAircraft) {
-                    color = style.selectedColor;
-                }
-
                 std::vector<float>::iterator lon_idx = p->lonHistory.begin();
                 std::vector<float>::iterator lat_idx = p->latHistory.begin();
                 std::vector<float>::iterator heading_idx = p->headingHistory.begin();
@@ -473,6 +467,9 @@ void View::drawTrails(int left, int top, int right, int bottom) {
                     if(outOfBounds(currentX,currentY,left,top,right,bottom) && outOfBounds(prevX,prevY,left,top,right,bottom)) {
                         continue;
                     }
+
+
+                    SDL_Color color = lerpColor({255,0,0,255}, {255,200,0,255}, age / static_cast<float>(p->lonHistory.size()));
 
                     uint8_t colorVal = (uint8_t)floor(127.0 * (age / static_cast<float>(p->lonHistory.size())));
                                
@@ -744,6 +741,19 @@ void View::drawPlaneText(Aircraft *p) {
     p->label->draw(renderer, (p == selectedAircraft));
 }
 
+void View::moveLabels(float dx, float dy) {
+	Aircraft *p = appData->aircraftList.head;
+
+	while(p) { 
+		if(p->label) {
+			p->label->move(dx,dy);
+		}
+
+		p = p->next;
+	}
+}
+
+
 float View::resolveLabelConflicts() {
     float maxV = 0.0f;    
 
@@ -855,6 +865,8 @@ void View::animateCenterAbsolute(float x, float y) {
     float dx = -1.0 * (0.75*(double)screen_width / (double)screen_height) * (x - screen_width/2) * maxDist / (0.95 * scale_factor * 0.5);
     float dy = 1.0 * (y - screen_height/2) * maxDist / (0.95 * scale_factor * 0.5);
 
+    moveLabels(x,y);
+
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
     float outLon = dx * (1.0/6371.0) * (180.0f / M_PI) / cos(((centerLat)/2.0f) * M_PI / 180.0f);
@@ -872,6 +884,8 @@ void View::moveCenterAbsolute(float x, float y) {
 
     float dx = -1.0 * (0.75*(double)screen_width / (double)screen_height) * (x - screen_width/2) * maxDist / (0.95 * scale_factor * 0.5);
     float dy = 1.0 * (y - screen_height/2) * maxDist / (0.95 * scale_factor * 0.5);
+
+    moveLabels(x,y);
 
     float outLat = dy * (1.0/6371.0) * (180.0f / M_PI);
 
@@ -891,6 +905,8 @@ void View::moveCenterRelative(float dx, float dy) {
     // need to make lonlat to screen conversion class - this is just the inverse of the stuff in draw.c, without offsets
     //
         
+    moveLabels(dx,dy);
+
     float scale_factor = (screen_width > screen_height) ? screen_width : screen_height;
 
     dx = -1.0 * dx * maxDist / (0.95 * scale_factor * 0.5);

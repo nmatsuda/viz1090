@@ -59,7 +59,7 @@ void Label::setColor(SDL_Color color) {
 }
 // 
 Label::Label() {
-    this->color = {255,255,255,255};
+    this->color = {0,0,0,0};
     surface = NULL;
 }
 

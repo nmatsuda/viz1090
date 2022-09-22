@@ -68,20 +68,20 @@ typedef struct Style {
 		blue		= {0,0,255,255};
 
 
-	    backgroundColor = {200,200,200,255};
+	    backgroundColor = {0,0,0,255};
 
 	    selectedColor = pink;
-	    planeColor = black;
+	    planeColor = {0,255,174};
 	    planeGoneColor = grey;
-	    trailColor = grey;
+	    trailColor = {0,255,174};
 
 	    geoColor = grey_dark;
 	    airportColor = grey;
 
-	    labelColor = black;
+	    labelColor = white;
 	    labelLineColor = grey_dark;
 	    subLabelColor = grey;
-	   	labelBackground = grey_light;
+	   	labelBackground = black;
 	    scaleBarColor = grey_light;
 	    buttonColor = grey_light;
    		buttonBackground = black;
