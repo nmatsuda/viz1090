@@ -16,6 +16,7 @@ class AircraftLabel {
 		void calculateForces(Aircraft *check_p);
 		void applyForces();
 		void move(float dx, float dy);
+		bool getIsChanging();
 
 		void draw(SDL_Renderer *renderer, bool selected);
 
@@ -63,11 +64,13 @@ class AircraftLabel {
 		int screen_width;
 		int screen_height;
 
+		bool isChanging;
+
 		std::chrono::high_resolution_clock::time_point lastLevelChange;
 
 		///////////
 
-	    	float label_force = 0.01f;
+	    float label_force = 0.01f;
 		float label_dist = 2.0f;
 		float density_force = 0.01f;
 		float attachment_force = 0.01f;

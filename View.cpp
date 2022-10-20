@@ -83,6 +83,40 @@ SDL_Color setColor(uint8_t r, uint8_t g, uint8_t b) {
     return out;
 }
 
+float lerp(float a, float b, float factor) {
+    if(factor > 1.0f) {
+        factor = 1.0f;
+    }
+
+    if(factor < 0.0f) {
+        factor = 0.0f;
+    }
+
+    return (1.0f - factor) * a + factor * b;
+}
+
+float lerpAngle(float a, float b, float factor) {
+    float diff = fabs(b - a);
+    if (diff > 180.0f)
+    {
+        if (b > a)
+        {
+            a += 360.0f;
+        }
+        else
+        {
+            b += 360.0f;
+        }
+    }
+
+    float value = (a + ((b - a) * factor));
+
+    if (value >= 0.0f && value <= 360.0f)
+        return value;
+
+    return fmod(value,360.0f);
+}
+
 SDL_Color lerpColor(SDL_Color aColor, SDL_Color bColor, float factor) {
     if(factor > 1.0f) {
         factor = 1.0f;
@@ -401,15 +435,15 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(bodyWidth*out[0]);
     y2 = y + round(bodyWidth*out[1]);
 
-    trigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    trigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
-    // x1 = x + round(-body*vec[0] - bodyWidth*out[0]);
-    // y1 = y + round(-body*vec[1] - bodyWidth*out[1]);
-    // x2 = x + round(body*vec[0] - bodyWidth*out[0]);
-    // y2 = y + round(body*vec[1] - bodyWidth*out[1]);
+    x1 = x + round(15*vec[0]);
+    y1 = y + round(15*vec[1]);
+    x2 = x + round(30*vec[0]);
+    y2 = y + round(30*vec[1]);
 
-    // lineRGBA(renderer,x,y,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    lineRGBA(renderer,x1,y1,x2,y2,255,255,255,SDL_ALPHA_OPAQUE);
 
     // x1 = x + round(-body*vec[0] + bodyWidth*out[0]);
     // y1 = y + round(-body*vec[1] + bodyWidth*out[1]);
@@ -427,7 +461,7 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(wing*out[0]);
     y2 = y + round(wing*out[1]);
 
-    trigonRGBA(renderer, x1, y1, x2, y2, x+round(body*wingThick*vec[0]), y+round(body*wingThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(renderer, x1, y1, x2, y2, x+round(body*wingThick*vec[0]), y+round(body*wingThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     //tail
     x1 = x + round(-body*.75*vec[0] - tail*out[0]);
@@ -435,7 +469,7 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(-body*.75*vec[0] + tail*out[0]);
     y2 = y + round(-body*.75*vec[1] + tail*out[1]);
 
-    trigonRGBA (renderer, x1, y1, x2, y2, x+round(-body*tailThick*vec[0]), y+round(-body*tailThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body*tailThick*vec[0]), y+round(-body*tailThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
 
 void View::drawTrails(int left, int top, int right, int bottom) {
@@ -754,9 +788,7 @@ void View::moveLabels(float dx, float dy) {
 }
 
 
-float View::resolveLabelConflicts() {
-    float maxV = 0.0f;    
-
+void View::resolveLabelConflicts() {
     Aircraft *p = appData->aircraftList.head;
 
     while(p) {
@@ -783,12 +815,14 @@ float View::resolveLabelConflicts() {
 
         if(p->label) {
             p->label->applyForces();
+
+            // if(p->label->getIsChanging()) {
+            //     highFramerate = true;
+            // }
         }
         
         p = p->next;
     }
-
-    return maxV;
 }
 
 void View::drawPlanes() {
@@ -819,6 +853,7 @@ void View::drawPlanes() {
 
             float age_ms = elapsed(p->created);
             if(age_ms < 500) {
+                //highFramerate = true;
                 float ratio = age_ms / 500.0f;
                 float radius = (1.0f - ratio * ratio) * screen_width / 8;
                 for(float theta = 0; theta < 2*M_PI; theta += M_PI / 4) {
@@ -829,6 +864,10 @@ void View::drawPlanes() {
                 if(MODES_ACFLAGS_HEADING_VALID) {
                     int usex = x;   
                     int usey = y;
+                    float useHeading = static_cast<float>(p->track);
+
+                    p->x = usex;
+                    p->y = usey;
 
                     planeColor = lerpColor(style.planeColor, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
                     
@@ -836,19 +875,23 @@ void View::drawPlanes() {
                         planeColor = style.selectedColor;
                     }
 
+
                     if(outOfBounds(x,y)) {
                         drawPlaneOffMap(x, y, &(p->x), &(p->y), planeColor);
                     } else {
-                        drawPlaneIcon(usex, usey, p->track, planeColor);
+                        if(elapsed(p->msSeenLatLon) < 500) {
+                            //highFramerate = true;
+                            circleRGBA(renderer, p->x, p->y, elapsed(p->msSeenLatLon) * screen_width / (8192), 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
+                        
+                            pxFromLonLat(&dx, &dy, p->getLastLon(), p->getLastLat());
+                            screenCoords(&x, &y, dx, dy);
 
-                        p->x = usex;
-                        p->y = usey;
-                    }
-                      
-                
-                    //show latlon ping
-                    if(elapsed(p->msSeenLatLon) < 500) {
-                        circleRGBA(renderer, p->x, p->y, elapsed(p->msSeenLatLon) * screen_width / (8192), 127,127, 127, 255 - (uint8_t)(255.0 * elapsed(p->msSeenLatLon) / 500.0));   
+                            usex = lerp(x,usex,elapsed(p->msSeenLatLon) / 500.0);
+                            usey = lerp(y,usey,elapsed(p->msSeenLatLon) / 500.0);
+                            useHeading = lerpAngle(p->getLastHeading(),useHeading,elapsed(p->msSeenLatLon) / 500.0);
+                        }
+
+                        drawPlaneIcon(usex, usey, useHeading, planeColor);
                     }
 
                     drawPlaneText(p);            
@@ -877,6 +920,8 @@ void View::animateCenterAbsolute(float x, float y) {
     mapTargetMaxDist = 0.25 * maxDist;
 
     mapMoved = 1;
+    highFramerate = true;
+
 }
 
 void View::moveCenterAbsolute(float x, float y) {
@@ -898,6 +943,7 @@ void View::moveCenterAbsolute(float x, float y) {
     mapTargetLat = 0;
 
     mapMoved = 1;
+    highFramerate = true;
 }
 
 void View::moveCenterRelative(float dx, float dy) {
@@ -923,6 +969,7 @@ void View::moveCenterRelative(float dx, float dy) {
     mapTargetLat = 0;
 
     mapMoved = 1;
+    highFramerate = true;
 }
 
 void View::zoomMapToTarget() {
@@ -931,6 +978,7 @@ void View::zoomMapToTarget() {
             maxDist += 0.1 * (mapTargetMaxDist - maxDist);
             mapAnimating = 1;
             mapMoved = 1;
+            highFramerate = true;
         } else {
             mapTargetMaxDist = 0;
         }
@@ -945,6 +993,7 @@ void View::moveMapToTarget() {
 
             mapAnimating = 1;
             mapMoved = 1;    
+            highFramerate = true;
         } else {
             mapTargetLon = 0;
             mapTargetLat = 0;
@@ -970,6 +1019,7 @@ void View::moveMapToTarget() {
 
 void View::drawClick() {
     if(clickx && clicky) {
+        highFramerate = true;
 
         int radius = .25 * elapsed(clickTime);
         int alpha = 128 - static_cast<int>(0.5 * elapsed(clickTime));
@@ -1052,6 +1102,7 @@ void View::registerMouseMove(int x, int y) {
     //     latLonFromScreenCoords(&(mouse->lat), &(mouse->lon), x, screen_height-y);
     //     mouse->live = 1;
     // }    
+    highFramerate = true;
 }
 
 //
@@ -1059,7 +1110,19 @@ void View::registerMouseMove(int x, int y) {
 //
 
 void View::draw() {
-    drawStartTime = now();
+
+    int targetFrameTime = 15;
+
+    // if(highFramerate) {
+    //     targetFrameTime = 15;
+    // }
+    // highFramerate = false;
+
+    // if (elapsed(lastFrameTime) < targetFrameTime) {
+    //     SDL_Delay(static_cast<Uint32>(targetFrameTime - elapsed(lastFrameTime)));
+    // }
+    
+    SDL_Delay(targetFrameTime);
 
     moveMapToTarget();
     zoomMapToTarget();
@@ -1080,18 +1143,27 @@ void View::draw() {
     //drawMouse();
     drawClick();
 
-    // if(fps) {
-    //     char fps[60] = " ";
-    //     snprintf(fps,40," %d lines @ %.1ffps", lineCount, 1000.0 / elapsed(lastFrameTime));
+    if(fps) {
+        char fps[60] = " ";
+        snprintf(fps,40,"%.1f", 1000.0 / elapsed(lastFrameTime));
 
-    //     drawStringBG(fps, 0,0, mapFont, style.subLabelColor, style.backgroundColor);      
-    // }
+
+        int left = 5;
+        int top = 5;
+        drawStatusBox(&left, &top, "fps", fps, style.white);      
+    }
     
+    SDL_Delay(33);
+
     SDL_RenderPresent(renderer);  
 
-   if (elapsed(drawStartTime) < FRAMETIME) {
-        std::this_thread::sleep_for(fmilliseconds{FRAMETIME} - (now() - drawStartTime));
-    } 
+
+    
+
+    //if (elapsed(lastFrameTime) < targetFrameTime) {
+       //std::this_thread::sleep_for(fmilliseconds{targetFrameTime - elapsed(lastFrameTime)});
+        //std::this_thread::sleep_for(fmilliseconds{100.0f});
+    //} 
 
     lastFrameTime = now(); 
 }
@@ -1107,6 +1179,8 @@ View::View(AppData *appData){
     fps                     = 0;
     fullscreen              = 0;
     screen_index              = 0;
+
+    highFramerate = false;
 
     centerLon   = 0;
     centerLat   = 0;

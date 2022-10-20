@@ -108,7 +108,7 @@ class View {
 		void drawGeography();
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);
-		float resolveLabelConflicts();
+		void resolveLabelConflicts();
 		void drawPlanes();
 		void animateCenterAbsolute(float x, float y);
 		void moveCenterAbsolute(float x, float y);
@@ -146,6 +146,8 @@ class View {
 	    int mapMoved;
 	    int mapRedraw;
 	    int mapAnimating;
+
+	    bool highFramerate;
 
 	    float currentLon;
 	    float currentLat;

@@ -334,6 +334,7 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
 				}
 
 		        	labelLevel += level_rate;
+                    isChanging = true;
 		        	lastLevelChange = now();
 			}
 		} else if (labelLevel > 1.2f + density_mult * calculateDensity(head, labelLevel + 1)) {
@@ -343,6 +344,7 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
 				}
 
 		  		labelLevel -= level_rate;
+                    isChanging = true;
 		        	lastLevelChange = now();
 			}	                         
 		}
@@ -392,12 +394,16 @@ void AircraftLabel::applyForces() {
             dy = 0;
         }
 
+        if(dx < 1 || dy < 1) {
+            isChanging = true;
+        }
+
         float new_x = 0;
         float new_y = 0;
 
         for(int i = 0; i < buffer_length; i++) {
-                new_x += x_buffer[i] / static_cast<float>(buffer_length);
-                new_y += y_buffer[i] / static_cast<float>(buffer_length);
+            new_x += x_buffer[i] / static_cast<float>(buffer_length);
+            new_y += y_buffer[i] / static_cast<float>(buffer_length);
         }
 
         x_buffer[buffer_idx] = new_x + dx;
@@ -633,6 +639,13 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
     if(h < 0.05f) {
         h = 0;
     }	
+
+    isChanging = false;
+}
+
+
+bool AircraftLabel::getIsChanging() {
+    return isChanging;
 }
 
 AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int screen_height, TTF_Font *font) {
@@ -665,6 +678,8 @@ AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int scr
     this->screen_height = screen_height;
 
     labelLevel = 0;
+
+    isChanging = false;
 
     flightLabel.setFont(font);
 	altitudeLabel.setFont(font);
