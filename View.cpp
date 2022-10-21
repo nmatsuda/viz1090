@@ -260,7 +260,7 @@ void View::SDL_init() {
     }
 
     window =  SDL_CreateWindow("viz1090",  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index),  SDL_WINDOWPOS_CENTERED_DISPLAY(screen_index), screen_width, screen_height, flags);        
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     mapTexture = SDL_CreateTexture(renderer,
                                SDL_PIXELFORMAT_ARGB8888,
                                SDL_TEXTUREACCESS_TARGET,
@@ -411,9 +411,9 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 {
     float body = 8.0 * screen_uiscale;
     float wing = 6.0 * screen_uiscale;
-    float wingThick = 0.35;
+    float wingThick = 0.5;
     float tail = 3.0 * screen_uiscale;
-    float tailThick = 0.5;
+    float tailThick = 0.15;
     float bodyWidth = screen_uiscale;
 
     float vec[3];
@@ -435,15 +435,15 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(bodyWidth*out[0]);
     y2 = y + round(bodyWidth*out[1]);
 
-    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    //trigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    //trigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
-    x1 = x + round(15*vec[0]);
-    y1 = y + round(15*vec[1]);
-    x2 = x + round(30*vec[0]);
-    y2 = y + round(30*vec[1]);
+    x1 = x + round(1*vec[0]);
+    y1 = y + round(1*vec[1]);
+    x2 = x + round(10*vec[0]);
+    y2 = y + round(10*vec[1]);
 
-    lineRGBA(renderer,x1,y1,x2,y2,255,255,255,SDL_ALPHA_OPAQUE);
+    lineRGBA(renderer,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     // x1 = x + round(-body*vec[0] + bodyWidth*out[0]);
     // y1 = y + round(-body*vec[1] + bodyWidth*out[1]);
@@ -464,10 +464,10 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     filledTrigonRGBA(renderer, x1, y1, x2, y2, x+round(body*wingThick*vec[0]), y+round(body*wingThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     //tail
-    x1 = x + round(-body*.75*vec[0] - tail*out[0]);
-    y1 = y + round(-body*.75*vec[1] - tail*out[1]);
-    x2 = x + round(-body*.75*vec[0] + tail*out[0]);
-    y2 = y + round(-body*.75*vec[1] + tail*out[1]);
+    x1 = x + round(-body*.5*vec[0] - tail*out[0]);
+    y1 = y + round(-body*.5*vec[1] - tail*out[1]);
+    x2 = x + round(-body*.5*vec[0] + tail*out[0]);
+    y2 = y + round(-body*.5*vec[1] + tail*out[1]);
 
     filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body*tailThick*vec[0]), y+round(-body*tailThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
@@ -1110,6 +1110,7 @@ void View::registerMouseMove(int x, int y) {
 //
 
 void View::draw() {
+    drawStartTime = now();
 
     int targetFrameTime = 15;
 
@@ -1118,11 +1119,11 @@ void View::draw() {
     // }
     // highFramerate = false;
 
-    // if (elapsed(lastFrameTime) < targetFrameTime) {
-    //     SDL_Delay(static_cast<Uint32>(targetFrameTime - elapsed(lastFrameTime)));
-    // }
+    if (lastFrameTime < targetFrameTime) {
+         SDL_Delay(static_cast<Uint32>(targetFrameTime - lastFrameTime));
+    }
     
-    SDL_Delay(targetFrameTime);
+    //SDL_Delay(targetFrameTime);
 
     moveMapToTarget();
     zoomMapToTarget();
@@ -1145,7 +1146,7 @@ void View::draw() {
 
     if(fps) {
         char fps[60] = " ";
-        snprintf(fps,40,"%.1f", 1000.0 / elapsed(lastFrameTime));
+        snprintf(fps,40,"%.1f", 1000.0 / lastFrameTime);
 
 
         int left = 5;
@@ -1153,10 +1154,8 @@ void View::draw() {
         drawStatusBox(&left, &top, "fps", fps, style.white);      
     }
     
-    SDL_Delay(33);
 
     SDL_RenderPresent(renderer);  
-
 
     
 
@@ -1165,7 +1164,7 @@ void View::draw() {
         //std::this_thread::sleep_for(fmilliseconds{100.0f});
     //} 
 
-    lastFrameTime = now(); 
+    lastFrameTime = elapsed(drawStartTime); 
 }
 
 View::View(AppData *appData){
