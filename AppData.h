@@ -45,7 +45,6 @@ class AppData {
 		//
 
 	    struct client *c;
-	    bool connected;
 	    int fd;
         char pk_buf[8];
 
@@ -56,6 +55,8 @@ class AppData {
 		void update();
 		void updateStatus();
 		AppData();
+
+	        bool connected;
 
 		AircraftList aircraftList;
 		Modes modes;

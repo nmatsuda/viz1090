@@ -128,7 +128,9 @@ public:
 	std::vector<MapLabel*> mapnames;
 	std::vector<MapLabel*> airportnames;
 
-	Map(); 
+	void load();
+	int loaded;
+	Map();
 
 	int mapPoints_count;
 	float *mapPoints;	

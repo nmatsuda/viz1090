@@ -84,6 +84,7 @@ class View {
 		SDL_Rect drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color);
 		SDL_Rect drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
 		void drawStatusBox(int *left, int *top, std::string label, std::string message, SDL_Color color);
+		void drawCenteredStatusBox(std::string label, std::string message, SDL_Color color);
 		void drawStatus();
 		void moveLabels(float dx, float dy);
 
@@ -132,6 +133,8 @@ class View {
 		bool metric;
 
 		bool fps;
+
+	    int startupState;
 
 	    float maxDist;
 	    float currentMaxDist;

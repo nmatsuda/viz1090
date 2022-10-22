@@ -233,7 +233,6 @@ void View::font_init() {
 //
 
 void View::SDL_init() {
-    
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Could not initialize SDL: %s\n", SDL_GetError());       
         exit(1);
@@ -322,27 +321,56 @@ void View::drawStatusBox(int *left, int *top, std::string label, std::string mes
     *left = *left + labelWidth + messageWidth + PAD;
 }
 
+void View::drawCenteredStatusBox(std::string label, std::string message, SDL_Color color) {
+
+    int labelWidth = (label.length() + ((label.length() > 0 ) ? 1 : 0)) * labelFontWidth;
+    int messageWidth = (message.length() + ((message.length() > 0 ) ? 1 : 0)) * messageFontWidth;
+
+    int left = (screen_width - (labelWidth + messageWidth)) / 2;
+    int top = (screen_height - labelFontHeight) / 2;
+	
+    drawStatusBox(&left, &top, label, message, color);
+}
+
+
 void View::drawStatus() {
 
     int left = PAD; 
     int top = screen_height - messageFontHeight - PAD;
 
-    char strLoc[20] = " ";
-    snprintf(strLoc, 20, "%3.3fN %3.3f%c", centerLat, fabs(centerLon),(centerLon > 0) ? 'E' : 'W');
-    drawStatusBox(&left, &top, "loc", strLoc, style.buttonColor);   
+    if(fps) {
+        char fps[60] = " ";
+        snprintf(fps,40,"%.1f", 1000.0 / lastFrameTime);
 
-    char strPlaneCount[10] = " ";
-    snprintf(strPlaneCount, 10,"%d/%d", appData->numVisiblePlanes, appData->numPlanes);
-    drawStatusBox(&left, &top, "disp", strPlaneCount, style.buttonColor);
+        drawStatusBox(&left, &top, "fps", fps, style.white);
+    }
 
-    char strMsgRate[18] = " ";
-    snprintf(strMsgRate, 18,"%.0f/s", appData->msgRate);
-    drawStatusBox(&left, &top, "rate", strMsgRate, style.buttonColor);
 
-    char strSig[18] = " ";
-    snprintf(strSig, 18, "%.0f%%", 100.0 * appData->avgSig / 1024.0);
-    drawStatusBox(&left, &top, "sAvg", strSig, style.buttonColor);
+    if(!appData->connected) {
+        drawStatusBox(&left,&top,"init", "connecting", style.white);
+    } else {    
+        char strLoc[20] = " ";
+        snprintf(strLoc, 20, "%3.3fN %3.3f%c", centerLat, fabs(centerLon),(centerLon > 0) ? 'E' : 'W');
+        drawStatusBox(&left, &top, "loc", strLoc, style.buttonColor);   
 
+        char strPlaneCount[10] = " ";
+        snprintf(strPlaneCount, 10,"%d/%d", appData->numVisiblePlanes, appData->numPlanes);
+        drawStatusBox(&left, &top, "disp", strPlaneCount, style.buttonColor);
+
+        char strMsgRate[18] = " ";
+        snprintf(strMsgRate, 18,"%.0f/s", appData->msgRate);
+        drawStatusBox(&left, &top, "rate", strMsgRate, style.buttonColor);
+
+        char strSig[18] = " ";
+        snprintf(strSig, 18, "%.0f%%", 100.0 * appData->avgSig / 1024.0);
+        drawStatusBox(&left, &top, "sAvg", strSig, style.buttonColor);
+    }
+
+    if(map.loaded < 100) {
+	char loaded[20] = " ";
+        snprintf(loaded, 20, "loading map %d%%", map.loaded);	
+        drawStatusBox(&left,&top,"init", loaded, style.white);
+    }
 }
 
 //
@@ -413,7 +441,7 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     float wing = 6.0 * screen_uiscale;
     float wingThick = 0.5;
     float tail = 3.0 * screen_uiscale;
-    float tailThick = 0.15;
+    float tailThick = 0.35;
     float bodyWidth = screen_uiscale;
 
     float vec[3];
@@ -435,15 +463,15 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     x2 = x + round(bodyWidth*out[0]);
     y2 = y + round(bodyWidth*out[1]);
 
-    //trigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
-    //trigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body * vec[0]), y+round(-body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(body * vec[0]), y+round(body*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
-    x1 = x + round(1*vec[0]);
-    y1 = y + round(1*vec[1]);
-    x2 = x + round(10*vec[0]);
-    y2 = y + round(10*vec[1]);
+    //x1 = x + round(8*vec[0]);
+    //y1 = y + round(8*vec[1]);
+    //x2 = x + round(16*vec[0]);
+    //y2 = y + round(16*vec[1]);
 
-    lineRGBA(renderer,x1,y1,x2,y2,planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    //lineRGBA(renderer,x1,y1,x2,y2, style.white.r, style.white.g, style.white.b, SDL_ALPHA_OPAQUE);
 
     // x1 = x + round(-body*vec[0] + bodyWidth*out[0]);
     // y1 = y + round(-body*vec[1] + bodyWidth*out[1]);
@@ -464,10 +492,10 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
     filledTrigonRGBA(renderer, x1, y1, x2, y2, x+round(body*wingThick*vec[0]), y+round(body*wingThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     //tail
-    x1 = x + round(-body*.5*vec[0] - tail*out[0]);
-    y1 = y + round(-body*.5*vec[1] - tail*out[1]);
-    x2 = x + round(-body*.5*vec[0] + tail*out[0]);
-    y2 = y + round(-body*.5*vec[1] + tail*out[1]);
+    x1 = x + round(-body*.75*vec[0] - tail*out[0]);
+    y1 = y + round(-body*.75*vec[1] - tail*out[1]);
+    x2 = x + round(-body*.75*vec[0] + tail*out[0]);
+    y2 = y + round(-body*.75*vec[1] + tail*out[1]);
 
     filledTrigonRGBA (renderer, x1, y1, x2, y2, x+round(-body*tailThick*vec[0]), y+round(-body*tailThick*vec[1]),planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 }
@@ -1123,10 +1151,9 @@ void View::draw() {
          SDL_Delay(static_cast<Uint32>(targetFrameTime - lastFrameTime));
     }
     
-    //SDL_Delay(targetFrameTime);
-
     moveMapToTarget();
     zoomMapToTarget();
+
     drawGeography();
 
     for(int i = 0; i < 8; i++) {
@@ -1144,31 +1171,15 @@ void View::draw() {
     //drawMouse();
     drawClick();
 
-    if(fps) {
-        char fps[60] = " ";
-        snprintf(fps,40,"%.1f", 1000.0 / lastFrameTime);
-
-
-        int left = 5;
-        int top = 5;
-        drawStatusBox(&left, &top, "fps", fps, style.white);      
-    }
-    
-
     SDL_RenderPresent(renderer);  
-
     
-
-    //if (elapsed(lastFrameTime) < targetFrameTime) {
-       //std::this_thread::sleep_for(fmilliseconds{targetFrameTime - elapsed(lastFrameTime)});
-        //std::this_thread::sleep_for(fmilliseconds{100.0f});
-    //} 
-
     lastFrameTime = elapsed(drawStartTime); 
 }
 
 View::View(AppData *appData){
     this->appData = appData;
+
+    startupState = 0;
 
     // Display options
     screen_uiscale          = 1;
@@ -1190,6 +1201,9 @@ View::View(AppData *appData){
     mapRedraw        = 1;
 
     selectedAircraft =  NULL;
+
+    std::thread t1(&Map::load, &map);
+    t1.detach();
 }
 
 View::~View() {

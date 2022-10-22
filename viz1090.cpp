@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
 
     AppData appData;
     View view(&appData);
+
     Input input(&appData,&view);
 
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
@@ -120,15 +121,15 @@ int main(int argc, char **argv) {
   
     view.SDL_init();
     view.font_init();
-            
+
     go = 1;
           
     while (go == 1)
     {
-        appData.connect();
         input.getInput();
-        appData.update();
         view.draw();
+        appData.connect();
+        appData.update();
     }
     
     appData.disconnect();
