@@ -33,7 +33,6 @@
 #include "View.h"
 #include "Input.h"
 #include <cstring> 
-
 int go = 1;
 
 
@@ -69,25 +68,18 @@ void showHelp(void) {
 
 
 int main(int argc, char **argv) {
-    int j;
-
+  
     AppData appData;
     View view(&appData);
-
-    Input input(&appData,&view);
-
-    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
-
-    appData.initialize();
-
+    
     // Parse the command line options
-    for (j = 1; j < argc; j++) {
+    for (int j = 1; j < argc; j++) {
         int more = ((j + 1) < argc); // There are more arguments
 
         if        (!strcmp(argv[j],"--port") && more) {
             appData.modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--server") && more) {
-            std::strcpy(appData.server, argv[++j]);            
+            std::strcpy(appData.server, argv[++j]);
         } else if (!strcmp(argv[j],"--lat") && more) {
             appData.modes.fUserLat = atof(argv[++j]);
             view.centerLat = appData.modes.fUserLat;
@@ -97,16 +89,16 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--metric")) {
             view.metric = 1;
         } else if (!strcmp(argv[j],"--fps")) {
-            view.fps = 1;         
+            view.fps = 1;
         } else if (!strcmp(argv[j],"--fullscreen")) {
-            view.fullscreen = 1;         
+            view.fullscreen = 1;
         } else if (!strcmp(argv[j],"--screenindex")) {
-            view.screen_index = atoi(argv[++j]);         
+            view.screen_index = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--uiscale") && more) {
-            view.screen_uiscale = atoi(argv[++j]);   
+            view.screen_uiscale = atoi(argv[++j]);
          } else if (!strcmp(argv[j],"--screensize") && more) {
-            view.screen_width = atoi(argv[++j]);        
-            view.screen_height = atoi(argv[++j]);        
+            view.screen_width = atoi(argv[++j]);
+            view.screen_height = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
@@ -116,12 +108,19 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
-    
-    int go;
-  
+
+
+    appData.initialize();
+
     view.SDL_init();
     view.font_init();
 
+    Input input(&appData,&view);
+
+    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
+
+    int go;
+ 
     go = 1;
           
     while (go == 1)

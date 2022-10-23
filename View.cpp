@@ -342,12 +342,12 @@ void View::drawStatus() {
         char fps[60] = " ";
         snprintf(fps,40,"%.1f", 1000.0 / lastFrameTime);
 
-        drawStatusBox(&left, &top, "fps", fps, style.white);
+        drawStatusBox(&left, &top, "fps", fps, style.grey_dark);
     }
 
 
     if(!appData->connected) {
-        drawStatusBox(&left,&top,"init", "connecting", style.white);
+        drawStatusBox(&left,&top,"init", "connecting", style.red);
     } else {    
         char strLoc[20] = " ";
         snprintf(strLoc, 20, "%3.3fN %3.3f%c", centerLat, fabs(centerLon),(centerLon > 0) ? 'E' : 'W');
@@ -369,7 +369,7 @@ void View::drawStatus() {
     if(map.loaded < 100) {
 	char loaded[20] = " ";
         snprintf(loaded, 20, "loading map %d%%", map.loaded);	
-        drawStatusBox(&left,&top,"init", loaded, style.white);
+        drawStatusBox(&left,&top,"init", loaded, style.orange);
     }
 }
 
@@ -627,8 +627,6 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
 
         pxFromLonLat(&dx, &dy, (*currentLine)->end.lon, (*currentLine)->end.lat); 
         screenCoords(&x2, &y2, dx, dy);
-
-        lineCount++;
 
         if(outOfBounds(x1,y1) && outOfBounds(x2,y2)) {
             continue;
@@ -1148,25 +1146,26 @@ void View::draw() {
     // highFramerate = false;
 
     if (lastFrameTime < targetFrameTime) {
-         SDL_Delay(static_cast<Uint32>(targetFrameTime - lastFrameTime));
+        SDL_Delay(static_cast<Uint32>(targetFrameTime - lastFrameTime));
     }
-    
+ 
     moveMapToTarget();
     zoomMapToTarget();
 
     drawGeography();
+    drawScaleBars();
 
-    for(int i = 0; i < 8; i++) {
-        // if(resolveLabelConflicts() <  0.001f) {            
-        //     break;
-        // }
-        resolveLabelConflicts();
+    if(appData->connected) {
+        for(int i = 0; i < 8; i++) {
+            // if(resolveLabelConflicts() <  0.001f) {            
+            //     break;
+            // }
+            resolveLabelConflicts();
+        }
+
+        drawPlanes();  
     }
 
-    lineCount = 0;
-
-    drawScaleBars();
-    drawPlanes();  
     drawStatus();
     //drawMouse();
     drawClick();
@@ -1191,6 +1190,7 @@ View::View(AppData *appData){
     screen_index              = 0;
 
     highFramerate = false;
+    lastFrameTime = 0;
 
     centerLon   = 0;
     centerLat   = 0;
