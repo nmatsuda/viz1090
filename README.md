@@ -31,8 +31,17 @@ sudo apt-get install build-essential
 ```
 sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev libgdal-dev
 ```
+1b. (Raspberry Pi only)
+If you are running viz1090 on the Raspbian desktop (or any form of X) you can skip this step, but if you want to be able to start it directly from the command line, do the following to build SDL with KMS driver support. This is taken from [this stackoverflow question](https://stackoverflow.com/questions/57672568/sdl2-on-raspberry-pi-without-x)
 
-Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
+```
+git clone https://github.com/libsdl-org/SDL
+sudo apt build-dep libsdl2
+sudo apt install libdrm-dev libgbm-dev
+cd ~/SDL
+./configure --enable-video-kmsdrm
+make -j4 && sudo make install
+```
 
 2. Download and build viz1090
 ```
@@ -53,8 +62,6 @@ pip3 install fiona tqdm shapely
 This will produce files for map and airport geometry, with labels, that viz1090 reads. If any of these files don't exist then visualizer will show planes and trails without any geography.
 
 The default parameters for mapconverter should render reasonably quickly on a Raspberry Pi 4. See the mapconverter section below for other options and more information about map sources.
-
-
 
 3. (Windows only)
 
