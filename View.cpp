@@ -420,7 +420,7 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
     y2 = (screen_height>>1) + outy - 2.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
     x3 = (screen_width>>1) +  outx - arrowWidth * vec[0];
     y3 = (screen_height>>1) + outy - arrowWidth * vec[1];
-    trigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     // arrow 2
     x1 = (screen_width>>1) + outx - 3.0 * arrowWidth * vec[0] + round(-arrowWidth*out[0]);
@@ -429,7 +429,7 @@ void View::drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color p
     y2 = (screen_height>>1) + outy - 3.0 * arrowWidth * vec[1] + round(arrowWidth*out[1]);
     x3 = (screen_width>>1) +  outx - 2.0 * arrowWidth * vec[0];
     y3 = (screen_height>>1) + outy - 2.0 * arrowWidth * vec[1];
-    trigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
+    filledTrigonRGBA(renderer, x1, y1, x2, y2, x3, y3, planeColor.r,planeColor.g,planeColor.b,SDL_ALPHA_OPAQUE);
 
     *returnx = x3;
     *returny = y3;
@@ -711,7 +711,7 @@ void View::drawPlaceNames() {
 
 void View::drawGeography() {
 
-    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME) ||  elapsed(lastRedraw) > 2000) {
+    if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME) ||  elapsed(lastRedraw) > 2000 || (map.loaded < 100 && elapsed(lastRedraw) > 250)) {
 
         SDL_SetRenderTarget(renderer, mapTexture);
         
@@ -873,7 +873,7 @@ void View::drawPlanes() {
 
             int x, y;
 
-            float dx, dy;
+	    float dx, dy;
             pxFromLonLat(&dx, &dy, p->lon, p->lat);
             screenCoords(&x, &y, dx, dy);
 
@@ -886,7 +886,7 @@ void View::drawPlanes() {
                     pixelRGBA(renderer, x + radius * cos(theta), y + radius * sin(theta), style.planeColor.r, style.planeColor.g, style.planeColor.b, 255 * ratio);
                 }
                 // circleRGBA(renderer, x, y, 500 - age_ms, 255,255, 255, (uint8_t)(255.0 * age_ms / 500.0));   
-            } else {
+            } else if(1000 * DISPLAY_ACTIVE - elapsed(p->msSeen) > 500) {
                 if(MODES_ACFLAGS_HEADING_VALID) {
                     int usex = x;   
                     int usey = y;
@@ -896,6 +896,10 @@ void View::drawPlanes() {
                     p->y = usey;
 
                     planeColor = lerpColor(style.planeColor, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
+
+		    if(elapsed_s(p->msSeen) > DISPLAY_ACTIVE / 2) {
+		    	arcRGBA(renderer, x, y, 8, 0, 360 * 2.0 * (elapsed_s(p->msSeen) / DISPLAY_ACTIVE - 0.5), planeColor.r, planeColor.g, planeColor.b, 255);
+		    }
                     
                     if(p == selectedAircraft) {
                         planeColor = style.selectedColor;
@@ -922,7 +926,9 @@ void View::drawPlanes() {
 
                     drawPlaneText(p);            
                 }
-            }
+            } else {
+                circleRGBA(renderer, x, y, 8 * (1000 * DISPLAY_ACTIVE - elapsed(p->msSeen)) / 500, style.planeGoneColor.r, style.planeGoneColor.g, style.planeGoneColor.b, 255);
+	    }
         }
         p = p->next;
     }
@@ -1138,7 +1144,7 @@ void View::registerMouseMove(int x, int y) {
 void View::draw() {
     drawStartTime = now();
 
-    int targetFrameTime = 15;
+    int targetFrameTime = 30;
 
     // if(highFramerate) {
     //     targetFrameTime = 15;
