@@ -508,7 +508,7 @@ void View::drawTrails(int left, int top, int right, int bottom) {
 
     while(p) {
         if (p->lon && p->lat) {
-            if(p->lonHistory.empty()) {
+            if(p->lonHistory.empty() || (elapsed_s(p->msSeen) - DISPLAY_ACTIVE > 5)) {
                     return;
                 }
 
@@ -533,7 +533,13 @@ void View::drawTrails(int left, int top, int right, int bottom) {
 
                     SDL_Color color = lerpColor({255,0,0,255}, {255,200,0,255}, age / static_cast<float>(p->lonHistory.size()));
 
+		    color = lerpColor(color, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
+
                     uint8_t colorVal = (uint8_t)floor(127.0 * (age / static_cast<float>(p->lonHistory.size())));
+
+		    if(elapsed_s(p->msSeen) > DISPLAY_ACTIVE) {
+			colorVal = (uint8_t)(255 * ((float)colorVal / 255.0) * (elapsed(p->msSeen) - 1000 * DISPLAY_ACTIVE) / 5000.0f);
+		    }
                                
                     //thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
                     lineRGBA(renderer, prevX, prevY, currentX, currentY, color.r, color.g, color.b, colorVal); 
