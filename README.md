@@ -39,9 +39,27 @@ git clone https://github.com/libsdl-org/SDL
 sudo apt build-dep libsdl2
 sudo apt install libdrm-dev libgbm-dev
 cd ~/SDL
+git checkout SDL2
 ./configure --enable-video-kmsdrm
 make -j4 && sudo make install
 ```
+Then download and build SDL2_gfx
+```
+wget http://www.ferzkopp.net/Software/SDL2_gfx/SDL2_gfx-1.0.4.tar.gz
+tar -zxvf SDL2_gfx-1.0.4.tar.gz
+cd SDL2_gfx-1.0.4
+./configure
+make -j4 && sudo make install
+```
+And finally SDL2_ttf
+```
+git clone https://github.com/libsdl-org/SDL_ttf.git
+cd SDL_ttf
+git checkout SDL2
+./configure --disable-harfbuzz-builtin --disable-freetype-builtin --without-x
+make -j4 && sudo make install
+```
+
 
 2. Download and build viz1090
 ```
