@@ -51,15 +51,10 @@ void AircraftList::update(Modes *modes) {
     struct aircraft *a = modes->aircrafts;
 
     Aircraft *p = head;
-
     while(p) {
         p->live = 0;                
         p = p->next;
     }
-
-    //debug
-    //find(1)->live = 1;
-
 
     while(a) {
 
@@ -127,6 +122,8 @@ void AircraftList::update(Modes *modes) {
 
     p = head;
     Aircraft *prev = nullptr;
+
+    return;
 
     while(p) {
         if(!p->live) {

@@ -68,6 +68,7 @@ static float clamp(float in, float min, float max) {
     return out;
 }
 
+
 static void CROSSVP(float *v, float *u, float *w) 
 {                                                                       
     v[0] = u[1]*w[2] - u[2]*(w)[1];                             
@@ -501,16 +502,16 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 }
 
 void View::drawTrails(int left, int top, int right, int bottom) {
-    int currentX, currentY, prevX, prevY;
+    int currentX, currentY, prevX, prevY, colorVal;
     float dx, dy;   
 
     Aircraft *p = appData->aircraftList.head;
-
+    int count = 0;
     while(p) {
-        if (p->lon && p->lat) {
-            if(p->lonHistory.empty() || (elapsed_s(p->msSeen) - DISPLAY_ACTIVE > 5)) {
-                    return;
-                }
+            if(p->lonHistory.empty()) {
+                p = p->next;
+                continue;
+            }
 
                 std::vector<float>::iterator lon_idx = p->lonHistory.begin();
                 std::vector<float>::iterator lat_idx = p->latHistory.begin();
@@ -533,19 +534,20 @@ void View::drawTrails(int left, int top, int right, int bottom) {
 
                     SDL_Color color = lerpColor({255,0,0,255}, {255,200,0,255}, age / static_cast<float>(p->lonHistory.size()));
 
-		    color = lerpColor(color, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
+		            color = lerpColor(color, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
+                    color = lerpColor(color, style.black, -1.0f + (elapsed_s(p->msSeen) / DISPLAY_ACTIVE));
 
-                    uint8_t colorVal = (uint8_t)floor(127.0 * (age / static_cast<float>(p->lonHistory.size())));
-
-		    if(elapsed_s(p->msSeen) > DISPLAY_ACTIVE) {
-			colorVal = (uint8_t)(255 * ((float)colorVal / 255.0) * (elapsed(p->msSeen) - 1000 * DISPLAY_ACTIVE) / 5000.0f);
-		    }
-                               
-                    //thickLineRGBA(renderer, prevX, prevY, currentX, currentY, 2 * screen_uiscale, 255, 255, 255, colorVal); 
+                    colorVal = (uint8_t)clamp(512.0 * (age / static_cast<float>(p->lonHistory.size())), 0, 255);
+		  
                     lineRGBA(renderer, prevX, prevY, currentX, currentY, color.r, color.g, color.b, colorVal); 
-
                 }
-        }
+
+                if(elapsed_s(p->msSeen) > DISPLAY_ACTIVE) {
+                    //lineRGBA(renderer, currentX-4, currentY-4, currentX+4, currentY+4, style.planeGoneColor.r, style.planeGoneColor.g, style.planeGoneColor.b, colorVal); 
+                    //lineRGBA(renderer, currentX+4, currentY-4, currentX-4, currentY+4, style.planeGoneColor.r, style.planeGoneColor.g, style.planeGoneColor.b, colorVal); 
+                    SDL_Color color = lerpColor(style.planeGoneColor, style.black, -1.0f + (elapsed_s(p->msSeen) / DISPLAY_ACTIVE));
+                    circleRGBA(renderer, currentX, currentY, 5, color.r, color.g, color.b, colorVal); 
+                }
         p = p->next;
     }
 }
