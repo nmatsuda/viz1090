@@ -123,8 +123,6 @@ void AircraftList::update(Modes *modes) {
     p = head;
     Aircraft *prev = nullptr;
 
-    return;
-
     while(p) {
         if(!p->live) {
             if (!prev) {
