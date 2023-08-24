@@ -38,7 +38,7 @@ def extractLines(shapefile, tolerance):
 		elif(simplified.geom_type == "MultiPolygon" or simplified.geom_type == "Polygon"):
 
 			if(simplified.boundary.geom_type == "MultiLineString"):
-				for boundary in simplified.boundary:
+				for boundary in simplified.boundary.geoms:
 					outlist.extend(convertLinestring(boundary))
 			else:
 				outlist.extend(convertLinestring(simplified.boundary))
