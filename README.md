@@ -48,7 +48,7 @@ Then download and build SDL2_gfx
 wget http://www.ferzkopp.net/Software/SDL2_gfx/SDL2_gfx-1.0.4.tar.gz
 tar -zxvf SDL2_gfx-1.0.4.tar.gz
 cd SDL2_gfx-1.0.4
-./configure
+./configure --build=arm-linux-gnueabihf --disable-mmx
 make -j4 && sudo make install
 ```
 And finally SDL2_ttf
@@ -56,7 +56,7 @@ And finally SDL2_ttf
 git clone https://github.com/libsdl-org/SDL_ttf.git
 cd SDL_ttf
 git checkout SDL2
-./configure --disable-harfbuzz-builtin --disable-freetype-builtin --without-x
+./configure --disable-freetype-builtin --without-x
 make -j4 && sudo make install
 ```
 
