@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
+    fprintf(stderr, "view.metric is '%d'.\n\n", view.metric);
     
     int go;
   
