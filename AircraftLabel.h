@@ -33,7 +33,7 @@ class AircraftLabel {
 
 		float labelLevel;
 
-		bool metric;
+		bool metric {};
 
 		float x;
 		float y;

@@ -128,7 +128,7 @@ class View {
 
 
 	////////////////
-		bool metric;
+		bool metric {};
 
 		bool fps;
 
