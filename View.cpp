@@ -1088,6 +1088,7 @@ View::View(AppData *appData){
     screen_width            = 0;
     screen_height           = 0;    
     screen_depth            = 32;
+    metric                  = 0;
     fps                     = 0;
     fullscreen              = 0;
     screen_index              = 0;
