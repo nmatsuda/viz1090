@@ -1,12 +1,24 @@
 #!/bin/bash
 
-wget https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip
-wget https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places.zip
-wget https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_airports.zip
+mkdir -p mapdata
+pushd mapdata > /dev/null
+
+wget --no-verbose https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_1_states_provinces.zip
+wget --no-verbose https://naciscdn.org/naturalearth/10m/cultural/ne_10m_populated_places.zip
+wget --no-verbose https://naciscdn.org/naturalearth/10m/cultural/ne_10m_airports.zip
 
 #this may not be up to date
-wget https://opendata.arcgis.com/datasets/4d8fa46181aa470d809776c57a8ab1f6_0.zip  
+wget --no-verbose https://opendata.arcgis.com/datasets/4d8fa46181aa470d809776c57a8ab1f6_0.zip
 
-unzip '*.zip'
+for file in *.zip; do
+    unzip -o "${file}"
+    rm "${file}"
+done
 
-python3 mapconverter.py --mapfile ne_10m_admin_1_states_provinces.shp --mapnames ne_10m_populated_places.shp --airportfile Runways.shp --airportnames ne_10m_airports.shp 
+popd > /dev/null
+
+python3 mapconverter.py \
+	--mapfile mapdata/ne_10m_admin_1_states_provinces.shp \
+	--mapnames mapdata/ne_10m_populated_places.shp \
+	--airportfile mapdata/Runways.shp \
+	--airportnames mapdata/ne_10m_airports.shp 
