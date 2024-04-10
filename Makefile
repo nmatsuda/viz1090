@@ -16,4 +16,11 @@ viz1090: viz1090.o AppData.o AircraftList.o Aircraft.o Label.o AircraftLabel.o a
 	$(CXX) -o viz1090 viz1090.o AppData.o AircraftList.o Aircraft.o Label.o AircraftLabel.o anet.o interactive.o mode_ac.o mode_s.o net_io.o Input.o View.o Map.o parula.o monokai.o $(LIBS) $(LDFLAGS)
 
 clean:
-	rm -f *.o viz1090
+	rm -f \
+		airportdata.bin \
+		airportnames \
+		mapdata/* \
+		mapdata.bin \
+		mapnames \
+		*.o \
+		viz1090
