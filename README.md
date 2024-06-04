@@ -56,7 +56,7 @@ And finally SDL2_ttf
 git clone https://github.com/libsdl-org/SDL_ttf.git
 cd SDL_ttf
 git checkout SDL2
-./configure --disable-freetype-builtin --without-x
+./configure --disable-freetype-builtin --without-x --enable-harfbuzz=no
 make -j4 && sudo make install
 ```
 
