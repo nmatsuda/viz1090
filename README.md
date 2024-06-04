@@ -59,7 +59,11 @@ git checkout SDL2
 ./configure --disable-freetype-builtin --without-x --enable-harfbuzz=no
 make -j4 && sudo make install
 ```
-
+Now make sure that you are using the "Fake KMS" driver, not the newer "KMS" driver in /boot/config.txt:
+```
+dtoverlay=vc4-fkms-v3d
+#dtoverlay=vc4-kms-v3d
+```
 
 2. Download and build viz1090
 ```
