@@ -32,9 +32,8 @@
 #ifndef APPDATA_H
 #define APPDATA_H
 
-#include "view1090.h" //for Modes
-
 #include "AircraftList.h"
+#include "dump1090.h"
 
 class AppData {
 	private:

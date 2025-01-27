@@ -29,7 +29,7 @@ sudo apt-get install build-essential
 
 1. Install SDL and RTL-SDR libraries
 ```
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev libgdal-dev
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev libgdal-dev
 ```
 1b. (Raspberry Pi only)
 If you are running viz1090 on the Raspbian desktop (or any form of X) you can skip this step, but if you want to be able to start it directly from the command line, do the following to build SDL with KMS driver support. This is taken from [this stackoverflow question](https://stackoverflow.com/questions/57672568/sdl2-on-raspberry-pi-without-x)

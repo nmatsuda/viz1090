@@ -1,47 +1,47 @@
-// dump1090, a Mode S messages decoder for RTLSDR devices.
-//
-// Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//  *  Redistributions of source code must retain the above copyright
-//     notice, this list of conditions and the following disclaimer.
-//
-//  *  Redistributions in binary form must reproduce the above copyright
-//     notice, this list of conditions and the following disclaimer in the
-//     documentation and/or other materials provided with the distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// // dump1090, a Mode S messages decoder for RTLSDR devices.
+// //
+// // Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
+// //
+// // All rights reserved.
+// //
+// // Redistribution and use in source and binary forms, with or without
+// // modification, are permitted provided that the following conditions are
+// // met:
+// //
+// //  *  Redistributions of source code must retain the above copyright
+// //     notice, this list of conditions and the following disclaimer.
+// //
+// //  *  Redistributions in binary form must reproduce the above copyright
+// //     notice, this list of conditions and the following disclaimer in the
+// //     documentation and/or other materials provided with the distribution.
+// //
+// // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// // HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// //
 #ifndef __DUMP1090_H
 #define __DUMP1090_H
 
-// File Version number
-// ====================
-// Format is : MajorVer.MinorVer.DayMonth.Year"
-// MajorVer changes only with significant changes
-// MinorVer changes when additional features are added, but not for bug fixes (range 00-99)
-// DayDate & Year changes for all changes, including for bug fixes. It represent the release date of the update
-//
-#define MODES_DUMP1090_VERSION     "1.10.3010.14"
+// // File Version number
+// // ====================
+// // Format is : MajorVer.MinorVer.DayMonth.Year"
+// // MajorVer changes only with significant changes
+// // MinorVer changes when additional features are added, but not for bug fixes (range 00-99)
+// // DayDate & Year changes for all changes, including for bug fixes. It represent the release date of the update
+// //
+// #define MODES_DUMP1090_VERSION     "1.10.3010.14"
 
-// ============================= Include files ==========================
+// // ============================= Include files ==========================
 
-#ifndef _WIN32
+// #ifndef _WIN32
     #include <stdio.h>
     #include <string.h>
     #include <stdlib.h>
@@ -50,26 +50,28 @@
     #include <errno.h>
     #include <unistd.h>
     #include <math.h>
-    #include <sys/time.h>
+    #include <sys/socket.h>
+
+//     #include <sys/time.h>
     #include <sys/timeb.h>
     #include <signal.h>
-    #include <fcntl.h>
+//     #include <fcntl.h>
     #include <ctype.h>
     #include <sys/stat.h>
-    #include <sys/ioctl.h>
-    #include "rtl-sdr.h"
+//     #include <sys/ioctl.h>
+//     // #include "rtl-sdr.h"
     #include "anet.h"
-#else
-    #include "winstubs.h" //Put everything Windows specific in here
-    #include "rtl-sdr.h"
-    #include "anet.h"
-#endif
+// #else
+//     #include "winstubs.h" //Put everything Windows specific in here
+//     #include "rtl-sdr.h"
+//     #include "anet.h"
+// #endif
 
-// ============================= #defines ===============================
-//
-// If you have a valid coaa.h, these values will come from it. If not,
-// then you can enter your own values in the #else section here
-//
+// // ============================= #defines ===============================
+// //
+// // If you have a valid coaa.h, these values will come from it. If not,
+// // then you can enter your own values in the #else section here
+// //
 #ifdef USER_LATITUDE
     #define MODES_USER_LATITUDE_DFLT   (USER_LATITUDE)
     #define MODES_USER_LONGITUDE_DFLT  (USER_LONGITUDE)
@@ -78,27 +80,27 @@
     #define MODES_USER_LONGITUDE_DFLT  (0.0)
 #endif
 
-#define MODES_DEFAULT_PPM          52
-#define MODES_DEFAULT_RATE         2000000
-#define MODES_DEFAULT_FREQ         1090000000
-#define MODES_DEFAULT_WIDTH        1000
-#define MODES_DEFAULT_HEIGHT       700
+// #define MODES_DEFAULT_PPM          52
+// #define MODES_DEFAULT_RATE         2000000
+// #define MODES_DEFAULT_FREQ         1090000000
+// #define MODES_DEFAULT_WIDTH        1000
+// #define MODES_DEFAULT_HEIGHT       700
 #define MODES_ASYNC_BUF_NUMBER     16
-#define MODES_ASYNC_BUF_SIZE       (16*16384)                 // 256k
-#define MODES_ASYNC_BUF_SAMPLES    (MODES_ASYNC_BUF_SIZE / 2) // Each sample is 2 bytes
-#define MODES_AUTO_GAIN            -100                       // Use automatic gain
-#define MODES_MAX_GAIN             999999                     // Use max available gain
-#define MODES_MSG_SQUELCH_LEVEL    0x02FF                     // Average signal strength limit
-#define MODES_MSG_ENCODER_ERRS     3                          // Maximum number of encoding errors
+// #define MODES_ASYNC_BUF_SIZE       (16*16384)                 // 256k
+// #define MODES_ASYNC_BUF_SAMPLES    (MODES_ASYNC_BUF_SIZE / 2) // Each sample is 2 bytes
+// #define MODES_AUTO_GAIN            -100                       // Use automatic gain
+// #define MODES_MAX_GAIN             999999                     // Use max available gain
+// #define MODES_MSG_SQUELCH_LEVEL    0x02FF                     // Average signal strength limit
+// #define MODES_MSG_ENCODER_ERRS     3                          // Maximum number of encoding errors
 
-// When changing, change also fixBitErrors() and modesInitErrorTable() !!
+// // When changing, change also fixBitErrors() and modesInitErrorTable() !!
 #define MODES_MAX_BITERRORS        2                          // Global max for fixable bit erros
 
-#define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
+// #define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
 #define MODEAC_MSG_BYTES          2
 #define MODEAC_MSG_SQUELCH_LEVEL  0x07FF                      // Average signal strength limit
 #define MODEAC_MSG_FLAG          (1<<0)
-#define MODEAC_MSG_MODES_HIT     (1<<1)
+// #define MODEAC_MSG_MODES_HIT     (1<<1)
 #define MODEAC_MSG_MODEA_HIT     (1<<2)
 #define MODEAC_MSG_MODEC_HIT     (1<<3)
 #define MODEAC_MSG_MODEA_ONLY    (1<<4)
@@ -112,13 +114,13 @@
 #define MODES_LONG_MSG_BITS     (MODES_LONG_MSG_BYTES    * 8)
 #define MODES_SHORT_MSG_BITS    (MODES_SHORT_MSG_BYTES   * 8)
 #define MODES_LONG_MSG_SAMPLES  (MODES_LONG_MSG_BITS     * 2)
-#define MODES_SHORT_MSG_SAMPLES (MODES_SHORT_MSG_BITS    * 2)
-#define MODES_LONG_MSG_SIZE     (MODES_LONG_MSG_SAMPLES  * sizeof(uint16_t))
-#define MODES_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
+// #define MODES_SHORT_MSG_SAMPLES (MODES_SHORT_MSG_BITS    * 2)
+// #define MODES_LONG_MSG_SIZE     (MODES_LONG_MSG_SAMPLES  * sizeof(uint16_t))
+// #define MODES_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
 
-#define MODES_RAWOUT_BUF_SIZE   (1500)
-#define MODES_RAWOUT_BUF_FLUSH  (MODES_RAWOUT_BUF_SIZE - 200)
-#define MODES_RAWOUT_BUF_RATE   (1000)            // 1000 * 64mS = 1 Min approx
+// #define MODES_RAWOUT_BUF_SIZE   (1500)
+// #define MODES_RAWOUT_BUF_FLUSH  (MODES_RAWOUT_BUF_SIZE - 200)
+// #define MODES_RAWOUT_BUF_RATE   (1000)            // 1000 * 64mS = 1 Min approx
 
 #define MODES_ICAO_CACHE_LEN 1024 // Power of two required
 #define MODES_ICAO_CACHE_TTL 60   // Time to live of cached addresses
@@ -146,45 +148,45 @@
 
 #define MODES_ACFLAGS_LLEITHER_VALID (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
 #define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
-#define MODES_ACFLAGS_AOG_GROUND     (MODES_ACFLAGS_AOG_VALID    | MODES_ACFLAGS_AOG)
+// #define MODES_ACFLAGS_AOG_GROUND     (MODES_ACFLAGS_AOG_VALID    | MODES_ACFLAGS_AOG)
 
-#define MODES_DEBUG_DEMOD (1<<0)
-#define MODES_DEBUG_DEMODERR (1<<1)
-#define MODES_DEBUG_BADCRC (1<<2)
-#define MODES_DEBUG_GOODCRC (1<<3)
-#define MODES_DEBUG_NOPREAMBLE (1<<4)
+// #define MODES_DEBUG_DEMOD (1<<0)
+// #define MODES_DEBUG_DEMODERR (1<<1)
+// #define MODES_DEBUG_BADCRC (1<<2)
+// #define MODES_DEBUG_GOODCRC (1<<3)
+// #define MODES_DEBUG_NOPREAMBLE (1<<4)
 #define MODES_DEBUG_NET (1<<5)
-#define MODES_DEBUG_JS (1<<6)
+// #define MODES_DEBUG_JS (1<<6)
 
-// When debug is set to MODES_DEBUG_NOPREAMBLE, the first sample must be
-// at least greater than a given level for us to dump the signal.
-#define MODES_DEBUG_NOPREAMBLE_LEVEL 25
+// // When debug is set to MODES_DEBUG_NOPREAMBLE, the first sample must be
+// // at least greater than a given level for us to dump the signal.
+// #define MODES_DEBUG_NOPREAMBLE_LEVEL 25
 
-#define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
-#define MODES_INTERACTIVE_ROWS          22      // Rows on screen
+// #define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
+// #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DELETE_TTL   300      // Delete from the list after 300 seconds
 #define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
 
-#define MODES_NET_HEARTBEAT_RATE       900      // Each block is approx 65mS - default is > 1 min
+// #define MODES_NET_HEARTBEAT_RATE       900      // Each block is approx 65mS - default is > 1 min
 
 #define MODES_NET_SERVICES_NUM          6
-#define MODES_NET_INPUT_RAW_PORT    30001
-#define MODES_NET_OUTPUT_RAW_PORT   30002
-#define MODES_NET_OUTPUT_SBS_PORT   30003
-#define MODES_NET_INPUT_BEAST_PORT  30004
+// #define MODES_NET_INPUT_RAW_PORT    30001
+// #define MODES_NET_OUTPUT_RAW_PORT   30002
+// #define MODES_NET_OUTPUT_SBS_PORT   30003
+// #define MODES_NET_INPUT_BEAST_PORT  30004
 #define MODES_NET_OUTPUT_BEAST_PORT 30005
-#define MODES_NET_HTTP_PORT          8080
+// #define MODES_NET_HTTP_PORT          8080
 #define MODES_CLIENT_BUF_SIZE  1024
-#define MODES_NET_SNDBUF_SIZE (1024*64)
-#define MODES_NET_SNDBUF_MAX  (7)
+// #define MODES_NET_SNDBUF_SIZE (1024*64)
+// #define MODES_NET_SNDBUF_MAX  (7)
 
-#ifndef HTMLPATH
-#define HTMLPATH   "./public_html"      // default path for gmap.html etc
-#endif
+// #ifndef HTMLPATH
+// #define HTMLPATH   "./public_html"      // default path for gmap.html etc
+// #endif
 
 #define MODES_NOTUSED(V) ((void) V)
 
-//======================== structure declarations =========================
+// //======================== structure declarations =========================
 
 // Structure used to describe a networking client
 struct client {
@@ -263,7 +265,7 @@ typedef struct Modes{                             // Internal state
     int           dev_index;
     int           gain;
     int           enable_agc;
-    rtlsdr_dev_t *dev;
+    // rtlsdr_dev_t *dev;
     int           freq;
     int           ppm_error;
 
@@ -418,7 +420,7 @@ struct modesMessage {
     int  bFlags;                // Flags related to fields in this structure
 };
 
-// ======================== function declarations =========================
+// // ======================== function declarations =========================
 
 #ifdef __cplusplus
 extern "C" {
@@ -449,7 +451,8 @@ struct aircraft* interactiveReceiveData(Modes *modes, struct modesMessage *mm);
 void  interactiveShowData(void);
 void  interactiveRemoveStaleAircrafts(Modes *modes);
 int   decodeBinMessage   (Modes *modes, struct client *c, char *p);
-// struct aircraft *interactiveFindAircraft(uint32_t addr);
+struct aircraft *interactiveFindAircraft(Modes *modes, uint32_t addr);
+
 struct stDF     *interactiveFindDF      (uint32_t addr);
 
 //
