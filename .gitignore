@@ -18,10 +18,9 @@ thumbs.db
 *.prj
 *.xml
 *.html
-*.txt 
+*.txt
 
 airportnames
 mapnames
-
-
-viz1090
+bin/
+go.sum
