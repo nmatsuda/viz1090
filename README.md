@@ -29,7 +29,7 @@ sudo apt-get install build-essential
 
 1. Install SDL and RTL-SDR libraries
 ```
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev libgdal-dev
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
 
 Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
