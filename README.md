@@ -45,8 +45,7 @@ make clean; make
 3. Download and process map data
 
 ```
-sudo apt install python3 python3-pip
-pip3 install fiona tqdm shapely
+sudo apt install python3 python3-fiona python3-tqdm python3-shapely
 ./getmap.sh
 ```
 
