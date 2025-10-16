@@ -29,7 +29,7 @@ sudo apt-get install build-essential
 
 1. Install SDL and RTL-SDR libraries
 ```
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev libgdal-dev
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
 
 Note: On Raspbian the SDL2 package requires X to be running. See the Raspberry Pi section for notes on running from the terminal and other improvements.
@@ -45,8 +45,7 @@ make clean; make
 3. Download and process map data
 
 ```
-sudo apt install python3 python3-pip
-pip3 install fiona tqdm shapely
+sudo apt install python3 python3-fiona python3-tqdm python3-shapely
 ./getmap.sh
 ```
 
