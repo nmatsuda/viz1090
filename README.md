@@ -73,6 +73,10 @@ As WSL does not have an X server built in, you will need to install a 3rd party 
         ```
 * Start viz1090 as described below.
 
+### BINARIES
+
+You can find binaries for installation at https://repology.org/project/viz1090/versions
+
 ### RUNNING
 
 1. Start dump1090 (http://www.github.com/MalcolmRobb/dump1090) locally in network mode:
