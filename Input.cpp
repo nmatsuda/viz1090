@@ -66,6 +66,26 @@ void Input::getInput()
 						exit(0);
 					break;
 
+					case SDLK_MINUS:
+                        view->maxDist *= 1.0 + 0.5 * sgn(1);
+                        if(view->maxDist < 0.001f) {
+                                view->maxDist = 0.001f;
+                        }
+
+                        view->mapTargetMaxDist = 0;
+                        view->mapMoved = 1;
+    				break;
+
+    				case SDLK_EQUALS:
+                        view->maxDist *= 1.0 + 0.5 * sgn(-1);
+                        if(view->maxDist < 0.001f) {
+                                view->maxDist = 0.001f;
+                        }
+
+                        view->mapTargetMaxDist = 0;
+                        view->mapMoved = 1;
+    				break;
+
 					default:
 					break;
 				}

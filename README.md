@@ -29,7 +29,7 @@ sudo apt-get install build-essential
 
 1. Install SDL and RTL-SDR libraries
 ```
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev libgdal-dev
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev librtlsdr-dev
 ```
 1b. (Raspberry Pi only)
 If you are running viz1090 on the Raspbian desktop (or any form of X) you can skip this step, but if you want to be able to start it directly from the command line, do the following to build SDL with KMS driver support. This is taken from [this stackoverflow question](https://stackoverflow.com/questions/57672568/sdl2-on-raspberry-pi-without-x)
@@ -76,8 +76,7 @@ make clean; make
 3. Download and process map data
 
 ```
-sudo apt install python3 python3-pip
-pip3 install fiona tqdm shapely
+sudo apt install python3 python3-fiona python3-tqdm python3-shapely
 ./getmap.sh
 ```
 
@@ -102,6 +101,10 @@ As WSL does not have an X server built in, you will need to install a 3rd party 
         export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
         ```
 * Start viz1090 as described below.
+
+### BINARIES
+
+You can find binaries for installation at https://repology.org/project/viz1090/versions
 
 ### RUNNING
 
