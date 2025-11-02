@@ -32,6 +32,24 @@
 #include "Aircraft.h"
 #include "AircraftLabel.h"
 
+float Aircraft::getLastLon() {
+	if(lonHistory.size() > 1) {
+		 return lonHistory.end()[-2];
+	}
+}
+ 
+float Aircraft::getLastLat() {
+	if(latHistory.size() > 1) {
+		return latHistory.end()[-2];
+	}
+}
+
+float Aircraft::getLastHeading() {
+	if(headingHistory.size() > 1) {
+		 return headingHistory.end()[-2];
+	}
+}
+
 Aircraft::Aircraft(uint32_t addr) {
     this->addr = addr;
     prev_seen = 0;

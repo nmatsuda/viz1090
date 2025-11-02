@@ -36,7 +36,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
-
+#include <cmath>
 bool Map::QTInsert(QuadTree *tree, Line *line, int depth) {
 
   // if(depth > 25) {
@@ -186,7 +186,8 @@ std::vector<Line*> Map::getLines(float screen_lat_min, float screen_lat_max, flo
   return getLinesRecursive(&root, screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max);
 };
 
-Map::Map() { 
+
+void Map::load() { 
   FILE *fileptr;
 
   if((fileptr = fopen("mapdata.bin", "rb"))) {
@@ -205,9 +206,31 @@ Map::Map() {
     fclose(fileptr);
 
     printf("Read %d map points.\n",mapPoints_count / 2);
+  }
 
-    // load quad tree
+   
+   if((fileptr = fopen("airportdata.bin", "rb"))) {
+    fseek(fileptr, 0, SEEK_END);
+    airportPoints_count = ftell(fileptr) / sizeof(float);
+    rewind(fileptr);
 
+    airportPoints = (float *)malloc(airportPoints_count * sizeof(float));
+    if(!fread(airportPoints, sizeof(float), airportPoints_count, fileptr)){
+      printf("Map read error\n");
+      exit(0);
+    }
+
+    fclose(fileptr);
+
+    printf("Read %d airport points.\n",airportPoints_count / 2);
+    }
+ 
+ 
+  int total = mapPoints_count / 2 + airportPoints_count / 2;
+  int processed = 0;
+ 
+  // load quad tree
+    if(mapPoints_count > 0) {
   	for(int i = 0; i < mapPoints_count; i+=2) {
   		if(mapPoints[i] == 0)
   			continue;
@@ -248,6 +271,10 @@ Map::Map() {
       // printf("inserting [%f %f] -> [%f %f]\n",currentPoint.lon,currentPoint.lat,nextPoint.lon,nextPoint.lat);
 
       QTInsert(&root, new Line(currentPoint, nextPoint), 0);
+
+      processed++;
+
+      loaded = floor(100.0f * (float)processed / (float)total);
   	}
   } else {
     printf("No map file found\n");
@@ -255,23 +282,9 @@ Map::Map() {
 //
 
 
-  if((fileptr = fopen("airportdata.bin", "rb"))) {
-    fseek(fileptr, 0, SEEK_END);
-    airportPoints_count = ftell(fileptr) / sizeof(float);
-    rewind(fileptr);                   
-
-    airportPoints = (float *)malloc(airportPoints_count * sizeof(float)); 
-    if(!fread(airportPoints, sizeof(float), airportPoints_count, fileptr)){
-      printf("Map read error\n");
-      exit(0);
-    } 
-
-    fclose(fileptr);
-
-    printf("Read %d airport points.\n",airportPoints_count / 2);
 
     // load quad tree
-
+    if(airportPoints_count > 0) {
     for(int i = 0; i < airportPoints_count; i+=2) {
       if(airportPoints[i] == 0)
         continue;
@@ -312,6 +325,10 @@ Map::Map() {
       //printf("inserting [%f %f] -> [%f %f]\n",currentPoint.lon,currentPoint.lat,nextPoint.lon,nextPoint.lat);
 
       QTInsert(&airport_root, new Line(currentPoint, nextPoint), 0);
+
+      processed++;
+
+      loaded = floor(100.0f * (float)processed / (float)total);
     }
   } else {
     printf("No airport file found\n");
@@ -379,7 +396,17 @@ Map::Map() {
 
   infile.close();
 
-
-
   printf("done\n");
+
+  loaded = 100;
 }
+
+Map::Map() {
+    loaded = 0;
+
+    mapPoints_count = 0;
+    mapPoints = NULL;
+
+    airportPoints_count = 0;
+    airportPoints = NULL;
+} 

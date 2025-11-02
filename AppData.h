@@ -32,9 +32,8 @@
 #ifndef APPDATA_H
 #define APPDATA_H
 
-#include "view1090.h" //for Modes
-
 #include "AircraftList.h"
+#include "dump1090.h"
 
 class AppData {
 	private:
@@ -45,7 +44,6 @@ class AppData {
 		//
 
 	    struct client *c;
-	    bool connected;
 	    int fd;
         char pk_buf[8];
 
@@ -56,6 +54,8 @@ class AppData {
 		void update();
 		void updateStatus();
 		AppData();
+
+	        bool connected;
 
 		AircraftList aircraftList;
 		Modes modes;

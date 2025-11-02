@@ -84,7 +84,9 @@ class View {
 		SDL_Rect drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color);
 		SDL_Rect drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
 		void drawStatusBox(int *left, int *top, std::string label, std::string message, SDL_Color color);
+		void drawCenteredStatusBox(std::string label, std::string message, SDL_Color color);
 		void drawStatus();
+		void moveLabels(float dx, float dy);
 
 		Aircraft *selectedAircraft;
 
@@ -107,7 +109,7 @@ class View {
 		void drawGeography();
 		void drawSignalMarks(Aircraft *p, int x, int y);
 		void drawPlaneText(Aircraft *p);
-		float resolveLabelConflicts();
+		void resolveLabelConflicts();
 		void drawPlanes();
 		void animateCenterAbsolute(float x, float y);
 		void moveCenterAbsolute(float x, float y);
@@ -132,6 +134,8 @@ class View {
 
 		bool fps;
 
+	    int startupState;
+
 	    float maxDist;
 	    float currentMaxDist;
 
@@ -146,11 +150,13 @@ class View {
 	    int mapRedraw;
 	    int mapAnimating;
 
+	    bool highFramerate;
+
 	    float currentLon;
 	    float currentLat;
-	    std::chrono::high_resolution_clock::time_point lastFrameTime;
-		std::chrono::high_resolution_clock::time_point drawStartTime;
-		std::chrono::high_resolution_clock::time_point lastRedraw;
+	    float lastFrameTime;
+	    std::chrono::high_resolution_clock::time_point drawStartTime;
+	    std::chrono::high_resolution_clock::time_point lastRedraw;
 
 	    Map map;
 

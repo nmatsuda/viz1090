@@ -86,11 +86,12 @@ void AppData::disconnect() {
 
 
 void AppData::update() {
-    if(!connected) {
+    if(!connected) {        
         return;
     }
 
     if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
+        connected = false;
         free(c);
         usleep(1000000);
         c = (struct client *) malloc(sizeof(*c));
@@ -152,9 +153,9 @@ AppData::AppData(){
     memset(&modes,    0, sizeof(Modes));
 
     modes.check_crc               = 1;
-    strcpy(server,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
+    strcpy(server,"127.0.0.1"); 
     modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
-    modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
+    // modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
     modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     modes.fUserLat                = MODES_USER_LATITUDE_DFLT;

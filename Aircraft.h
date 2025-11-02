@@ -39,6 +39,12 @@ class AircraftLabel;
 
 class Aircraft {
 public:	
+    float   getLastLon();
+    float   getLastLat();
+    float   getLastHeading();
+
+
+
     uint32_t        addr;           // ICAO address
     char            flight[16];     // Flight number
     unsigned char   signalLevel[8]; // Last 8 Signal Amplitudes

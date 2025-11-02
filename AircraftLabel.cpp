@@ -32,12 +32,12 @@ SDL_Rect AircraftLabel::getFullRect(int labelLevel) {
 	}
 
     if(labelLevel < 1) {
-	   	currentRect = altitudeLabel.getRect();
+  	currentRect = altitudeLabel.getRect();
 
         rect.w = std::max(rect.w,currentRect.w);  
         rect.h += currentRect.h; 
 
-	   	currentRect = speedLabel.getRect();
+   	currentRect = speedLabel.getRect();
 
         rect.w = std::max(rect.w,currentRect.w);  
         rect.h += currentRect.h; 
@@ -132,20 +132,20 @@ float AircraftLabel::calculateDensity(Aircraft *check_p, int labelLevel) {
 }
 
 void AircraftLabel::calculateForces(Aircraft *check_p) {
-	if(w == 0 || h == 0) {
-		return;
-	}
+	//if(w == 0 || h == 0) {
+//		return;
+//	}
 
-	Aircraft *head = check_p;
+    Aircraft *head = check_p;
 
-    int p_left = x;
-    int p_right = x + w;
-    int p_top = y;
-    int p_bottom = y + h;
+    float p_left = static_cast<float>(x);
+    float p_right = static_cast<float>(x + w);
+    float p_top = static_cast<float>(y);
+    float p_bottom = static_cast<float>(y + h);
 
        
-    float boxmid_x = static_cast<float>(p_left + p_right) / 2.0f;
-    float boxmid_y = static_cast<float>(p_top + p_bottom) / 2.0f;
+    float boxmid_x = (p_left + p_right) / 2.0f;
+    float boxmid_y = (p_top + p_bottom) / 2.0f;
     
     float offset_x = boxmid_x - p->x;
     float offset_y = boxmid_y - p->y;
@@ -162,19 +162,19 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     // screen edge 
 
     if(p_left < edge_margin) {
-        ddx += boundary_force * static_cast<float>(edge_margin - p_left);
+        ddx += boundary_force * (edge_margin - p_left);
     }
 
     if(p_right > screen_width - edge_margin) {
-        ddx += boundary_force * static_cast<float>(screen_width - edge_margin - p_right);
+        ddx += boundary_force * (screen_width - edge_margin - p_right);
     }
 
     if(p_top < edge_margin) {
-        ddy += boundary_force * static_cast<float>(edge_margin - p_top);
+        ddy += boundary_force * (edge_margin - p_top);
     }
 
     if(p_bottom > screen_height - edge_margin) {
-        ddy += boundary_force * static_cast<float>(screen_height - edge_margin - p_bottom);
+        ddy += boundary_force * (screen_height - edge_margin - p_bottom);
     }
 
 
@@ -194,17 +194,18 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
         	continue;
         }
 
-        int check_left = check_p->label->x;
-        int check_right = check_p->label->x + check_p->label->w;
-        int check_top = check_p->label->y;
-        int check_bottom = check_p->label->y + check_p->label->h;
+        float check_left = static_cast<float>(check_p->label->x);
+        float check_right = static_cast<float>(check_p->label->x + check_p->label->w);
+        float check_top = static_cast<float>(check_p->label->y);
+        float check_bottom = static_cast<float>(check_p->label->y + check_p->label->h);
 
         float icon_x = static_cast<float>(check_p->x);
         float icon_y = static_cast<float>(check_p->y);
 
         float checkboxmid_x = static_cast<float>(check_left + check_right) / 2.0f;
-        float checkboxmid_y = static_cast<float>(check_top + check_bottom) / 2.0f;
+	float checkboxmid_y = static_cast<float>(check_top + check_bottom) / 2.0f;
 
+	/*
         float offset_x = boxmid_x - checkboxmid_x;
         float offset_y = boxmid_y - checkboxmid_y;
 
@@ -213,16 +214,83 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     
         float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
         float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
+	
+	*/
+
+	bool overlap = true;
+
+    	if (p_left >= check_right + 10 || check_left >= p_right + 10)
+        	overlap = false;
+ 
+    	if (p_top >= check_bottom + 10|| check_top >= p_bottom + 10)
+        	overlap = false;
+ 
+	if(overlap) {
+
+		float td = fabs(p_top - check_bottom);
+		float bd = fabs(p_bottom - check_top);
+		float ld = fabs(p_left - check_right);
+		float rd = fabs(p_right - check_left);
+
+		float x_mag, y_mag;
+
+		if(boxmid_y > checkboxmid_y) {
+			y_mag = check_bottom - p_top + 10; 
+		} else {
+			y_mag = check_top - p_bottom - 10;
+			td = bd;
+		}
+
+		if(boxmid_x > checkboxmid_x) {
+			x_mag = check_right - p_left + 10;
+		} else {
+			x_mag = check_left - p_right - 10;
+			ld = rd;
+		}
+
+		if(td < ld) {
+			x_mag = 0;
+		} else {
+			y_mag = 0;		
+		}
+	
+		ddx += label_force * x_mag;
+		ddy += label_force * y_mag;
+	}
+
+	
 
         // stay at least label_dist away from other icons
 
+	if(p_right >= check_p->x && check_p->x >= p_left && p_bottom >= check_p->y && check_p->y >= p_top) {
+		float x_mag, y_mag;
+
+		if(boxmid_x - check_p->x > 0) {
+			x_mag = check_p->x - p_left + 10;
+		} else {
+			x_mag = check_p->x - p_right - 10;
+		}
+
+		if(boxmid_y - check_p->y > 0) {
+			y_mag = check_p->y - p_top + 10;
+		} else {
+			y_mag = check_p->y - p_bottom - 10;
+		}
+
+		ddx += icon_force * x_mag;
+		ddy += icon_force * y_mag;
+
+	}
+	/*
         if(x_mag > 0 && y_mag > 0) {
             ddx += sign(offset_x) * label_force * x_mag;                        
             ddy += sign(offset_y) * label_force * y_mag;    
         }            
    
-        // stay at least icon_dist away from other icons
+	*/
 
+        // stay at least icon_dist away from other icons
+	/*
         offset_x = boxmid_x - check_p->x;
         offset_y = boxmid_y - check_p->y;
 
@@ -237,9 +305,10 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
             ddy += sign(offset_y) * icon_force * y_mag;
         }
 
+	*/
         all_x += sign(boxmid_x - checkboxmid_x);
         all_y += sign(boxmid_y - checkboxmid_y);
-
+	
         count++;
     
         check_p = check_p -> next;
@@ -250,34 +319,65 @@ void AircraftLabel::calculateForces(Aircraft *check_p) {
     ddy += density_force * all_y / count;
 
 	// char buff[100];
-	// snprintf(buff, sizeof(buff), "%2.2f", labelLevel);
+	// snprintf(buff, sizeof(buff), "l:%2.2f d:%2.2f", labelLevel, calculateDensity(head, labelLevel));
 	// debugLabel.setText(buff);
 
- 	float density_mult = 0.5f;
+ 	float density_mult = 0.15f;
  	float level_rate = 0.25f;
 
- 	if(elapsed(lastLevelChange) > 1000.0) {
-		if(labelLevel < 0.8f * density_mult * calculateDensity(head, labelLevel + 1)) {
-		    if(labelLevel <= 2) {
-		        labelLevel += level_rate;
-		        lastLevelChange = now();
-		    }
-		} else if (labelLevel > 1.2f * density_mult * calculateDensity(head, labelLevel - 1)) {
-		    if(labelLevel >= 0) {
+	float randtime = 5000.0f + 5000.0f * static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+ 	if(elapsed(lastLevelChange) > randtime) {
+		if(labelLevel < -1.2f + density_mult * calculateDensity(head, labelLevel - 1)) {
+			if(labelLevel <= 2) {
+				if(ceil(labelLevel) - labelLevel <= level_rate) {
+					labelLevel += 0.5f;
+				}
+
+		        	labelLevel += level_rate;
+                    isChanging = true;
+		        	lastLevelChange = now();
+			}
+		} else if (labelLevel > 1.2f + density_mult * calculateDensity(head, labelLevel + 1)) {
+			if(labelLevel >= 0) {
+				if(labelLevel - floor(labelLevel) <= level_rate) {
+					labelLevel -= 0.5f;
+				}
+
 		  		labelLevel -= level_rate;
-		        lastLevelChange = now();
-				}	                         
+                    isChanging = true;
+		        	lastLevelChange = now();
+			}	                         
 		}
  	}
+
+
+	//add drag force
+	ddx -= drag_force * dx * dx * sign(dx);
+	ddy -= drag_force * dy * dy * sign(dy);
 }
 
 void AircraftLabel::applyForces() {
-        dx += ddx;
-        dy += ddy;
+        float new_dx = dx + ddx;
+        float new_dy = dy + ddy;
+	
+	new_dx *= damping_force;
+	new_dy *= damping_force;
 
-        dx *= damping_force;
-        dy *= damping_force;
-  
+	/*
+	if(sign(new_dx) != sign(dx) && dx != 0) {
+		new_dx = 0;
+	}
+
+	if(sign(new_dy) != sign(dy) && dy != 0) {
+		new_dy = 0;
+	}
+	*/
+
+	//if(dx > 0 || dy > 0 || new_dx > 0.01 || new_dy > 0.01) {
+		dx = new_dx;
+		dy = new_dy;
+	//}
+
         if(fabs(dx) > velocity_limit) {
             dx = sign(dx) * velocity_limit;
         }
@@ -294,9 +394,37 @@ void AircraftLabel::applyForces() {
             dy = 0;
         }
 
-        x += dx;
-        y += dy;
+        if(dx < 1 || dy < 1) {
+            isChanging = true;
+        }
 
+        float new_x = 0;
+        float new_y = 0;
+
+        for(int i = 0; i < buffer_length; i++) {
+            new_x += x_buffer[i] / static_cast<float>(buffer_length);
+            new_y += y_buffer[i] / static_cast<float>(buffer_length);
+        }
+
+        x_buffer[buffer_idx] = new_x + dx;
+        y_buffer[buffer_idx] = new_y + dy;
+
+        buffer_idx = (buffer_idx + 1) % buffer_length;
+
+	//new_x += dx;
+	//new_y += dy;
+
+	//new_x = x + dx;
+	//new_y = y + dy;
+
+	//if(abs(new_x - x) > 1 || abs(new_y - y) > 1) {
+		x = new_x;
+		y = new_y;
+	//}
+
+        //x += dx;
+        //y += dy;
+	
         if(isnan(x)) {
         	x = 0;
         }
@@ -347,6 +475,15 @@ void AircraftLabel::applyForces() {
 //     }
 // }
 
+void AircraftLabel::move(float dx, float dy) {
+	for(int i = 0; i < buffer_length; i++ ){
+		x_buffer[i] += dx;
+		y_buffer[i] += dy;
+	}
+	
+	x+=dx;
+	y+=dy;
+}
 
 void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
     if(x == 0 || y == 0) {
@@ -374,9 +511,9 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
         target_opacity = 0.0f;
     }
 
-    opacity += 0.25f * (target_opacity - opacity);
+    opacity += 0.15f * (target_opacity - opacity);
 
-    if(opacity < 0.05f) {
+    if(opacity < 0.005f) {
         opacity = 0;
     }
 
@@ -502,6 +639,13 @@ void AircraftLabel::draw(SDL_Renderer *renderer, bool selected) {
     if(h < 0.05f) {
         h = 0;
     }	
+
+    isChanging = false;
+}
+
+
+bool AircraftLabel::getIsChanging() {
+    return isChanging;
 }
 
 AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int screen_height, TTF_Font *font) {
@@ -516,18 +660,26 @@ AircraftLabel::AircraftLabel(Aircraft *p, bool metric, int screen_width, int scr
     target_w = 0;
     target_h = 0;
 
-    opacity = 0;
-    target_opacity = 0;
+    opacity = 0.0f;
+    target_opacity = 0.0f;
 
     dx = 0;
     dy  = 0;
     ddx = 0;
     ddy = 0;
 
+    for(int i = 0; i < buffer_length; i++) {
+	    x_buffer[i] = x;
+	    y_buffer[i] = y;
+    }
+    buffer_idx = 0;
+
     this->screen_width = screen_width;
     this->screen_height = screen_height;
 
     labelLevel = 0;
+
+    isChanging = false;
 
     flightLabel.setFont(font);
 	altitudeLabel.setFont(font);
