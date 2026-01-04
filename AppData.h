@@ -32,44 +32,72 @@
 #ifndef APPDATA_H
 #define APPDATA_H
 
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <string>
+
 #include "AircraftList.h"
-#include "dump1090.h"
+#include "viz1090/network/ConnectionManager.h"
 
+/// Application data and network management
+///
+/// Manages the connection to dump1090 and aircraft state.
 class AppData {
-	private:
-		//from view1090.c
-	
-		int setupConnection(struct client *c);
+public:
+  AppData();
+  ~AppData();
 
-		//
+  // Non-copyable
+  AppData(const AppData&) = delete;
+  AppData& operator=(const AppData&) = delete;
 
-	    struct client *c;
-	    int fd;
-        char pk_buf[8];
+  /// Initialize internal state
+  void initialize();
 
-	public:
-		void initialize();
-		void connect();
-		void disconnect();
-		void update();
-		void updateStatus();
-		AppData();
+  /// Start connection to server
+  void connect();
 
-	        bool connected;
+  /// Disconnect from server
+  void disconnect();
 
-		AircraftList aircraftList;
-		Modes modes;
+  /// Process pending updates (call each frame)
+  void update();
 
-		char server[32];
+  /// Check if connected
+  [[nodiscard]] bool isConnected() const;
 
-	    int numVisiblePlanes;
-	    int numPlanes;
-	    double maxDist;
-	    int totalCount;
-	    double avgSig;
-	    double sigAccumulate;
-	    double msgRate;
-	    double msgRateAccumulate;    
+  // Configuration (set before connect())
+  std::string server = "127.0.0.1";
+  uint16_t port = 30005;
+  double userLat = 0.0;
+  double userLon = 0.0;
+
+  // Aircraft list (thread-safe access)
+  AircraftList aircraftList;
+
+  // Statistics
+  int numVisiblePlanes = 0;
+  int numPlanes = 0;
+  double maxDist = 0.0;
+  double avgSig = 0.0;
+  double msgRate = 0.0;
+
+  // For backwards compatibility with View
+  [[nodiscard]] bool connected() const { return isConnected(); }
+
+private:
+  void handleMessage(const viz1090::ModesMessage& aMsg);
+  void updateStatus();
+  void removeStaleAircraft();
+
+  std::unique_ptr<viz1090::network::ConnectionManager> mConnectionManager;
+  std::mutex mMessageMutex;
+
+  // Timing for stale aircraft removal
+  std::chrono::steady_clock::time_point mLastCleanup;
+  static constexpr std::chrono::seconds kCleanupInterval{1};
+  static constexpr std::chrono::seconds kAircraftTtl{60};
 };
 
 #endif

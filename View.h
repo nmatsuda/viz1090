@@ -34,20 +34,19 @@
 
 #include "AppData.h"
 #include "Map.h"
-#include "Style.h"
 #include "SDL2/SDL.h"
-#include "SDL2/SDL_ttf.h" 
+#include "SDL2/SDL_ttf.h"
+#include "Style.h"
 #include <chrono>
 #include <string>
 
-
-//defs - should all move to config file setup
-#define ROUND_RADIUS 3 //radius of text box corners
+// defs - should all move to config file setup
+#define ROUND_RADIUS 3  // radius of text box corners
 
 #define TRAIL_LENGTH 120
-#define TRAIL_TTL   240.0 
-#define DISPLAY_ACTIVE   30.0
-#define TRAIL_TTL_STEP   2
+#define TRAIL_TTL 240.0
+#define DISPLAY_ACTIVE 30.0
+#define TRAIL_TTL_STEP 2
 
 #define MIN_MAP_FEATURE 2
 
@@ -55,136 +54,136 @@
 
 #define PAD 5
 
-#define LATLONMULT 111.195 // 6371.0 * M_PI / 180.0
-
+#define LATLONMULT 111.195  // 6371.0 * M_PI / 180.0
 
 class View {
 
-	private:
-		AppData *appData;
+private:
+  AppData* appData;
 
-		//for cursor drawing
-	    std::chrono::high_resolution_clock::time_point mouseMovedTime;
-	    bool mouseMoved;
-	    int mousex;
-	    int mousey;
+  // for cursor drawing
+  std::chrono::high_resolution_clock::time_point mouseMovedTime;
+  bool mouseMoved;
+  int mousex;
+  int mousey;
 
-	    std::chrono::high_resolution_clock::time_point clickTime;
-	    bool clicked;
-	    int clickx;
-	    int clicky;
+  std::chrono::high_resolution_clock::time_point clickTime;
+  bool clicked;
+  int clickx;
+  int clicky;
 
-	    int lineCount;
+  int lineCount;
 
-	    float dx_mult;
-	    float dy_mult;
+  float dx_mult;
+  float dy_mult;
 
-	    TTF_Font* loadFont(const char *name, int size);
-	    void closeFont(TTF_Font *font);
-		SDL_Rect drawString(std::string text, int x, int y, TTF_Font *font, SDL_Color color);
-		SDL_Rect drawStringBG(std::string text, int x, int y, TTF_Font *font, SDL_Color color, SDL_Color bgColor);
-		void drawStatusBox(int *left, int *top, std::string label, std::string message, SDL_Color color);
-		void drawCenteredStatusBox(std::string label, std::string message, SDL_Color color);
-		void drawStatus();
-		void moveLabels(float dx, float dy);
+  TTF_Font* loadFont(const char* name, int size);
+  void closeFont(TTF_Font* font);
+  SDL_Rect drawString(std::string text, int x, int y, TTF_Font* font, SDL_Color color);
+  SDL_Rect drawStringBG(std::string text, int x, int y, TTF_Font* font, SDL_Color color,
+                        SDL_Color bgColor);
+  void drawStatusBox(int* left, int* top, std::string label, std::string message, SDL_Color color);
+  void drawCenteredStatusBox(std::string label, std::string message, SDL_Color color);
+  void drawStatus();
+  void moveLabels(float dx, float dy);
 
-		Aircraft *selectedAircraft;
+  Aircraft* selectedAircraft;
 
-		Style style;
+  Style style;
 
-	public:
-		int screenDist(float d);
-		void pxFromLonLat(float *dx, float *dy, float lon, float lat);
-		void latLonFromScreenCoords(float *lat, float *lon, int x, int y);
-		void screenCoords(int *outX, int *outY, float dx, float dy);
-		int outOfBounds(int x, int y);
-		int outOfBounds(int x, int y, int left, int top, int right, int bottom);
-		void drawPlaneOffMap(int x, int y, int *returnx, int *returny, SDL_Color planeColor);
-		void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
-		void drawTrails(int left, int top, int right, int bottom);
-		void drawScaleBars();
-		void drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen_lat_max, float screen_lon_min, float screen_lon_max, SDL_Color color);
-		void drawLines(int left, int top, int right, int bottom, int bailTime);
-		void drawPlaceNames();		
-		void drawGeography();
-		void drawSignalMarks(Aircraft *p, int x, int y);
-		void drawPlaneText(Aircraft *p);
-		void resolveLabelConflicts();
-		void drawPlanes();
-		void animateCenterAbsolute(float x, float y);
-		void moveCenterAbsolute(float x, float y);
-		void moveCenterRelative(float dx, float dy);
-		void zoomMapToTarget();
-		void moveMapToTarget();
-		void drawMouse();
-		void drawClick();
-		void registerClick(int tapcount, int x, int y);
-		void registerMouseMove(int x, int y);
-		void draw();
-		
-		void SDL_init();
-		void font_init();
+public:
+  int screenDist(float d);
+  void pxFromLonLat(float* dx, float* dy, float lon, float lat);
+  void latLonFromScreenCoords(float* lat, float* lon, int x, int y);
+  void screenCoords(int* outX, int* outY, float dx, float dy);
+  int outOfBounds(int x, int y);
+  int outOfBounds(int x, int y, int left, int top, int right, int bottom);
+  void drawPlaneOffMap(int x, int y, int* returnx, int* returny, SDL_Color planeColor);
+  void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
+  void drawTrails(int left, int top, int right, int bottom);
+  void drawScaleBars();
+  void drawLinesRecursive(QuadTree* tree, float screen_lat_min, float screen_lat_max,
+                          float screen_lon_min, float screen_lon_max, SDL_Color color);
+  void drawLines(int left, int top, int right, int bottom, int bailTime);
+  void drawPlaceNames();
+  void drawGeography();
+  void drawSignalMarks(Aircraft* p, int x, int y);
+  void drawPlaneText(Aircraft* p);
+  void resolveLabelConflicts();
+  void drawPlanes();
+  void animateCenterAbsolute(float x, float y);
+  void moveCenterAbsolute(float x, float y);
+  void moveCenterRelative(float dx, float dy);
+  void zoomMapToTarget();
+  void moveMapToTarget();
+  void drawMouse();
+  void drawClick();
+  void registerClick(int tapcount, int x, int y);
+  void registerMouseMove(int x, int y);
+  void draw();
 
-		View(AppData *appData);
-		~View();
+  void SDL_init();
+  void font_init();
 
+  View(AppData* appData);
+  ~View();
 
-	////////////////
-		bool metric;
+  ////////////////
+  bool metric;
 
-		bool fps;
+  bool fps;
 
-	    int startupState;
+  int startupState;
 
-	    float maxDist;
-	    float currentMaxDist;
+  float maxDist;
+  float currentMaxDist;
 
-	    float centerLon;
-	    float centerLat;
-	   
-	    float mapTargetMaxDist;
-	    float mapTargetLat;
-	    float mapTargetLon;
+  float centerLon;
+  float centerLat;
 
-	    int mapMoved;
-	    int mapRedraw;
-	    int mapAnimating;
+  float mapTargetMaxDist;
+  float mapTargetLat;
+  float mapTargetLon;
 
-	    bool highFramerate;
+  int mapMoved;
+  int mapRedraw;
+  int mapAnimating;
 
-	    float currentLon;
-	    float currentLat;
-	    float lastFrameTime;
-	    std::chrono::high_resolution_clock::time_point drawStartTime;
-	    std::chrono::high_resolution_clock::time_point lastRedraw;
+  bool highFramerate;
 
-	    Map map;
+  float currentLon;
+  float currentLat;
+  float lastFrameTime;
+  std::chrono::high_resolution_clock::time_point drawStartTime;
+  std::chrono::high_resolution_clock::time_point lastRedraw;
 
-	    int screen_upscale;
-	    int screen_uiscale;
-	    int screen_width;
-	    int screen_height;
-	    int screen_depth;
-	    int fullscreen;
-	    int screen_index;
+  Map map;
 
-		SDL_Window		*window;
-		SDL_Renderer	*renderer;
-		SDL_Texture 	*mapTexture;
+  int screen_upscale;
+  int screen_uiscale;
+  int screen_width;
+  int screen_height;
+  int screen_depth;
+  int fullscreen;
+  int screen_index;
 
-		TTF_Font		*mapFont;
-		TTF_Font		*mapBoldFont;	
-		TTF_Font		*listFont;	
+  SDL_Window* window;
+  SDL_Renderer* renderer;
+  SDL_Texture* mapTexture;
 
-		TTF_Font		*messageFont;	
-		TTF_Font		*labelFont;		
+  TTF_Font* mapFont;
+  TTF_Font* mapBoldFont;
+  TTF_Font* listFont;
 
-		int mapFontWidth;
-		int mapFontHeight;
-		int labelFontWidth;
-		int labelFontHeight;	
-		int messageFontWidth;
-		int messageFontHeight;
+  TTF_Font* messageFont;
+  TTF_Font* labelFont;
+
+  int mapFontWidth;
+  int mapFontHeight;
+  int labelFontWidth;
+  int labelFontHeight;
+  int messageFontWidth;
+  int messageFontHeight;
 };
 
 #endif

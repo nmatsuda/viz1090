@@ -30,110 +30,108 @@
 //
 
 #include "AppData.h"
-#include "View.h"
 #include "Input.h"
-#include <cstring> 
-int go = 1;
+#include "View.h"
 
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-AppData appData;
 Style style;
 
 //
 // ================================ Main ====================================
 //
-void showHelp(void) {
-    printf(
-"-----------------------------------------------------------------------------\n"
-"|                        viz1090 ADSB Viewer        Ver : 0.1 |\n"
-"-----------------------------------------------------------------------------\n"
-"--fps                            Show current framerate\n"
-"--fullscreen                     Start fullscreen\n"
-"--help                           Show this help\n"
-"--lat <latitude>                 Latitude in degrees\n"
-"--lon <longitude>                Longitude in degrees\n"
-"--metric                         Use metric units\n"
-"--port <port>                    TCP Beast output listen port (default: 30005)\n"
-"--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
-"--screensize <width> <height>    Set frame buffer resolution (default: screen resolution)\n"
-"--screenindex <i>                Set the index of the display to use (default: 0)\n"
-"--uiscale <factor>               UI global scaling (default: 1)\n"  
-    );
+void
+showHelp() {
+  std::printf(
+      "-----------------------------------------------------------------------------\n"
+      "|                        viz1090 ADSB Viewer        Ver : 0.2 |\n"
+      "-----------------------------------------------------------------------------\n"
+      "--fps                            Show current framerate\n"
+      "--fullscreen                     Start fullscreen\n"
+      "--help                           Show this help\n"
+      "--lat <latitude>                 Latitude in degrees\n"
+      "--lon <longitude>                Longitude in degrees\n"
+      "--metric                         Use metric units\n"
+      "--port <port>                    TCP Beast output listen port (default: 30005)\n"
+      "--server <IPv4/hosname>          TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
+      "--screensize <width> <height>    Set frame buffer resolution (default: screen "
+      "resolution)\n"
+      "--screenindex <i>                Set the index of the display to use (default: 0)\n"
+      "--uiscale <factor>               UI global scaling (default: 1)\n");
 }
-
 
 //
 //=========================================================================
 //
 
+int
+main(int argc, char** argv) {
+  AppData appData;
+  View view(&appData);
 
-int main(int argc, char **argv) {
-  
-    AppData appData;
-    View view(&appData);
-    
-    // Parse the command line options
-    for (int j = 1; j < argc; j++) {
-        int more = ((j + 1) < argc); // There are more arguments
+  // Parse the command line options
+  for (int j = 1; j < argc; j++) {
+    int more = ((j + 1) < argc);  // There are more arguments
 
-        if        (!strcmp(argv[j],"--port") && more) {
-            appData.modes.net_input_beast_port = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--server") && more) {
-            std::strcpy(appData.server, argv[++j]);
-        } else if (!strcmp(argv[j],"--lat") && more) {
-            appData.modes.fUserLat = atof(argv[++j]);
-            view.centerLat = appData.modes.fUserLat;
-        } else if (!strcmp(argv[j],"--lon") && more) {
-            appData.modes.fUserLon = atof(argv[++j]);
-            view.centerLon = appData.modes.fUserLon;
-        } else if (!strcmp(argv[j],"--metric")) {
-            view.metric = 1;
-        } else if (!strcmp(argv[j],"--fps")) {
-            view.fps = 1;
-        } else if (!strcmp(argv[j],"--fullscreen")) {
-            view.fullscreen = 1;
-        } else if (!strcmp(argv[j],"--screenindex")) {
-            view.screen_index = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--uiscale") && more) {
-            view.screen_uiscale = atoi(argv[++j]);
-         } else if (!strcmp(argv[j],"--screensize") && more) {
-            view.screen_width = atoi(argv[++j]);
-            view.screen_height = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--help")) {
-            showHelp();
-            exit(0);
-        } else {
-            fprintf(stderr, "Unknown or not enough arguments for option '%s'.\n\n", argv[j]);
-            showHelp();
-            exit(1);
-        }
+    if (!std::strcmp(argv[j], "--port") && more) {
+      appData.port = static_cast<uint16_t>(std::atoi(argv[++j]));
+    } else if (!std::strcmp(argv[j], "--server") && more) {
+      appData.server = argv[++j];
+    } else if (!std::strcmp(argv[j], "--lat") && more) {
+      appData.userLat = std::atof(argv[++j]);
+      view.centerLat = appData.userLat;
+    } else if (!std::strcmp(argv[j], "--lon") && more) {
+      appData.userLon = std::atof(argv[++j]);
+      view.centerLon = appData.userLon;
+    } else if (!std::strcmp(argv[j], "--metric")) {
+      view.metric = 1;
+    } else if (!std::strcmp(argv[j], "--fps")) {
+      view.fps = 1;
+    } else if (!std::strcmp(argv[j], "--fullscreen")) {
+      view.fullscreen = 1;
+    } else if (!std::strcmp(argv[j], "--screenindex")) {
+      view.screen_index = std::atoi(argv[++j]);
+    } else if (!std::strcmp(argv[j], "--uiscale") && more) {
+      view.screen_uiscale = std::atoi(argv[++j]);
+    } else if (!std::strcmp(argv[j], "--screensize") && more) {
+      view.screen_width = std::atoi(argv[++j]);
+      view.screen_height = std::atoi(argv[++j]);
+    } else if (!std::strcmp(argv[j], "--help")) {
+      showHelp();
+      std::exit(0);
+    } else {
+      std::fprintf(stderr, "Unknown or not enough arguments for option '%s'.\n\n",
+                   argv[j]);
+      showHelp();
+      std::exit(1);
     }
+  }
 
+  appData.initialize();
 
-    appData.initialize();
+  view.SDL_init();
+  view.font_init();
 
-    view.SDL_init();
-    view.font_init();
+  Input input(&appData, &view);
 
-    Input input(&appData,&view);
+  std::signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
 
-    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
+  // Start connection
+  appData.connect();
 
-    int go;
- 
-    go = 1;
-          
-    while (go == 1)
-    {
-        input.getInput();
-        view.draw();
-        appData.connect();
-        appData.update();
-    }
-    
-    appData.disconnect();
+  bool running = true;
+  while (running) {
+    input.getInput();
+    view.draw();
+    appData.update();
+  }
 
-    return (0);
+  appData.disconnect();
+
+  return 0;
 }
 //
 //=========================================================================

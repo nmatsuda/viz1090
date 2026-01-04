@@ -31,128 +31,147 @@
 
 #include "AircraftList.h"
 
-static std::chrono::high_resolution_clock::time_point now() {
-    return std::chrono::high_resolution_clock::now();
+#include <cstring>
+
+static std::chrono::high_resolution_clock::time_point
+now() {
+  return std::chrono::high_resolution_clock::now();
 }
 
+Aircraft*
+AircraftList::find(uint32_t aAddr) {
+  Aircraft* p = head;
 
-Aircraft *AircraftList::find(uint32_t addr) {
-    Aircraft *p = head;
-
-    while(p) {
-        if (p->addr == addr) return (p);
-        p = p->next;
-    }
-    return (nullptr);
-}
-    
-	//instead of this, net_io should call this class directly to update info
-void AircraftList::update(Modes *modes) {
-    struct aircraft *a = modes->aircrafts;
-
-    Aircraft *p = head;
-    while(p) {
-        p->live = 0;                
-        p = p->next;
-    }
-
-    while(a) {
-
-        p = find(a->addr);
-        if (!p) {
-            p = new Aircraft(a->addr);
-            p->next = head;       
-            head = p;      
-        } else {
-            p->prev_seen = p->seen;
-        }
-
-        p->live = 1;
-
-        if(p->seen == a->seen) {
-            a = a->next;
-            continue;
-        }
-
-        p->seen = a->seen;            
-        p->msSeen = now();
-
-        if((p->seen - p->prev_seen) > 0) {
-                p->messageRate = 1.0 / (double)(p->seen - p->prev_seen);
-        }
-
-        memcpy(p->flight, a->flight, sizeof(p->flight));
-        memcpy(p->signalLevel, a->signalLevel, sizeof(p->signalLevel));
-
-
-        if(p->seenLatLon == a->seenLatLon) {
-            a = a->next;
-            continue;
-        }
-
-        p->msSeenLatLon = now();
-
-        p->seenLatLon = a->seenLatLon;
-
-        p->altitude = a->altitude;
-        p->speed =  a->speed;          
-        p->track = a->track;                  
-
-        p->vert_rate = a->vert_rate;    
-
-        if(p->lon == 0) {
-            p->created = now();
-        }
-
-        if(p->lon == a->lon && p->lat == a->lat) {
-            a = a->next;
-            continue;            
-        }
-
-        p->lon = a->lon;
-        p->lat = a->lat;
-
-        p->lonHistory.push_back(p->lon);
-        p->latHistory.push_back(p->lat);
-        p->headingHistory.push_back(p->track);
-        p->timestampHistory.push_back(p->msSeenLatLon);
-        
-        a = a->next;
-    }
-
-    p = head;
-    Aircraft *prev = nullptr;
-
-    while(p) {
-        if(!p->live) {
-            if (!prev) {
-                head = p->next; 
-                delete(p); 
-                p = head; 
-            } else {
-                prev->next = p->next; 
-                delete(p); 
-                p = prev->next;
-            }
-        } else {
-            prev = p;
-            p = p->next;
-        }
-    }
+  while (p) {
+    if (p->addr == aAddr)
+      return p;
+    p = p->next;
+  }
+  return nullptr;
 }
 
-AircraftList::AircraftList() {
-    head = nullptr;
-
-    // //debug aircraft attached to mouse
-    // head = new Aircraft(1);
-    // memcpy(head->flight, "mouse", sizeof("mouse"));
+Aircraft*
+AircraftList::findOrCreate(uint32_t aAddr) {
+  Aircraft* p = find(aAddr);
+  if (!p) {
+    p = new Aircraft(aAddr);
+    p->next = head;
+    head = p;
+  }
+  return p;
 }
+
+void
+AircraftList::updateFromMessage(const viz1090::ModesMessage& aMsg) {
+  // Only process messages with valid ICAO addresses
+  if (aMsg.addr() == 0) {
+    return;
+  }
+
+  Aircraft* p = findOrCreate(aMsg.addr());
+
+  auto currentTime = now();
+  p->prev_seen = p->seen;
+  p->seen = std::time(nullptr);
+  p->msSeen = currentTime;
+  p->live = 1;
+
+  // Calculate message rate
+  if ((p->seen - p->prev_seen) > 0) {
+    p->messageRate = 1.0f / static_cast<float>(p->seen - p->prev_seen);
+  }
+
+  // Update signal level (rolling buffer)
+  auto sigLevel = aMsg.signalLevel();
+  std::memmove(p->signalLevel + 1, p->signalLevel, sizeof(p->signalLevel) - 1);
+  p->signalLevel[0] = static_cast<unsigned char>(sigLevel);
+
+  // Update flight callsign
+  auto flight = aMsg.flight();
+  if (!flight.empty()) {
+    std::memset(p->flight, 0, sizeof(p->flight));
+    std::strncpy(p->flight, flight.data(),
+                 std::min(flight.size(), sizeof(p->flight) - 1));
+  }
+
+  // Update altitude
+  if (aMsg.altitude().has_value()) {
+    p->altitude = *aMsg.altitude();
+  }
+
+  // Update velocity
+  if (aMsg.velocity().has_value()) {
+    p->speed = *aMsg.velocity();
+  }
+
+  // Update heading/track
+  if (aMsg.heading().has_value()) {
+    p->track = *aMsg.heading();
+  }
+
+  // Update vertical rate
+  if (aMsg.vertRate().has_value()) {
+    p->vert_rate = *aMsg.vertRate();
+  }
+
+  // Update position
+  if (aMsg.position().has_value()) {
+    auto pos = *aMsg.position();
+
+    if (p->lon == 0.0f && p->lat == 0.0f) {
+      p->created = currentTime;
+    }
+
+    if (p->lon != static_cast<float>(pos.longitude) ||
+        p->lat != static_cast<float>(pos.latitude)) {
+      p->lon = static_cast<float>(pos.longitude);
+      p->lat = static_cast<float>(pos.latitude);
+      p->msSeenLatLon = currentTime;
+      p->seenLatLon = std::time(nullptr);
+
+      // Record position history
+      p->lonHistory.push_back(p->lon);
+      p->latHistory.push_back(p->lat);
+      p->headingHistory.push_back(static_cast<float>(p->track));
+      p->timestampHistory.push_back(currentTime);
+    }
+  }
+}
+
+void
+AircraftList::removeStale(std::chrono::seconds aTtl) {
+  auto currentTime = now();
+
+  Aircraft* p = head;
+  Aircraft* prev = nullptr;
+
+  while (p) {
+    auto age = std::chrono::duration_cast<std::chrono::seconds>(
+        currentTime - p->msSeen);
+
+    if (age > aTtl) {
+      if (!prev) {
+        head = p->next;
+        delete p;
+        p = head;
+      } else {
+        prev->next = p->next;
+        delete p;
+        p = prev->next;
+      }
+    } else {
+      prev = p;
+      p = p->next;
+    }
+  }
+}
+
+AircraftList::AircraftList() : head(nullptr) {}
 
 AircraftList::~AircraftList() {
-    while(head != nullptr) {
-        Aircraft *temp = head;
-        head  = head->next;
-        delete(temp);
-    }
+  while (head != nullptr) {
+    Aircraft* temp = head;
+    head = head->next;
+    delete temp;
+  }
 }

@@ -31,138 +31,119 @@
 
 #include "AppData.h"
 
-//
-//carried over from view1090.c
-//
+#include <cstdio>
 
-int AppData::setupConnection(struct client *c) {
-    int fd;
+AppData::AppData()
+    : mConnectionManager(std::make_unique<viz1090::network::ConnectionManager>()),
+      mLastCleanup(std::chrono::steady_clock::now()) {
+  // Set up message handler
+  mConnectionManager->onMessage(
+      [this](const viz1090::ModesMessage& aMsg) { handleMessage(aMsg); });
 
-    if ((fd = anetTcpConnect(modes.aneterr, server, modes.net_input_beast_port)) != ANET_ERR) {
-		anetNonBlock(modes.aneterr, fd);
-		c->next    = NULL;
-		c->buflen  = 0;
-		c->fd      = 
-		c->service =
-		modes.bis  = fd;
-		modes.clients = c;
+  // Set up state change handler
+  mConnectionManager->onStateChange(
+      [](bool aConnected, const std::string& aHost) {
+        if (aConnected) {
+          std::fprintf(stderr, "Connected to %s\n", aHost.c_str());
+        } else {
+          std::fprintf(stderr, "Disconnected from %s\n", aHost.c_str());
+        }
+      });
+}
+
+AppData::~AppData() {
+  disconnect();
+}
+
+void
+AppData::initialize() {
+  // No initialization needed with new architecture
+}
+
+void
+AppData::connect() {
+  if (mConnectionManager->isRunning()) {
+    return;
+  }
+
+  std::fprintf(stderr, "Connecting to %s:%d\n", server.c_str(), port);
+
+  viz1090::network::ConnectionManager::Config config;
+  config.host = server;
+  config.port = port;
+  config.autoReconnect = true;
+  config.reconnectDelay = std::chrono::seconds{5};
+
+  mConnectionManager->start(config);
+}
+
+void
+AppData::disconnect() {
+  mConnectionManager->stop();
+}
+
+bool
+AppData::isConnected() const {
+  return mConnectionManager->isConnected();
+}
+
+void
+AppData::update() {
+  // Remove stale aircraft periodically
+  auto now = std::chrono::steady_clock::now();
+  if (now - mLastCleanup > kCleanupInterval) {
+    removeStaleAircraft();
+    mLastCleanup = now;
+  }
+
+  // Update statistics
+  updateStatus();
+}
+
+void
+AppData::handleMessage(const viz1090::ModesMessage& aMsg) {
+  std::lock_guard<std::mutex> lock(mMessageMutex);
+  aircraftList.updateFromMessage(aMsg);
+}
+
+void
+AppData::removeStaleAircraft() {
+  std::lock_guard<std::mutex> lock(mMessageMutex);
+  aircraftList.removeStale(kAircraftTtl);
+}
+
+void
+AppData::updateStatus() {
+  numVisiblePlanes = 0;
+  numPlanes = 0;
+  double sigAccumulate = 0.0;
+  double msgRateAccumulate = 0.0;
+
+  std::lock_guard<std::mutex> lock(mMessageMutex);
+  Aircraft* p = aircraftList.head;
+
+  while (p) {
+    unsigned char* pSig = p->signalLevel;
+    unsigned int signalAverage =
+        (pSig[0] + pSig[1] + pSig[2] + pSig[3] + pSig[4] + pSig[5] + pSig[6] +
+         pSig[7]);
+
+    sigAccumulate += signalAverage;
+
+    if (p->lon != 0.0f && p->lat != 0.0f) {
+      numVisiblePlanes++;
     }
-    return fd;
-}
 
-void AppData::initialize() {
-    if ( NULL == (modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)))
-    {
-        fprintf(stderr, "Out of memory allocating data buffer.\n");
-        exit(1);
-    }
-    memset(modes.icao_cache, 0,   sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2);
-    modesInitErrorInfo(&(modes));
-}
+    msgRateAccumulate += p->messageRate;
 
+    numPlanes++;
+    p = p->next;
+  }
 
-void AppData::connect() {
-
-    if(connected) {
-        return;
-    }
-
-    c = (struct client *) malloc(sizeof(*c));
-
-    if ((fd = setupConnection(c)) == ANET_ERR) {
-        fprintf(stderr, "Waiting on %s:%d\n", server, modes.net_input_beast_port);     
-        return;
-    } 
-
-    connected = true;
-    fprintf(stderr, "Connected to %s:%d\n", server, modes.net_input_beast_port);     
-}
-
-
-void AppData::disconnect() {
-    if (fd != ANET_ERR) 
-      {close(fd);}
-}
-
-
-void AppData::update() {
-    if(!connected) {        
-        return;
-    }
-
-    if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
-        connected = false;
-        free(c);
-        usleep(1000000);
-        c = (struct client *) malloc(sizeof(*c));
-        fd = setupConnection(c);
-        return;
-    }
-    char empty;
-    modesReadFromClient(&modes, c, &empty,decodeBinMessage);
-
-    interactiveRemoveStaleAircrafts(&modes);
-
-    aircraftList.update(&modes);
-
-    //this can probably be collapsed into somethingelse, came from status.c
-    updateStatus();
-}
-
-
-void AppData::updateStatus() {
-    // struct aircraft *a = Modes.aircrafts;
-
-    numVisiblePlanes = 0;
-    numPlanes = 0;
-    maxDist = 0;
-    totalCount = 0;
-    sigAccumulate = 0.0;
-    msgRateAccumulate = 0.0;    
-
-
-     Aircraft *p = aircraftList.head;
-
-     while(p) {
-         unsigned char * pSig       = p->signalLevel;
-         unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                       pSig[4] + pSig[5] + pSig[6] + pSig[7]);   
-
-         sigAccumulate += signalAverage;
-        
-         if (p->lon && p->lat) {
-                 numVisiblePlanes++;
-         }    
-
-         totalCount++;
-
-         msgRateAccumulate += p->messageRate; 
-
-         p = p->next;
-     }
-
-     msgRate                = msgRateAccumulate;
-     avgSig                 = sigAccumulate / (double) totalCount;
-     numPlanes              = totalCount;
-     numVisiblePlanes       = numVisiblePlanes;
-     maxDist                = maxDist;
-}
-
-
-AppData::AppData(){
-    memset(&modes,    0, sizeof(Modes));
-
-    modes.check_crc               = 1;
-    strcpy(server,"127.0.0.1"); 
-    modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
-    // modes.interactive_rows        = MODES_INTERACTIVE_ROWS;
-    modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
-    modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
-    modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
-
-    modes.interactive             = 0;
-    modes.quiet                   = 1;
-
-    connected = false;
+  msgRate = msgRateAccumulate;
+  if (numPlanes > 0) {
+    avgSig = sigAccumulate / static_cast<double>(numPlanes);
+  } else {
+    avgSig = 0.0;
+  }
 }

@@ -1,70 +1,75 @@
 #include "Label.h"
 #include <string>
 
-void Label::draw(SDL_Renderer *renderer) {
-    SDL_Rect rect = getRect();
+void
+Label::draw(SDL_Renderer* renderer) {
+  SDL_Rect rect = getRect();
 
-    if(rect.h == 0 || rect.w == 0) {
-        return;
-    }
+  if (rect.h == 0 || rect.w == 0) {
+    return;
+  }
 
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_RenderCopy(renderer, texture, NULL, &rect);
-    SDL_DestroyTexture(texture);
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_RenderCopy(renderer, texture, NULL, &rect);
+  SDL_DestroyTexture(texture);
 }
 
-void Label::makeSurface() {
-    if(surface != NULL) {
-        SDL_FreeSurface(surface);
-    }
-    
-    surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);   
+void
+Label::makeSurface() {
+  if (surface != NULL) {
+    SDL_FreeSurface(surface);
+  }
+
+  surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);
 }
 
-SDL_Rect Label::getRect() {
-    SDL_Rect rect = {0,0,0,0};
+SDL_Rect
+Label::getRect() {
+  SDL_Rect rect = {0, 0, 0, 0};
 
-    if(!text.length()) { 
-        return rect;
-    }
-
-    if(surface == NULL) {
-        return rect;
-    }
-
-    rect.x = x;
-    rect.y = y;
-    rect.w = surface->w;
-    rect.h = surface->h;
-
+  if (!text.length()) {
     return rect;
+  }
+
+  if (surface == NULL) {
+    return rect;
+  }
+
+  rect.x = x;
+  rect.y = y;
+  rect.w = surface->w;
+  rect.h = surface->h;
+
+  return rect;
 }
 
-void Label::setText(std::string text) {
-    this->text = text;
-    makeSurface();
+void
+Label::setText(std::string text) {
+  this->text = text;
+  makeSurface();
 }
 
-void Label::setPosition(int x, int y) {
-    this->x = x;
-    this->y = y;
+void
+Label::setPosition(int x, int y) {
+  this->x = x;
+  this->y = y;
 }
 
-void Label::setFont(TTF_Font *font) {
-    this->font = font;
+void
+Label::setFont(TTF_Font* font) {
+  this->font = font;
 }
 
-void Label::setColor(SDL_Color color) {
-    this->color = color;
+void
+Label::setColor(SDL_Color color) {
+  this->color = color;
 }
-// 
+//
 Label::Label() {
-    this->color = {0,0,0,0};
-    surface = NULL;
+  this->color = {0, 0, 0, 0};
+  surface = NULL;
 }
 
 Label::~Label() {
-    SDL_FreeSurface(surface);
+  SDL_FreeSurface(surface);
 }
-
-

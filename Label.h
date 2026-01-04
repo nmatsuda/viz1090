@@ -1,29 +1,29 @@
 
 #include "SDL2/SDL.h"
-#include "SDL2/SDL_ttf.h" 
+#include "SDL2/SDL_ttf.h"
 #include <string>
 
 class Label {
-	public:
-		void draw(SDL_Renderer *renderer);
+public:
+  void draw(SDL_Renderer* renderer);
 
-		void setText(std::string text);
-		void setPosition(int x, int y);
-		void setFont(TTF_Font *font);
-		void setColor(SDL_Color color);
+  void setText(std::string text);
+  void setPosition(int x, int y);
+  void setFont(TTF_Font* font);
+  void setColor(SDL_Color color);
 
-		SDL_Rect getRect();
+  SDL_Rect getRect();
 
-		Label();
-		~Label();
+  Label();
+  ~Label();
 
-	private:
-		void makeSurface();
+private:
+  void makeSurface();
 
-		std::string text;
-		int x;
-		int y;
-		TTF_Font *font;
-		SDL_Color color;
-		SDL_Surface *surface;
+  std::string text;
+  int x;
+  int y;
+  TTF_Font* font;
+  SDL_Color color;
+  SDL_Surface* surface;
 };

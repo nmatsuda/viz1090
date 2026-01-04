@@ -27,30 +27,17 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef INPUT_H
-#define INPUT_H
+#include "viz1090/Aircraft.h"
 
-#include "AppData.h"
-#include "View.h"
+namespace viz1090 {
 
-#include <chrono>
+Aircraft::Aircraft(IcaoAddress aAddr)
+    : mAddr(aAddr), mCreated(Clock::now()), mSeen(Clock::now()) {
+  mFlight.fill('\0');
+  mSignalLevels.fill(0);
+}
 
-class Input {
-public:
-  void getInput();
+Aircraft::~Aircraft() = default;
 
-  // should input know about view?
-  Input(AppData* appData, View* view);
-
-  View* view;
-  AppData* appData;
-
-  std::chrono::high_resolution_clock::time_point touchDownTime;
-  int touchx;
-  int touchy;
-  int tapCount;
-};
-
-#endif
+}  // namespace viz1090

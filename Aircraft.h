@@ -31,64 +31,61 @@
 
 #include <stdint.h>
 
-#include <ctime>
-#include <vector> 
 #include <chrono>
+#include <ctime>
+#include <vector>
 
 class AircraftLabel;
 
 class Aircraft {
-public:	
-    float   getLastLon();
-    float   getLastLat();
-    float   getLastHeading();
+public:
+  float getLastLon();
+  float getLastLat();
+  float getLastHeading();
 
+  uint32_t addr;                 // ICAO address
+  char flight[16];               // Flight number
+  unsigned char signalLevel[8];  // Last 8 Signal Amplitudes
+  float messageRate;
+  int altitude;       // Altitude
+  int speed;          // Velocity
+  int track;          // Angle of flight
+  int vert_rate;      // Vertical rate.
+  time_t seen;        // Time at which the last packet was received
+  time_t seenLatLon;  // Time at which the last packet was received
+  time_t prev_seen;
+  float lat, lon;  // Coordinated obtained from CPR encoded data
 
+  // history
 
-    uint32_t        addr;           // ICAO address
-    char            flight[16];     // Flight number
-    unsigned char   signalLevel[8]; // Last 8 Signal Amplitudes
-    float          messageRate;
-    int             altitude;       // Altitude
-    int             speed;          // Velocity
-    int             track;          // Angle of flight
-    int             vert_rate;      // Vertical rate.
-    time_t          seen;           // Time at which the last packet was received
-    time_t          seenLatLon;           // Time at which the last packet was received
-    time_t          prev_seen;
-    float          lat, lon;       // Coordinated obtained from CPR encoded data
-    
-    //history
+  std::vector<float> lonHistory, latHistory, headingHistory;
+  std::vector<std::chrono::high_resolution_clock::time_point> timestampHistory;
 
-    std::vector <float>   lonHistory, latHistory, headingHistory;
-    std::vector <std::chrono::high_resolution_clock::time_point> timestampHistory;
+  AircraftLabel* label;
 
+  // float           oldLon[TRAIL_LENGTH];
+  // float           oldLat[TRAIL_LENGTH];
+  // float           oldHeading[TRAIL_LENGTH];
+  // time_t          oldSeen[TRAIL_LENGTH];
+  // uint8_t         oldIdx;
+  std::chrono::high_resolution_clock::time_point created;
+  std::chrono::high_resolution_clock::time_point msSeen;
+  std::chrono::high_resolution_clock::time_point msSeenLatLon;
+  int live;
 
-    AircraftLabel *label;
+  struct Aircraft* next;  // Next aircraft in our linked list
 
-    // float           oldLon[TRAIL_LENGTH];
-    // float           oldLat[TRAIL_LENGTH];
-    // float           oldHeading[TRAIL_LENGTH];
-    // time_t          oldSeen[TRAIL_LENGTH];
-    // uint8_t         oldIdx; 
-    std::chrono::high_resolution_clock::time_point        created;
-    std::chrono::high_resolution_clock::time_point        msSeen;
-    std::chrono::high_resolution_clock::time_point        msSeenLatLon;
-    int             live;
+  //// label stuff -> should go to aircraft icon  class
 
-    struct Aircraft *next;        // Next aircraft in our linked list
+  // int             x, y, cx, cy;
+  int x, y;
+  // float w, h, target_w, target_h;
+  // float           ox, oy, dox, doy, ddox, ddoy;
+  // float             labelLevel;
+  // float  opacity, target_opacity;
 
-//// label stuff -> should go to aircraft icon  class
+  /// methods
 
-    // int             x, y, cx, cy;
-    int x, y;
-    // float w, h, target_w, target_h;
-    // float           ox, oy, dox, doy, ddox, ddoy;
-    // float             labelLevel;
-    // float  opacity, target_opacity;
-
-/// methods
-
-    Aircraft(uint32_t addr);  
-    ~Aircraft();
+  Aircraft(uint32_t addr);
+  ~Aircraft();
 };

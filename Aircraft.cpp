@@ -32,39 +32,40 @@
 #include "Aircraft.h"
 #include "AircraftLabel.h"
 
-float Aircraft::getLastLon() {
-	if(lonHistory.size() > 1) {
-		 return lonHistory.end()[-2];
-	}
-	return 0.0f;
-}
- 
-float Aircraft::getLastLat() {
-	if(latHistory.size() > 1) {
-		return latHistory.end()[-2];
-	}
-	return 0.0f;
+float
+Aircraft::getLastLon() {
+  if (lonHistory.size() > 1) {
+    return lonHistory.end()[-2];
+  }
+  return 0.0f;
 }
 
-float Aircraft::getLastHeading() {
-	if(headingHistory.size() > 1) {
-		 return headingHistory.end()[-2];
-	}
-	return 0.0f;
+float
+Aircraft::getLastLat() {
+  if (latHistory.size() > 1) {
+    return latHistory.end()[-2];
+  }
+  return 0.0f;
+}
+
+float
+Aircraft::getLastHeading() {
+  if (headingHistory.size() > 1) {
+    return headingHistory.end()[-2];
+  }
+  return 0.0f;
 }
 
 Aircraft::Aircraft(uint32_t addr) {
-    this->addr = addr;
-    prev_seen = 0;
+  this->addr = addr;
+  prev_seen = 0;
 
-    lon = 0;
-    lat = 0;
+  lon = 0;
+  lat = 0;
 
-    label = NULL;
+  label = NULL;
 
-    next = NULL;
+  next = NULL;
 }
 
-
-Aircraft::~Aircraft() {
-}
+Aircraft::~Aircraft() {}

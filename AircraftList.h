@@ -29,17 +29,34 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#ifndef AIRCRAFT_LIST_H
+#define AIRCRAFT_LIST_H
+
+#include <chrono>
+#include <cstdint>
+
 #include "Aircraft.h"
+#include "viz1090/ModesMessage.h"
 
-#include "dump1090.h" //for Modes
-
+/// Manages a linked list of aircraft
 class AircraftList {
-	public:
-		Aircraft *head;
+public:
+  Aircraft* head = nullptr;
 
-		Aircraft *find(uint32_t addr);
-		void update(Modes *modes);
+  /// Find an aircraft by ICAO address
+  Aircraft* find(uint32_t aAddr);
 
-		AircraftList();
-		~AircraftList();
+  /// Find or create an aircraft
+  Aircraft* findOrCreate(uint32_t aAddr);
+
+  /// Update aircraft from a decoded message
+  void updateFromMessage(const viz1090::ModesMessage& aMsg);
+
+  /// Remove aircraft not seen within TTL
+  void removeStale(std::chrono::seconds aTtl);
+
+  AircraftList();
+  ~AircraftList();
 };
+
+#endif
