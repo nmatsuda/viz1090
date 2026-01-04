@@ -33,6 +33,11 @@
 
 #include <cstring>
 
+#include "viz1090/decoder/CprDecoder.h"
+
+// Maximum time between even and odd CPR frames for global decode (10 seconds)
+static constexpr uint64_t kCprMaxTimeDiff = 10000000;  // microseconds
+
 static std::chrono::high_resolution_clock::time_point
 now() {
   return std::chrono::high_resolution_clock::now();
@@ -114,7 +119,69 @@ AircraftList::updateFromMessage(const viz1090::ModesMessage& aMsg) {
     p->vert_rate = *aMsg.vertRate();
   }
 
-  // Update position
+  // Handle CPR position decoding
+  bool isOddFrame = aMsg.hasFlag(viz1090::AircraftFlags::OddLatLonValid);
+  bool isEvenFrame = aMsg.hasFlag(viz1090::AircraftFlags::EvenLatLonValid);
+
+  if ((isOddFrame || isEvenFrame) && aMsg.rawLatitude().has_value() &&
+      aMsg.rawLongitude().has_value()) {
+    uint64_t msgTime = aMsg.timestamp();
+
+    if (isOddFrame) {
+      p->oddCprLat = *aMsg.rawLatitude();
+      p->oddCprLon = *aMsg.rawLongitude();
+      p->oddCprTime = msgTime;
+      p->cprOddValid = true;
+    } else {
+      p->evenCprLat = *aMsg.rawLatitude();
+      p->evenCprLon = *aMsg.rawLongitude();
+      p->evenCprTime = msgTime;
+      p->cprEvenValid = true;
+    }
+
+    // Try to decode position if we have both frames
+    if (p->cprOddValid && p->cprEvenValid) {
+      // Check time difference between frames (must be within 10 seconds)
+      uint64_t timeDiff = (p->oddCprTime > p->evenCprTime)
+                              ? (p->oddCprTime - p->evenCprTime)
+                              : (p->evenCprTime - p->oddCprTime);
+
+      if (timeDiff < kCprMaxTimeDiff) {
+        viz1090::decoder::CprDecoder::CprFrame evenFrame{
+            p->evenCprLat, p->evenCprLon, p->evenCprTime};
+        viz1090::decoder::CprDecoder::CprFrame oddFrame{
+            p->oddCprLat, p->oddCprLon, p->oddCprTime};
+
+        // Use the most recent frame for final position
+        bool useOdd = (p->oddCprTime > p->evenCprTime);
+
+        auto decoded = viz1090::decoder::CprDecoder::decodeGlobal(
+            evenFrame, oddFrame, useOdd);
+
+        if (decoded) {
+          if (p->lon == 0.0f && p->lat == 0.0f) {
+            p->created = currentTime;
+          }
+
+          if (p->lon != static_cast<float>(decoded->longitude) ||
+              p->lat != static_cast<float>(decoded->latitude)) {
+            p->lon = static_cast<float>(decoded->longitude);
+            p->lat = static_cast<float>(decoded->latitude);
+            p->msSeenLatLon = currentTime;
+            p->seenLatLon = std::time(nullptr);
+
+            // Record position history
+            p->lonHistory.push_back(p->lon);
+            p->latHistory.push_back(p->lat);
+            p->headingHistory.push_back(static_cast<float>(p->track));
+            p->timestampHistory.push_back(currentTime);
+          }
+        }
+      }
+    }
+  }
+
+  // Also handle pre-decoded positions (if decoder already set them)
   if (aMsg.position().has_value()) {
     auto pos = *aMsg.position();
 

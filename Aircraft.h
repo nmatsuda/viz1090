@@ -56,6 +56,16 @@ public:
   time_t prev_seen;
   float lat, lon;  // Coordinated obtained from CPR encoded data
 
+  // CPR decoding state
+  int evenCprLat = 0;   // Even frame raw latitude
+  int evenCprLon = 0;   // Even frame raw longitude
+  int oddCprLat = 0;    // Odd frame raw latitude
+  int oddCprLon = 0;    // Odd frame raw longitude
+  uint64_t evenCprTime = 0;  // Timestamp of even frame
+  uint64_t oddCprTime = 0;   // Timestamp of odd frame
+  bool cprOddValid = false;
+  bool cprEvenValid = false;
+
   // history
 
   std::vector<float> lonHistory, latHistory, headingHistory;
