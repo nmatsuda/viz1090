@@ -32,9 +32,9 @@
 #include "SDL2/SDL2_gfxPrimitives.h"
 #include "SDL2/SDL2_rotozoom.h"
 
-#include "View.h"
+#include "ui/View.h"
 
-#include "AircraftLabel.h"
+#include "ui/AircraftLabel.h"
 
 #include <iostream>
 #include <thread>

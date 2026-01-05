@@ -32,8 +32,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "AppData.h"
-#include "View.h"
+#include "app/AppData.h"
+#include "ui/View.h"
 
 #include <chrono>
 

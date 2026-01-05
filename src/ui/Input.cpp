@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "Input.h"
+#include "ui/Input.h"
 
 static std::chrono::high_resolution_clock::time_point
 now() {

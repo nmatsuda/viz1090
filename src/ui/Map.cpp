@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "Map.h"
+#include "ui/Map.h"
 #include <cmath>
 #include <cstdlib>
 #include <fstream>

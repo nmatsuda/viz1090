@@ -32,11 +32,11 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include "AppData.h"
-#include "Map.h"
+#include "app/AppData.h"
+#include "ui/Map.h"
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_ttf.h"
-#include "Style.h"
+#include "style/Style.h"
 #include <chrono>
 #include <string>
 

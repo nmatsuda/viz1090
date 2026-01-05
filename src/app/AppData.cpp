@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "AppData.h"
+#include "app/AppData.h"
 
 #include <cstdio>
 

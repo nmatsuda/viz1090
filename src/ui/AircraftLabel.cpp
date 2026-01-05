@@ -1,5 +1,5 @@
-#include "AircraftLabel.h"
-#include "Aircraft.h"
+#include "ui/AircraftLabel.h"
+#include "core/Aircraft.h"
 
 #include <algorithm>
 

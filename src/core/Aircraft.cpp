@@ -27,17 +27,45 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
-#include "viz1090/Aircraft.h"
+#include "core/Aircraft.h"
+#include "ui/AircraftLabel.h"
 
-namespace viz1090 {
-
-Aircraft::Aircraft(IcaoAddress aAddr)
-    : mAddr(aAddr), mCreated(Clock::now()), mSeen(Clock::now()) {
-  mFlight.fill('\0');
-  mSignalLevels.fill(0);
+float
+Aircraft::getLastLon() {
+  if (lonHistory.size() > 1) {
+    return lonHistory.end()[-2];
+  }
+  return 0.0f;
 }
 
-Aircraft::~Aircraft() = default;
+float
+Aircraft::getLastLat() {
+  if (latHistory.size() > 1) {
+    return latHistory.end()[-2];
+  }
+  return 0.0f;
+}
 
-}  // namespace viz1090
+float
+Aircraft::getLastHeading() {
+  if (headingHistory.size() > 1) {
+    return headingHistory.end()[-2];
+  }
+  return 0.0f;
+}
+
+Aircraft::Aircraft(uint32_t addr) {
+  this->addr = addr;
+  prev_seen = 0;
+
+  lon = 0;
+  lat = 0;
+
+  label = NULL;
+
+  next = NULL;
+}
+
+Aircraft::~Aircraft() {}

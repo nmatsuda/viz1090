@@ -3,8 +3,8 @@
 #include <chrono>
 #include <string>
 
-#include "Label.h"
-#include "Style.h"
+#include "ui/Label.h"
+#include "style/Style.h"
 
 class Aircraft;
 

@@ -29,9 +29,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "AppData.h"
-#include "Input.h"
-#include "View.h"
+#include "app/AppData.h"
+#include "ui/Input.h"
+#include "ui/View.h"
 
 #include <csignal>
 #include <cstdio>

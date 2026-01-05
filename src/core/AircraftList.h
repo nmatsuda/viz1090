@@ -29,75 +29,34 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef APPDATA_H
-#define APPDATA_H
+#ifndef AIRCRAFT_LIST_H
+#define AIRCRAFT_LIST_H
 
 #include <chrono>
-#include <memory>
-#include <mutex>
-#include <string>
+#include <cstdint>
 
-#include "AircraftList.h"
-#include "viz1090/network/ConnectionManager.h"
+#include "core/Aircraft.h"
+#include "viz1090/ModesMessage.h"
 
-/// Application data and network management
-///
-/// Manages the connection to dump1090 and aircraft state.
-class AppData {
+/// Manages a linked list of aircraft
+class AircraftList {
 public:
-  AppData();
-  ~AppData();
+  Aircraft* head = nullptr;
 
-  // Non-copyable
-  AppData(const AppData&) = delete;
-  AppData& operator=(const AppData&) = delete;
+  /// Find an aircraft by ICAO address
+  Aircraft* find(uint32_t aAddr);
 
-  /// Initialize internal state
-  void initialize();
+  /// Find or create an aircraft
+  Aircraft* findOrCreate(uint32_t aAddr);
 
-  /// Start connection to server
-  void connect();
+  /// Update aircraft from a decoded message
+  void updateFromMessage(const viz1090::ModesMessage& aMsg);
 
-  /// Disconnect from server
-  void disconnect();
+  /// Remove aircraft not seen within TTL
+  void removeStale(std::chrono::seconds aTtl);
 
-  /// Process pending updates (call each frame)
-  void update();
-
-  /// Check if connected
-  [[nodiscard]] bool isConnected() const;
-
-  // Configuration (set before connect())
-  std::string server = "127.0.0.1";
-  uint16_t port = 30005;
-  double userLat = 0.0;
-  double userLon = 0.0;
-
-  // Aircraft list (thread-safe access)
-  AircraftList aircraftList;
-
-  // Statistics
-  int numVisiblePlanes = 0;
-  int numPlanes = 0;
-  double maxDist = 0.0;
-  double avgSig = 0.0;
-  double msgRate = 0.0;
-
-  // For backwards compatibility with View
-  [[nodiscard]] bool connected() const { return isConnected(); }
-
-private:
-  void handleMessage(const viz1090::ModesMessage& aMsg);
-  void updateStatus();
-  void removeStaleAircraft();
-
-  std::unique_ptr<viz1090::network::ConnectionManager> mConnectionManager;
-  std::mutex mMessageMutex;
-
-  // Timing for stale aircraft removal
-  std::chrono::steady_clock::time_point mLastCleanup;
-  static constexpr std::chrono::seconds kCleanupInterval{1};
-  static constexpr std::chrono::seconds kAircraftTtl{60};
+  AircraftList();
+  ~AircraftList();
 };
 
 #endif

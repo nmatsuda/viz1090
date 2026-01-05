@@ -1,4 +1,4 @@
-#include "monokai.h"
+#include "style/monokai.h"
 
 SDL_Color pink 		= {249,38,114,255};
 SDL_Color purple 	= {160,0,255,255};
