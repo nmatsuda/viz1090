@@ -1,86 +1,38 @@
+// viz1090, a vizualizer for dump1090 ADSB output
+//
+// Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//  *  Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//
+//  *  Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STYLE_H
 #define STYLE_H
 
-#include "SDL2/SDL.h"
+#include "viz1090/StyleManager.h"
 
-//
-// This should go to a full theming class
-//
-typedef struct Style {
-  SDL_Color backgroundColor;
+// Backwards-compatible Style type alias
+// The Theme struct from StyleManager provides the same color fields
+using Style = viz1090::Theme;
 
-  SDL_Color selectedColor;
-  SDL_Color planeColor;
-  SDL_Color planeGoneColor;
-  SDL_Color trailColor;
-
-  SDL_Color geoColor;
-  SDL_Color airportColor;
-
-  SDL_Color labelColor;
-  SDL_Color labelLineColor;
-  SDL_Color subLabelColor;
-  SDL_Color labelBackground;
-
-  SDL_Color scaleBarColor;
-  SDL_Color buttonColor;
-  SDL_Color buttonBackground;
-  SDL_Color buttonOutline;
-
-  SDL_Color clickColor;
-
-  SDL_Color black;
-  SDL_Color white;
-  SDL_Color red;
-  SDL_Color green;
-  SDL_Color blue;
-  SDL_Color orange;
-  SDL_Color grey;
-  SDL_Color grey_dark;
-
-  //
-  // todo separate style stuff
-  //
-
-  Style() {
-    SDL_Color pink = {249, 38, 114, 255};
-
-    SDL_Color purple = {85, 0, 255, 255};
-    SDL_Color purple_dark = {33, 0, 122, 255};
-
-    SDL_Color grey_light = {196, 196, 196, 255};
-
-    orange = {253, 151, 31, 255};
-    grey = {127, 127, 127, 255};
-    grey_dark = {64, 64, 64, 255};
-
-    black = {0, 0, 0, 255};
-    white = {255, 255, 255, 255};
-    red = {255, 0, 0, 255};
-    green = {0, 255, 0, 255};
-    blue = {0, 0, 255, 255};
-
-    backgroundColor = {0, 0, 0, 255};
-
-    selectedColor = pink;
-    planeColor = {0, 255, 174, 255};
-    planeGoneColor = grey;
-    trailColor = {0, 255, 174, 255};
-
-    geoColor = purple_dark;
-    airportColor = purple;
-
-    labelColor = white;
-    labelLineColor = grey_dark;
-    subLabelColor = grey;
-    labelBackground = black;
-    scaleBarColor = grey_light;
-    buttonColor = grey_light;
-    buttonBackground = black;
-    buttonOutline = grey_light;
-
-    clickColor = grey;
-  }
-} Style;
-
-#endif
+#endif  // STYLE_H

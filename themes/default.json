@@ -1,0 +1,36 @@
+{
+  "name": "Default",
+  "description": "Default dark theme with cyan accents",
+  "colors": {
+    "background": [0, 0, 0, 255],
+    "selected": [249, 38, 114, 255],
+    "plane": [0, 255, 174, 255],
+    "planeGone": [127, 127, 127, 255],
+    "trail": [0, 255, 174, 255],
+    "geo": [33, 0, 122, 255],
+    "airport": [85, 0, 255, 255],
+    "label": [255, 255, 255, 255],
+    "labelLine": [64, 64, 64, 255],
+    "subLabel": [127, 127, 127, 255],
+    "labelBackground": [0, 0, 0, 255],
+    "scaleBar": [196, 196, 196, 255],
+    "button": [196, 196, 196, 255],
+    "buttonBackground": [0, 0, 0, 255],
+    "buttonOutline": [196, 196, 196, 255],
+    "click": [127, 127, 127, 255]
+  },
+  "palette": {
+    "black": [0, 0, 0, 255],
+    "white": [255, 255, 255, 255],
+    "red": [255, 0, 0, 255],
+    "green": [0, 255, 0, 255],
+    "blue": [0, 0, 255, 255],
+    "orange": [253, 151, 31, 255],
+    "grey": [127, 127, 127, 255],
+    "grey_dark": [64, 64, 64, 255],
+    "pink": [249, 38, 114, 255],
+    "purple": [85, 0, 255, 255],
+    "yellow": [253, 250, 31, 255],
+    "lightGrey": [196, 196, 196, 255]
+  }
+}
