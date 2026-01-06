@@ -6,7 +6,7 @@
 # Handles download failures gracefully - missing data sources are skipped.
 #
 # Requirements:
-#   - wget
+#   - wget, unzip
 #   - Python 3 with: fiona, shapely, numpy, tqdm
 #
 # Usage:
@@ -17,12 +17,32 @@
 
 set -e
 
+#=============================================================================
+# DATA SOURCE URLS
+# Edit these URLs to change data sources
+#=============================================================================
+
+# Map geometry (state/province boundaries)
+# Source: Natural Earth 10m Admin 1 States Provinces
+URL_MAP="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_admin_1_states_provinces"
+
+# Place names (cities, towns)
+# Source: Natural Earth 10m Populated Places
+URL_PLACES="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_populated_places"
+
+# Airport names (IATA codes)
+# Source: Natural Earth 10m Airports
+URL_AIRPORTS="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_airports"
+
+# Airport runway geometry
+# Source: FAA Aeronautical Data Delivery Service via ArcGIS Hub
+URL_RUNWAYS="https://hub.arcgis.com/api/v3/datasets/4d8fa46181aa470d809776c57a8ab1f6_0/downloads/data?format=shp&spatialRefId=4269&where=1%3D1"
+
+#=============================================================================
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR="${1:-.}"
 MAPDATA_DIR="${OUTPUT_DIR}/mapdata"
-
-# GitHub raw URL base for Natural Earth vector data
-GITHUB_BASE="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural"
 
 echo "=== viz1090 Map Data Generator ==="
 echo "Output directory: ${OUTPUT_DIR}"
@@ -52,7 +72,7 @@ download_file() {
     fi
 }
 
-# Download a complete shapefile (all required extensions)
+# Download a complete shapefile (all required extensions) from individual files
 download_shapefile() {
     local base_url="$1"
     local base_name="$2"
@@ -63,13 +83,13 @@ download_shapefile() {
 
     # Required shapefile components
     for ext in shp shx dbf prj; do
-        if ! download_file "${base_url}/${base_name}.${ext}" "${dest_dir}/${base_name}.${ext}"; then
+        if ! download_file "${base_url}.${ext}" "${dest_dir}/${base_name}.${ext}"; then
             success=false
         fi
     done
 
     # Optional components (don't fail if missing)
-    download_file "${base_url}/${base_name}.cpg" "${dest_dir}/${base_name}.cpg" || true
+    download_file "${base_url}.cpg" "${dest_dir}/${base_name}.cpg" || true
 
     if $success; then
         echo "  Shapefile complete: ${base_name}"
@@ -80,17 +100,55 @@ download_shapefile() {
     fi
 }
 
-echo "Downloading Natural Earth data from GitHub..."
+# Download and extract a shapefile from a ZIP archive
+download_shapefile_zip() {
+    local url="$1"
+    local dest_dir="$2"
+    local zip_name="$3"
+    local zip_file="${dest_dir}/${zip_name}.zip"
+
+    echo "Downloading shapefile archive: ${zip_name}"
+
+    # Check if we already have extracted files
+    if [[ -f "${dest_dir}/${zip_name}.shp" ]]; then
+        echo "  Already exists: ${dest_dir}/${zip_name}.shp"
+        return 0
+    fi
+
+    # Download the ZIP
+    if ! download_file "${url}" "${zip_file}"; then
+        return 1
+    fi
+
+    # Extract
+    echo "  Extracting: ${zip_file}"
+    if unzip -o -q "${zip_file}" -d "${dest_dir}"; then
+        echo "  Extracted successfully"
+        # Clean up ZIP file
+        rm -f "${zip_file}"
+        return 0
+    else
+        echo "  Warning: Failed to extract ${zip_file}"
+        rm -f "${zip_file}"
+        return 1
+    fi
+}
+
+echo "Downloading map data..."
 echo ""
 
-# Download shapefiles from GitHub
-download_shapefile "${GITHUB_BASE}" "ne_10m_admin_1_states_provinces" "${MAPDATA_DIR}" || true
+# Download shapefiles from Natural Earth (GitHub)
+download_shapefile "${URL_MAP}" "ne_10m_admin_1_states_provinces" "${MAPDATA_DIR}" || true
 echo ""
 
-download_shapefile "${GITHUB_BASE}" "ne_10m_populated_places" "${MAPDATA_DIR}" || true
+download_shapefile "${URL_PLACES}" "ne_10m_populated_places" "${MAPDATA_DIR}" || true
 echo ""
 
-download_shapefile "${GITHUB_BASE}" "ne_10m_airports" "${MAPDATA_DIR}" || true
+download_shapefile "${URL_AIRPORTS}" "ne_10m_airports" "${MAPDATA_DIR}" || true
+echo ""
+
+# Download runway data from FAA/ArcGIS (ZIP archive)
+download_shapefile_zip "${URL_RUNWAYS}" "${MAPDATA_DIR}" "Runways" || true
 echo ""
 
 echo "Converting to viz1090 format..."

@@ -5,7 +5,7 @@
 **This is a work in progress**
 
 There are some major fixes and cleanup that need to happen before a release:
-* Everything is a grab bag of C and C++, need to more consistently modernize
+* ~~Everything is a grab bag of C and C++, need to more consistently modernize~~ ✓ Migrated to C++17
 * A full refactor, especially View.cpp, necessary for many of the new features below.
 * A working Android build, as this is the best way to run this on portable hardware.
 
@@ -14,12 +14,12 @@ There are also a lot of missing features:
 	* Labels, different colors/line weights for features
 	* Tile prerenderer for improved performance
 * In-application menus for view options and configuration
-* Theming/colormaps (important as this is primarily intended to be eye candy!)
+* ~~Theming/colormaps~~ ✓ JSON-based theme system added (will be expanded further)
 * Integration with handheld features like GPS, battery monitors, buttons/dials, etc. 
 
 ### BUILDING
 
-Tested and working on Ubuntu 18.04, Raspbian Stretch / Buster, Windows Subsystem for Linux (with Ubuntu 18.04), and Mac
+Tested and working on Ubuntu 24.04, Raspbian Stretch / Buster, Windows Subsystem for Linux (with Ubuntu 18.04), and Mac
 
 0. Install build essentials
 
@@ -70,14 +70,22 @@ dtoverlay=vc4-fkms-v3d
 cd ~
 git clone https://www.github.com/nmatsuda/viz1090
 cd viz1090
-make clean; make
+mkdir build
+cd build
+cmake ..
+make
 ```
 
 3. Download and process map data
 
 ```
 sudo apt install python3 python3-fiona python3-tqdm python3-shapely
-./getmap.sh
+cmake --build build --target mapdata
+```
+
+Or run the script directly:
+```
+./src/tools/getmap.sh
 ```
 
 This will produce files for map and airport geometry, with labels, that viz1090 reads. If any of these files don't exist then visualizer will show planes and trails without any geography.
@@ -138,14 +146,13 @@ viz1090 will open an SDL window set to the resolution of your screen.
 The best map data source I've found so far is https://www.naturalearthdata.com. This has a lot of useful GIS data, but not airport runways, which you can get from the FAA Aeronautical Data Delivery Service (https://adds-faa.opendata.arcgis.com/)
 
 
-I've been using these files:
+I've been using these files from the [Natural Earth Vector GitHub repository](https://github.com/nvkelso/natural-earth-vector):
 
-* [Map geometry](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip) 
-* [Place names](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places.zip) 
-* [Airport IATA codes](https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_airports.zip) 
-* [Airport runway geometry](https://opendata.arcgis.com/datasets/4d8fa46181aa470d809776c57a8ab1f6_0.zip)  
+* [Map geometry (ne_10m_admin_1_states_provinces)](https://github.com/nvkelso/natural-earth-vector/tree/master/10m_cultural)
+* [Place names (ne_10m_populated_places)](https://github.com/nvkelso/natural-earth-vector/tree/master/10m_cultural)
+* [Airport IATA codes (ne_10m_airports)](https://github.com/nvkelso/natural-earth-vector/tree/master/10m_cultural)  
 
-The bash script getmap.sh will download (so long as the links don't break) and convert these. Alternatively, you can pass shapefiles and other arguments to mapconverter.py directly
+The bash script `src/tools/getmap.sh` will download (so long as the links don't break) and convert these. Alternatively, you can pass shapefiles and other arguments to `src/tools/mapconverter.py` directly.
 
 ### MAPCONVERTER.PY RUNTIME OPTIONS
 
@@ -156,7 +163,30 @@ The bash script getmap.sh will download (so long as the links don't break) and c
 | --airportfile | shapefile for airport runway outlines |
 | --airportnames | shapefile for airport IATA names |
 | --minpop | minimum population to show place names for (defaults to 100000) |
-| --tolerance" | map simplification tolerance (defaults to 0.001, which works well on a Raspberry Pi 4 - smaller values will produce more detail but slow down the map refresh rate) |
+| --tolerance | map simplification tolerance (defaults to 0.001, which works well on a Raspberry Pi 4 - smaller values will produce more detail but slow down the map refresh rate) |
+| --output-dir | output directory for generated map data files |
+
+### PROFILING
+
+
+
+To build with performance profiling enabled:
+```
+mkdir build
+cd build
+cmake .. -DENABLE_PROFILING=ON
+make
+```
+
+When profiling is enabled, timing statistics for major rendering functions are printed to stderr every 300 frames (~10 seconds at 30fps). This is useful for comparing performance between different builds or identifying bottlenecks.
+
+### THEMING
+
+Theme colors and colormaps are defined in JSON files in the `themes/` directory:
+- `themes/default.json` - Main theme with UI colors
+- `themes/colormaps/` - Color gradients for altitude visualization (parula, magma)
+
+This system will be expanded in future updates to support in-application theme editing and additional color schemes.
 
 ### HARDWARE NOTES
 
