@@ -18,11 +18,10 @@ thumbs.db
 *.prj
 *.xml
 *.html
-*.txt 
-
 airportnames
 mapnames
 
 build
 
-viz1090
+# Ignore the executable, but not the include directory
+/viz1090

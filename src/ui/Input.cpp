@@ -30,6 +30,7 @@
 //
 
 #include "ui/Input.h"
+#include "viz1090/Profiler.h"
 
 static std::chrono::high_resolution_clock::time_point
 now() {
@@ -54,6 +55,7 @@ sgn(T val) {
 
 void
 Input::getInput() {
+  PROFILE_SCOPE("Input::getInput");
   SDL_Event event;
 
   while (SDL_PollEvent(&event)) {
