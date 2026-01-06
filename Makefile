@@ -2,10 +2,19 @@
 # When building a package or installing otherwise in the system, make
 # sure that the variable PREFIX is defined, e.g. make PREFIX=/usr/local
 #
+# To build with profiling enabled:
+#   make PROFILING=1
+#
 
 CXXFLAGS=-O2 -std=c++11 -g
 LIBS= -lm -lSDL2 -lSDL2_ttf -lSDL2_gfx -lpthread -g
 CXX=g++
+
+# Enable profiling if PROFILING=1 is set
+ifdef PROFILING
+CXXFLAGS += -DPROFILING_ENABLED
+$(info Profiling enabled - performance stats will be output to stderr)
+endif
 
 all: viz1090
 

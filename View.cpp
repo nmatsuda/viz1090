@@ -33,6 +33,7 @@
 #include "SDL2/SDL2_gfxPrimitives.h"
 
 #include "View.h"
+#include "Profiler.h"
 
 #include "AircraftLabel.h"
 
@@ -335,8 +336,9 @@ void View::drawCenteredStatusBox(std::string label, std::string message, SDL_Col
 
 
 void View::drawStatus() {
+    PROFILE_SCOPE("drawStatus");
 
-    int left = PAD; 
+    int left = PAD;
     int top = screen_height - messageFontHeight - PAD;
 
     if(fps) {
@@ -502,8 +504,9 @@ void View::drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor)
 }
 
 void View::drawTrails(int left, int top, int right, int bottom) {
+    PROFILE_SCOPE("drawTrails");
     int currentX, currentY, prevX, prevY, colorVal;
-    float dx, dy;   
+    float dx, dy;
 
     Aircraft *p = appData->aircraftList.head;
     int count = 0;
@@ -554,6 +557,7 @@ void View::drawTrails(int left, int top, int right, int bottom) {
 
 void View::drawScaleBars()
 {
+    PROFILE_SCOPE("drawScaleBars");
     int scalePower = 0;
     int scaleBarDist = screenDist((float)pow(10,scalePower));
 
@@ -589,6 +593,7 @@ void View::drawScaleBars()
 
 
 void View::drawLines(int left, int top, int right, int bottom, int bailTime) {
+    PROFILE_SCOPE("drawLines");
     float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
     latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top);
@@ -677,6 +682,7 @@ void View::drawLinesRecursive(QuadTree *tree, float screen_lat_min, float screen
 }
 
 void View::drawPlaceNames() {
+    PROFILE_SCOPE("drawPlaceNames");
 
     //pre-generating labels in map will trade memory for TTF calls - need to compare when there are a lot of labels on screen
 
@@ -718,6 +724,7 @@ void View::drawPlaceNames() {
 }
 
 void View::drawGeography() {
+    PROFILE_SCOPE("drawGeography");
 
     if((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME) ||  elapsed(lastRedraw) > 2000 || (map.loaded < 100 && elapsed(lastRedraw) > 250)) {
 
@@ -823,6 +830,7 @@ void View::moveLabels(float dx, float dy) {
 
 
 void View::resolveLabelConflicts() {
+    PROFILE_SCOPE("resolveLabelConflicts");
     Aircraft *p = appData->aircraftList.head;
 
     while(p) {
@@ -860,6 +868,7 @@ void View::resolveLabelConflicts() {
 }
 
 void View::drawPlanes() {
+    PROFILE_SCOPE("drawPlanes");
     Aircraft *p = appData->aircraftList.head;
     SDL_Color planeColor;
 
@@ -1058,6 +1067,7 @@ void View::moveMapToTarget() {
 // }
 
 void View::drawClick() {
+    PROFILE_SCOPE("drawClick");
     if(clickx && clicky) {
         highFramerate = true;
 
@@ -1150,6 +1160,8 @@ void View::registerMouseMove(int x, int y) {
 //
 
 void View::draw() {
+    PROFILE_BEGIN_FRAME();
+
     drawStartTime = now();
 
     int targetFrameTime = 30;
@@ -1162,31 +1174,42 @@ void View::draw() {
     if (lastFrameTime < targetFrameTime) {
         SDL_Delay(static_cast<Uint32>(targetFrameTime - lastFrameTime));
     }
- 
-    moveMapToTarget();
-    zoomMapToTarget();
+
+    {
+        PROFILE_SCOPE("moveMapToTarget");
+        moveMapToTarget();
+    }
+    {
+        PROFILE_SCOPE("zoomMapToTarget");
+        zoomMapToTarget();
+    }
 
     drawGeography();
     drawScaleBars();
 
     if(appData->connected) {
         for(int i = 0; i < 8; i++) {
-            // if(resolveLabelConflicts() <  0.001f) {            
+            // if(resolveLabelConflicts() <  0.001f) {
             //     break;
             // }
             resolveLabelConflicts();
         }
 
-        drawPlanes();  
+        drawPlanes();
     }
 
     drawStatus();
     //drawMouse();
     drawClick();
 
-    SDL_RenderPresent(renderer);  
-    
-    lastFrameTime = elapsed(drawStartTime); 
+    {
+        PROFILE_SCOPE("SDL_RenderPresent");
+        SDL_RenderPresent(renderer);
+    }
+
+    lastFrameTime = elapsed(drawStartTime);
+
+    PROFILE_END_FRAME();
 }
 
 View::View(AppData *appData){

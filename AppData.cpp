@@ -30,6 +30,7 @@
 //
 
 #include "AppData.h"
+#include "Profiler.h"
 
 //
 //carried over from view1090.c
@@ -86,7 +87,8 @@ void AppData::disconnect() {
 
 
 void AppData::update() {
-    if(!connected) {        
+    PROFILE_SCOPE("AppData::update");
+    if(!connected) {
         return;
     }
 
@@ -111,6 +113,7 @@ void AppData::update() {
 
 
 void AppData::updateStatus() {
+    PROFILE_SCOPE("AppData::updateStatus");
     // struct aircraft *a = Modes.aircrafts;
 
     numVisiblePlanes = 0;

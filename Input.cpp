@@ -30,6 +30,7 @@
 //
 
 #include "Input.h"
+#include "Profiler.h"
 
 static std::chrono::high_resolution_clock::time_point now() {
     return std::chrono::high_resolution_clock::now();
@@ -49,6 +50,7 @@ template <typename T> int sgn(T val) {
 
 void Input::getInput()
 {
+    PROFILE_SCOPE("Input::getInput");
 	SDL_Event event;
 		
 	while (SDL_PollEvent(&event))
