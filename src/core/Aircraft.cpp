@@ -34,24 +34,24 @@
 
 float
 Aircraft::getLastLon() {
-  if (lonHistory.size() > 1) {
-    return lonHistory.end()[-2];
+  if (positionHistory.size() > 1) {
+    return positionHistory.end()[-2].lon;
   }
   return 0.0f;
 }
 
 float
 Aircraft::getLastLat() {
-  if (latHistory.size() > 1) {
-    return latHistory.end()[-2];
+  if (positionHistory.size() > 1) {
+    return positionHistory.end()[-2].lat;
   }
   return 0.0f;
 }
 
 float
 Aircraft::getLastHeading() {
-  if (headingHistory.size() > 1) {
-    return headingHistory.end()[-2];
+  if (positionHistory.size() > 1) {
+    return positionHistory.end()[-2].heading;
   }
   return 0.0f;
 }
@@ -63,9 +63,7 @@ Aircraft::Aircraft(uint32_t addr) {
   lon = 0;
   lat = 0;
 
-  label = NULL;
-
-  next = NULL;
+  // label is default-initialized to nullptr by unique_ptr
 }
 
-Aircraft::~Aircraft() {}
+Aircraft::~Aircraft() = default;

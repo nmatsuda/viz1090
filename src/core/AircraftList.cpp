@@ -45,23 +45,17 @@ now() {
 
 Aircraft*
 AircraftList::find(uint32_t aAddr) {
-  Aircraft* p = head;
-
-  while (p) {
-    if (p->addr == aAddr)
-      return p;
-    p = p->next;
-  }
-  return nullptr;
+  auto it = std::find_if(mAircraft.begin(), mAircraft.end(),
+                         [aAddr](const AircraftPtr& p) { return p->addr == aAddr; });
+  return (it != mAircraft.end()) ? it->get() : nullptr;
 }
 
 Aircraft*
 AircraftList::findOrCreate(uint32_t aAddr) {
   Aircraft* p = find(aAddr);
   if (!p) {
-    p = new Aircraft(aAddr);
-    p->next = head;
-    head = p;
+    mAircraft.push_back(std::make_unique<Aircraft>(aAddr));
+    p = mAircraft.back().get();
   }
   return p;
 }
@@ -170,11 +164,8 @@ AircraftList::updateFromMessage(const viz1090::ModesMessage& aMsg) {
             p->msSeenLatLon = currentTime;
             p->seenLatLon = std::time(nullptr);
 
-            // Record position history
-            p->lonHistory.push_back(p->lon);
-            p->latHistory.push_back(p->lat);
-            p->headingHistory.push_back(static_cast<float>(p->track));
-            p->timestampHistory.push_back(currentTime);
+            // Record position history (consolidated struct for cache efficiency)
+            p->positionHistory.push_back({p->lon, p->lat, static_cast<float>(p->track), currentTime});
           }
         }
       }
@@ -196,11 +187,8 @@ AircraftList::updateFromMessage(const viz1090::ModesMessage& aMsg) {
       p->msSeenLatLon = currentTime;
       p->seenLatLon = std::time(nullptr);
 
-      // Record position history
-      p->lonHistory.push_back(p->lon);
-      p->latHistory.push_back(p->lat);
-      p->headingHistory.push_back(static_cast<float>(p->track));
-      p->timestampHistory.push_back(currentTime);
+      // Record position history (consolidated struct for cache efficiency)
+      p->positionHistory.push_back({p->lon, p->lat, static_cast<float>(p->track), currentTime});
     }
   }
 }
@@ -209,36 +197,13 @@ void
 AircraftList::removeStale(std::chrono::seconds aTtl) {
   auto currentTime = now();
 
-  Aircraft* p = head;
-  Aircraft* prev = nullptr;
-
-  while (p) {
-    auto age = std::chrono::duration_cast<std::chrono::seconds>(
-        currentTime - p->msSeen);
-
-    if (age > aTtl) {
-      if (!prev) {
-        head = p->next;
-        delete p;
-        p = head;
-      } else {
-        prev->next = p->next;
-        delete p;
-        p = prev->next;
-      }
-    } else {
-      prev = p;
-      p = p->next;
-    }
-  }
-}
-
-AircraftList::AircraftList() : head(nullptr) {}
-
-AircraftList::~AircraftList() {
-  while (head != nullptr) {
-    Aircraft* temp = head;
-    head = head->next;
-    delete temp;
-  }
+  // Use erase-remove idiom for efficient removal
+  mAircraft.erase(
+      std::remove_if(mAircraft.begin(), mAircraft.end(),
+                     [currentTime, aTtl](const AircraftPtr& p) {
+                       auto age = std::chrono::duration_cast<std::chrono::seconds>(
+                           currentTime - p->msSeen);
+                       return age > aTtl;
+                     }),
+      mAircraft.end());
 }

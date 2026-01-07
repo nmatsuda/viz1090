@@ -1,3 +1,5 @@
+#ifndef AIRCRAFT_LABEL_H
+#define AIRCRAFT_LABEL_H
 
 #include "SDL2/SDL_ttf.h"
 #include <chrono>
@@ -7,12 +9,13 @@
 #include "style/Style.h"
 
 class Aircraft;
+class AircraftList;
 
 class AircraftLabel {
 public:
   void update();
   void clearAcceleration();
-  void calculateForces(Aircraft* check_p);
+  void calculateForces(const AircraftList& aircraftList);
   void applyForces();
   void move(float dx, float dy);
   bool getIsChanging();
@@ -23,7 +26,7 @@ public:
 
 private:
   SDL_Rect getFullRect(int labelLevel);
-  float calculateDensity(Aircraft* check_p, int labelLevel);
+  float calculateDensity(const AircraftList& aircraftList, int labelLevel);
 
   Aircraft* p;
 
@@ -84,3 +87,5 @@ private:
 
   Style style;
 };
+
+#endif  // AIRCRAFT_LABEL_H

@@ -29,13 +29,25 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#ifndef AIRCRAFT_H
+#define AIRCRAFT_H
+
 #include <stdint.h>
 
 #include <chrono>
 #include <ctime>
+#include <memory>
 #include <vector>
 
 class AircraftLabel;
+
+/// Position history record for efficient trail rendering
+struct PositionHistory {
+  float lon;
+  float lat;
+  float heading;
+  std::chrono::high_resolution_clock::time_point timestamp;
+};
 
 class Aircraft {
 public:
@@ -66,12 +78,10 @@ public:
   bool cprOddValid = false;
   bool cprEvenValid = false;
 
-  // history
+  // Consolidated position history for efficient cache access
+  std::vector<PositionHistory> positionHistory;
 
-  std::vector<float> lonHistory, latHistory, headingHistory;
-  std::vector<std::chrono::high_resolution_clock::time_point> timestampHistory;
-
-  AircraftLabel* label;
+  std::unique_ptr<AircraftLabel> label;
 
   // float           oldLon[TRAIL_LENGTH];
   // float           oldLat[TRAIL_LENGTH];
@@ -82,8 +92,6 @@ public:
   std::chrono::high_resolution_clock::time_point msSeen;
   std::chrono::high_resolution_clock::time_point msSeenLatLon;
   int live;
-
-  struct Aircraft* next;  // Next aircraft in our linked list
 
   //// label stuff -> should go to aircraft icon  class
 
@@ -99,3 +107,5 @@ public:
   Aircraft(uint32_t addr);
   ~Aircraft();
 };
+
+#endif  // AIRCRAFT_H

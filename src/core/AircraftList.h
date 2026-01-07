@@ -32,18 +32,24 @@
 #ifndef AIRCRAFT_LIST_H
 #define AIRCRAFT_LIST_H
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 #include "core/Aircraft.h"
 #include "viz1090/ModesMessage.h"
 
-/// Manages a linked list of aircraft
+/// Manages a collection of aircraft with efficient lookup and iteration
 class AircraftList {
 public:
-  Aircraft* head = nullptr;
+  using AircraftPtr = std::unique_ptr<Aircraft>;
+  using Container = std::vector<AircraftPtr>;
+  using iterator = Container::iterator;
+  using const_iterator = Container::const_iterator;
 
-  /// Find an aircraft by ICAO address
+  /// Find an aircraft by ICAO address (returns nullptr if not found)
   Aircraft* find(uint32_t aAddr);
 
   /// Find or create an aircraft
@@ -55,8 +61,29 @@ public:
   /// Remove aircraft not seen within TTL
   void removeStale(std::chrono::seconds aTtl);
 
-  AircraftList();
-  ~AircraftList();
+  /// Iterator support for range-based for loops
+  iterator begin() { return mAircraft.begin(); }
+  iterator end() { return mAircraft.end(); }
+  const_iterator begin() const { return mAircraft.begin(); }
+  const_iterator end() const { return mAircraft.end(); }
+  const_iterator cbegin() const { return mAircraft.cbegin(); }
+  const_iterator cend() const { return mAircraft.cend(); }
+
+  /// Size access
+  [[nodiscard]] size_t size() const { return mAircraft.size(); }
+  [[nodiscard]] bool empty() const { return mAircraft.empty(); }
+
+  AircraftList() = default;
+  ~AircraftList() = default;
+
+  // Non-copyable but movable
+  AircraftList(const AircraftList&) = delete;
+  AircraftList& operator=(const AircraftList&) = delete;
+  AircraftList(AircraftList&&) = default;
+  AircraftList& operator=(AircraftList&&) = default;
+
+private:
+  Container mAircraft;
 };
 
 #endif

@@ -38,6 +38,7 @@
 #include "viz1090/Profiler.h"
 
 #include <iostream>
+#include <memory>
 #include <thread>
 
 using fmilliseconds = std::chrono::duration<float, std::milli>;
@@ -537,54 +538,43 @@ View::drawTrails(int left, int top, int right, int bottom) {
   int currentX, currentY, prevX, prevY, colorVal = 0;
   float dx, dy;
 
-  Aircraft* p = appData->aircraftList.head;
-  while (p) {
-    if (p->lonHistory.empty()) {
-      p = p->next;
+  for (const auto& aircraft : appData->aircraftList) {
+    if (aircraft->positionHistory.empty()) {
       continue;
     }
 
-    std::vector<float>::iterator lon_idx = p->lonHistory.begin();
-    std::vector<float>::iterator lat_idx = p->latHistory.begin();
-    std::vector<float>::iterator heading_idx = p->headingHistory.begin();
+    const auto& history = aircraft->positionHistory;
+    float historySize = static_cast<float>(history.size());
 
-    float age = 0;
+    for (size_t i = 0; i + 1 < history.size(); ++i) {
+      float age = static_cast<float>(i);
 
-    for (; std::next(lon_idx) != p->lonHistory.end();
-         ++lon_idx, ++lat_idx, ++heading_idx, age += 1.0) {
-
-      pxFromLonLat(&dx, &dy, *(std::next(lon_idx)), *(std::next(lat_idx)));
+      pxFromLonLat(&dx, &dy, history[i + 1].lon, history[i + 1].lat);
       screenCoords(&currentX, &currentY, dx, dy);
 
-      pxFromLonLat(&dx, &dy, *lon_idx, *lat_idx);
-
+      pxFromLonLat(&dx, &dy, history[i].lon, history[i].lat);
       screenCoords(&prevX, &prevY, dx, dy);
+
       if (outOfBounds(currentX, currentY, left, top, right, bottom) &&
           outOfBounds(prevX, prevY, left, top, right, bottom)) {
         continue;
       }
 
-      SDL_Color color = lerpColor({255, 0, 0, 255}, {255, 200, 0, 255},
-                                  age / static_cast<float>(p->lonHistory.size()));
+      SDL_Color color = lerpColor({255, 0, 0, 255}, {255, 200, 0, 255}, age / historySize);
 
-      color = lerpColor(color, style.planeGoneColor, elapsed_s(p->msSeen) / DISPLAY_ACTIVE);
-      color = lerpColor(color, style.black, -1.0f + (elapsed_s(p->msSeen) / DISPLAY_ACTIVE));
+      color = lerpColor(color, style.planeGoneColor, elapsed_s(aircraft->msSeen) / DISPLAY_ACTIVE);
+      color = lerpColor(color, style.black, -1.0f + (elapsed_s(aircraft->msSeen) / DISPLAY_ACTIVE));
 
-      colorVal = (uint8_t)clamp(512.0 * (age / static_cast<float>(p->lonHistory.size())), 0, 255);
+      colorVal = (uint8_t)clamp(512.0 * (age / historySize), 0, 255);
 
       lineRGBA(renderer, prevX, prevY, currentX, currentY, color.r, color.g, color.b, colorVal);
     }
 
-    if (elapsed_s(p->msSeen) > DISPLAY_ACTIVE) {
-      // lineRGBA(renderer, currentX-4, currentY-4, currentX+4, currentY+4, style.planeGoneColor.r,
-      // style.planeGoneColor.g, style.planeGoneColor.b, colorVal); lineRGBA(renderer, currentX+4,
-      // currentY-4, currentX-4, currentY+4, style.planeGoneColor.r, style.planeGoneColor.g,
-      // style.planeGoneColor.b, colorVal);
+    if (elapsed_s(aircraft->msSeen) > DISPLAY_ACTIVE) {
       SDL_Color color = lerpColor(style.planeGoneColor, style.black,
-                                  -1.0f + (elapsed_s(p->msSeen) / DISPLAY_ACTIVE));
+                                  -1.0f + (elapsed_s(aircraft->msSeen) / DISPLAY_ACTIVE));
       circleRGBA(renderer, currentX, currentY, 5, color.r, color.g, color.b, colorVal);
     }
-    p = p->next;
   }
 }
 
@@ -860,7 +850,7 @@ View::drawGeography() {
 void
 View::drawPlaneText(Aircraft* p) {
   if (!p->label) {
-    p->label = new AircraftLabel(p, metric, screen_width, screen_height, mapFont);
+    p->label = std::make_unique<AircraftLabel>(p, metric, screen_width, screen_height, mapFont);
   }
 
   p->label->update();
@@ -869,60 +859,39 @@ View::drawPlaneText(Aircraft* p) {
 
 void
 View::moveLabels(float dx, float dy) {
-  Aircraft* p = appData->aircraftList.head;
-
-  while (p) {
-    if (p->label) {
-      p->label->move(dx, dy);
+  for (const auto& aircraft : appData->aircraftList) {
+    if (aircraft->label) {
+      aircraft->label->move(dx, dy);
     }
-
-    p = p->next;
   }
 }
 
 void
 View::resolveLabelConflicts() {
   PROFILE_SCOPE("resolveLabelConflicts");
-  Aircraft* p = appData->aircraftList.head;
 
-  while (p) {
-    if (p->label) {
-      p->label->clearAcceleration();
+  for (const auto& aircraft : appData->aircraftList) {
+    if (aircraft->label) {
+      aircraft->label->clearAcceleration();
     }
-
-    p = p->next;
   }
 
-  p = appData->aircraftList.head;
-
-  while (p) {
-    if (p->label) {
-      p->label->calculateForces(appData->aircraftList.head);
+  for (const auto& aircraft : appData->aircraftList) {
+    if (aircraft->label) {
+      aircraft->label->calculateForces(appData->aircraftList);
     }
-
-    p = p->next;
   }
 
-  p = appData->aircraftList.head;
-
-  while (p) {
-
-    if (p->label) {
-      p->label->applyForces();
-
-      // if(p->label->getIsChanging()) {
-      //     highFramerate = true;
-      // }
+  for (const auto& aircraft : appData->aircraftList) {
+    if (aircraft->label) {
+      aircraft->label->applyForces();
     }
-
-    p = p->next;
   }
 }
 
 void
 View::drawPlanes() {
   PROFILE_SCOPE("drawPlanes");
-  Aircraft* p = appData->aircraftList.head;
   SDL_Color planeColor;
 
   if (selectedAircraft) {
@@ -930,9 +899,7 @@ View::drawPlanes() {
     mapTargetLat = selectedAircraft->lat;
   }
 
-  p = appData->aircraftList.head;
-
-  while (p) {
+  for (const auto& p : appData->aircraftList) {
     if (p->lon && p->lat) {
 
       // if lon lat argments were not provided, start by snapping to the first plane we see
@@ -974,7 +941,7 @@ View::drawPlanes() {
                   planeColor.r, planeColor.g, planeColor.b, 255);
         }
 
-        if (p == selectedAircraft) {
+        if (p.get() == selectedAircraft) {
           planeColor = style.selectedColor;
         }
 
@@ -997,13 +964,12 @@ View::drawPlanes() {
           drawPlaneIcon(usex, usey, useHeading, planeColor);
         }
 
-        drawPlaneText(p);
+        drawPlaneText(p.get());
       } else {
         circleRGBA(renderer, x, y, 8 * (1000 * DISPLAY_ACTIVE - elapsed(p->msSeen)) / 500,
                    style.planeGoneColor.r, style.planeGoneColor.g, style.planeGoneColor.b, 255);
       }
     }
-    p = p->next;
   }
 }
 
@@ -1194,24 +1160,23 @@ View::drawClick() {
 void
 View::registerClick(int tapcount, int x, int y) {
   if (tapcount == 1) {
-    Aircraft* p = appData->aircraftList.head;
-    Aircraft* selection = NULL;
+    Aircraft* selection = nullptr;
 
-    while (p) {
+    for (const auto& p : appData->aircraftList) {
       if (x && y) {
-        if ((p->x - x) * (p->x - x) + (p->y - y) * (p->y - y) < 900) {
+        int distSq = (p->x - x) * (p->x - x) + (p->y - y) * (p->y - y);
+        if (distSq < 900) {
           if (selection) {
-            if ((p->x - x) * (p->x - x) + (p->y - y) * (p->y - y) <
-                (selection->x - x) * (selection->x - x) + (selection->y - y) * (selection->y - y)) {
-              selection = p;
+            int selDistSq = (selection->x - x) * (selection->x - x) +
+                            (selection->y - y) * (selection->y - y);
+            if (distSq < selDistSq) {
+              selection = p.get();
             }
           } else {
-            selection = p;
+            selection = p.get();
           }
         }
       }
-
-      p = p->next;
     }
 
     selectedAircraft = selection;

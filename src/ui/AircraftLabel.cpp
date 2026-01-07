@@ -1,5 +1,6 @@
 #include "ui/AircraftLabel.h"
 #include "core/Aircraft.h"
+#include "core/AircraftList.h"
 
 #include <algorithm>
 
@@ -87,37 +88,31 @@ AircraftLabel::clearAcceleration() {
 }
 
 float
-AircraftLabel::calculateDensity(Aircraft* check_p, int labelLevel) {
+AircraftLabel::calculateDensity(const AircraftList& aircraftList, int labelLevel) {
   float density_max = 0;
 
-  while (check_p) {
+  for (const auto& check_p : aircraftList) {
     if (check_p->addr == p->addr) {
-      check_p = check_p->next;
       continue;
     }
 
     if (!check_p->label) {
-      check_p = check_p->next;
       continue;
     }
 
     if (check_p->label->x + check_p->label->w < 0) {
-      check_p = check_p->next;
       continue;
     }
 
     if (check_p->label->y + check_p->label->h < 0) {
-      check_p = check_p->next;
       continue;
     }
 
     if (check_p->label->x > screen_width) {
-      check_p = check_p->next;
       continue;
     }
 
     if (check_p->label->y > screen_height) {
-      check_p = check_p->next;
       continue;
     }
 
@@ -131,21 +126,13 @@ AircraftLabel::calculateDensity(Aircraft* check_p, int labelLevel) {
     if (density > density_max) {
       density_max = density;
     }
-
-    check_p = check_p->next;
   }
 
   return density_max;
 }
 
 void
-AircraftLabel::calculateForces(Aircraft* check_p) {
-  // if(w == 0 || h == 0) {
-  //		return;
-  //	}
-
-  Aircraft* head = check_p;
-
+AircraftLabel::calculateForces(const AircraftList& aircraftList) {
   float p_left = static_cast<float>(x);
   float p_right = static_cast<float>(x + w);
   float p_top = static_cast<float>(y);
@@ -188,14 +175,12 @@ AircraftLabel::calculateForces(Aircraft* check_p) {
   int count = 0;
   // check against other labels
 
-  while (check_p) {
+  for (const auto& check_p : aircraftList) {
     if (check_p->addr == p->addr) {
-      check_p = check_p->next;
       continue;
     }
 
     if (!check_p->label) {
-      check_p = check_p->next;
       continue;
     }
 
@@ -206,18 +191,6 @@ AircraftLabel::calculateForces(Aircraft* check_p) {
 
     float checkboxmid_x = static_cast<float>(check_left + check_right) / 2.0f;
     float checkboxmid_y = static_cast<float>(check_top + check_bottom) / 2.0f;
-
-    /*
-          float offset_x = boxmid_x - checkboxmid_x;
-          float offset_y = boxmid_y - checkboxmid_y;
-
-          float target_length_x = label_dist + static_cast<float>(check_p->label->w + w) / 2.0f;
-          float target_length_y = label_dist + static_cast<float>(check_p->label->h + h) / 2.0f;
-
-          float x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
-          float y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
-
-    */
 
     bool overlap = true;
 
@@ -281,53 +254,25 @@ AircraftLabel::calculateForces(Aircraft* check_p) {
       ddx += icon_force * x_mag;
       ddy += icon_force * y_mag;
     }
-    /*
-          if(x_mag > 0 && y_mag > 0) {
-              ddx += sign(offset_x) * label_force * x_mag;
-              ddy += sign(offset_y) * label_force * y_mag;
-          }
 
-    */
-
-    // stay at least icon_dist away from other icons
-    /*
-          offset_x = boxmid_x - check_p->x;
-          offset_y = boxmid_y - check_p->y;
-
-          target_length_x = icon_dist + static_cast<float>(check_p->label->w) / 2.0f;
-          target_length_y = icon_dist + static_cast<float>(check_p->label->h) / 2.0f;
-
-          x_mag = std::max(0.0f,(target_length_x - fabs(offset_x)));
-          y_mag = std::max(0.0f,(target_length_y - fabs(offset_y)));
-
-          if(x_mag > 0 && y_mag > 0) {
-              ddx += sign(offset_x) * icon_force * x_mag;
-              ddy += sign(offset_y) * icon_force * y_mag;
-          }
-
-    */
     all_x += sign(boxmid_x - checkboxmid_x);
     all_y += sign(boxmid_y - checkboxmid_y);
 
     count++;
-
-    check_p = check_p->next;
   }
 
   // move away from others
-  ddx += density_force * all_x / count;
-  ddy += density_force * all_y / count;
-
-  // char buff[100];
-  // snprintf(buff, sizeof(buff), "l:%2.2f d:%2.2f", labelLevel, calculateDensity(head,
-  // labelLevel)); debugLabel.setText(buff);
+  if (count > 0) {
+    ddx += density_force * all_x / count;
+    ddy += density_force * all_y / count;
+  }
 
   float density_mult = 0.15f;
   float level_rate = 0.25f;
 
   float randtime = 5000.0f + 5000.0f * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
   if (elapsed(lastLevelChange) > randtime) {
-    if (labelLevel < -1.2f + density_mult * calculateDensity(head, labelLevel - 1)) {
+    if (labelLevel < -1.2f + density_mult * calculateDensity(aircraftList, labelLevel - 1)) {
       if (labelLevel <= 2) {
         if (ceil(labelLevel) - labelLevel <= level_rate) {
           labelLevel += 0.5f;
@@ -337,7 +282,7 @@ AircraftLabel::calculateForces(Aircraft* check_p) {
         isChanging = true;
         lastLevelChange = now();
       }
-    } else if (labelLevel > 1.2f + density_mult * calculateDensity(head, labelLevel + 1)) {
+    } else if (labelLevel > 1.2f + density_mult * calculateDensity(aircraftList, labelLevel + 1)) {
       if (labelLevel >= 0) {
         if (labelLevel - floor(labelLevel) <= level_rate) {
           labelLevel -= 0.5f;

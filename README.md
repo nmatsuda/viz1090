@@ -77,6 +77,7 @@ make
 ```
 
 3. Download and process map data
+(see [maps](#maps) below)
 
 ```
 sudo apt install python3 python3-fiona python3-tqdm python3-shapely

@@ -123,9 +123,8 @@ AppData::updateStatus() {
   double msgRateAccumulate = 0.0;
 
   std::lock_guard<std::mutex> lock(mMessageMutex);
-  Aircraft* p = aircraftList.head;
 
-  while (p) {
+  for (const auto& p : aircraftList) {
     unsigned char* pSig = p->signalLevel;
     unsigned int signalAverage =
         (pSig[0] + pSig[1] + pSig[2] + pSig[3] + pSig[4] + pSig[5] + pSig[6] +
@@ -140,7 +139,6 @@ AppData::updateStatus() {
     msgRateAccumulate += p->messageRate;
 
     numPlanes++;
-    p = p->next;
   }
 
   msgRate = msgRateAccumulate;
