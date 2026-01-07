@@ -71,23 +71,23 @@ Input::getInput() {
             break;
 
           case SDLK_MINUS:
-            view->maxDist *= 1.0 + 0.5 * sgn(1);
-            if (view->maxDist < 0.001f) {
-              view->maxDist = 0.001f;
+            view->getMapView().maxDist *= 1.0 + 0.5 * sgn(1);
+            if (view->getMapView().maxDist < 0.001f) {
+              view->getMapView().maxDist = 0.001f;
             }
 
-            view->mapTargetMaxDist = 0;
-            view->mapMoved = 1;
+            view->getMapView().mapTargetMaxDist = 0;
+            view->getMapView().setMoved();
             break;
 
           case SDLK_EQUALS:
-            view->maxDist *= 1.0 + 0.5 * sgn(-1);
-            if (view->maxDist < 0.001f) {
-              view->maxDist = 0.001f;
+            view->getMapView().maxDist *= 1.0 + 0.5 * sgn(-1);
+            if (view->getMapView().maxDist < 0.001f) {
+              view->getMapView().maxDist = 0.001f;
             }
 
-            view->mapTargetMaxDist = 0;
-            view->mapMoved = 1;
+            view->getMapView().mapTargetMaxDist = 0;
+            view->getMapView().setMoved();
             break;
 
           default:
@@ -97,19 +97,19 @@ Input::getInput() {
         break;
 
       case SDL_MOUSEWHEEL:
-        view->maxDist *= 1.0 + 0.5 * sgn(event.wheel.y);
-        if (view->maxDist < 0.001f) {
-          view->maxDist = 0.001f;
+        view->getMapView().maxDist *= 1.0 + 0.5 * sgn(event.wheel.y);
+        if (view->getMapView().maxDist < 0.001f) {
+          view->getMapView().maxDist = 0.001f;
         }
 
-        view->mapTargetMaxDist = 0;
-        view->mapMoved = 1;
+        view->getMapView().mapTargetMaxDist = 0;
+        view->getMapView().setMoved();
         break;
 
       case SDL_MULTIGESTURE:
-        view->maxDist /= 1.0 + 4.0 * event.mgesture.dDist;
-        view->mapTargetMaxDist = 0;
-        view->mapMoved = 1;
+        view->getMapView().maxDist /= 1.0 + 4.0 * event.mgesture.dDist;
+        view->getMapView().mapTargetMaxDist = 0;
+        view->getMapView().setMoved();
 
         if (elapsed(touchDownTime) > 100) {
           // touchDownTime = 0;
@@ -183,7 +183,7 @@ Input::getInput() {
   }
 }
 
-Input::Input(AppData* appData, View* view) {
+Input::Input(AppData* appData, viz1090::View* view) {
   this->view = view;
   this->appData = appData;
 }

@@ -1,0 +1,85 @@
+// viz1090, a vizualizer for dump1090 ADSB output
+//
+// Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//  *  Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//
+//  *  Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#ifndef AIRCRAFT_RENDERER_H
+#define AIRCRAFT_RENDERER_H
+
+#include <SDL2/SDL.h>
+
+#include "core/AircraftList.h"
+#include "ui/RenderContext.h"
+
+class Aircraft;
+
+namespace viz1090 {
+
+class MapView;
+
+/// Renders aircraft icons, trails, and labels
+class AircraftRenderer {
+public:
+  AircraftRenderer() = default;
+
+  /// Draw all aircraft (icons, trails, labels)
+  void draw(const RenderContext& ctx, AircraftList& aircraftList,
+            Aircraft* selectedAircraft, MapView& mapView);
+
+  /// Draw aircraft position trails
+  void drawTrails(const RenderContext& ctx, const AircraftList& aircraftList,
+                  const MapView& mapView, int left, int top, int right, int bottom);
+
+  /// Resolve label conflicts using physics simulation
+  void resolveLabelConflicts(AircraftList& aircraftList);
+
+  /// Move all labels by offset (for viewport panning)
+  void moveLabels(AircraftList& aircraftList, float dx, float dy);
+
+  // Configuration
+  void setMetric(bool metric) { this->metric = metric; }
+  [[nodiscard]] bool getMetric() const { return metric; }
+
+  // Check if any animation needs high framerate
+  [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
+  void resetHighFramerate() { highFramerate = false; }
+
+private:
+  void drawPlaneIcon(const RenderContext& ctx, int x, int y, float heading,
+                     SDL_Color planeColor);
+  void drawPlaneOffMap(const RenderContext& ctx, int x, int y, int* returnx,
+                       int* returny, SDL_Color planeColor);
+  void drawPlaneText(const RenderContext& ctx, Aircraft* p, Aircraft* selectedAircraft);
+
+  bool metric{false};
+  bool highFramerate{false};
+
+  static constexpr float DISPLAY_ACTIVE = 30.0f;
+};
+
+}  // namespace viz1090
+
+#endif  // AIRCRAFT_RENDERER_H

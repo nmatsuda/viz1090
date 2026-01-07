@@ -38,7 +38,6 @@
 #include <cstdlib>
 #include <cstring>
 
-Style style;
 
 //
 // ================================ Main ====================================
@@ -70,7 +69,7 @@ showHelp() {
 int
 main(int argc, char** argv) {
   AppData appData;
-  View view(&appData);
+  viz1090::View view(&appData);
 
   // Parse the command line options
   for (int j = 1; j < argc; j++) {
@@ -82,10 +81,10 @@ main(int argc, char** argv) {
       appData.server = argv[++j];
     } else if (!std::strcmp(argv[j], "--lat") && more) {
       appData.userLat = std::atof(argv[++j]);
-      view.centerLat = appData.userLat;
+      view.getMapView().centerLat = static_cast<float>(appData.userLat);
     } else if (!std::strcmp(argv[j], "--lon") && more) {
       appData.userLon = std::atof(argv[++j]);
-      view.centerLon = appData.userLon;
+      view.getMapView().centerLon = static_cast<float>(appData.userLon);
     } else if (!std::strcmp(argv[j], "--metric")) {
       view.metric = 1;
     } else if (!std::strcmp(argv[j], "--fps")) {

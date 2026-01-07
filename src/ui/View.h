@@ -32,158 +32,111 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include "app/AppData.h"
-#include "ui/Map.h"
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_ttf.h"
-#include "style/Style.h"
 #include <chrono>
 #include <string>
 
-// defs - should all move to config file setup
-#define ROUND_RADIUS 3  // radius of text box corners
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_ttf.h"
 
-#define TRAIL_LENGTH 120
-#define TRAIL_TTL 240.0
-#define DISPLAY_ACTIVE 30.0
-#define TRAIL_TTL_STEP 2
+#include "app/AppData.h"
+#include "style/Style.h"
+#include "ui/AircraftRenderer.h"
+#include "ui/InputFeedback.h"
+#include "ui/MapView.h"
+#include "ui/RenderContext.h"
+#include "ui/UIOverlay.h"
 
-#define MIN_MAP_FEATURE 2
+namespace viz1090 {
 
-#define FRAMETIME 33
-
-#define PAD 5
-
-#define LATLONMULT 111.195  // 6371.0 * M_PI / 180.0
-
+/// Main view class that orchestrates all rendering components
 class View {
-
-private:
-  AppData* appData;
-
-  // for cursor drawing
-  std::chrono::high_resolution_clock::time_point mouseMovedTime;
-  bool mouseMoved;
-  int mousex;
-  int mousey;
-
-  std::chrono::high_resolution_clock::time_point clickTime;
-  bool clicked;
-  int clickx;
-  int clicky;
-
-  int lineCount;
-
-  float dx_mult;
-  float dy_mult;
-
-  TTF_Font* loadFont(const char* name, int size);
-  void closeFont(TTF_Font* font);
-  SDL_Rect drawString(std::string text, int x, int y, TTF_Font* font, SDL_Color color);
-  SDL_Rect drawStringBG(std::string text, int x, int y, TTF_Font* font, SDL_Color color,
-                        SDL_Color bgColor);
-  void drawStatusBox(int* left, int* top, std::string label, std::string message, SDL_Color color);
-  void drawCenteredStatusBox(std::string label, std::string message, SDL_Color color);
-  void drawStatus();
-  void moveLabels(float dx, float dy);
-
-  Aircraft* selectedAircraft;
-
-  Style style;
-
 public:
-  int screenDist(float d);
-  void pxFromLonLat(float* dx, float* dy, float lon, float lat);
-  void latLonFromScreenCoords(float* lat, float* lon, int x, int y);
-  void screenCoords(int* outX, int* outY, float dx, float dy);
-  int outOfBounds(int x, int y);
-  int outOfBounds(int x, int y, int left, int top, int right, int bottom);
-  void drawPlaneOffMap(int x, int y, int* returnx, int* returny, SDL_Color planeColor);
-  void drawPlaneIcon(int x, int y, float heading, SDL_Color planeColor);
-  void drawTrails(int left, int top, int right, int bottom);
-  void drawScaleBars();
-  void drawLinesRecursive(QuadTree* tree, float screen_lat_min, float screen_lat_max,
-                          float screen_lon_min, float screen_lon_max, SDL_Color color);
-  void drawLines(int left, int top, int right, int bottom, int bailTime);
-  void drawPlaceNames();
-  void drawGeography();
-  void drawSignalMarks(Aircraft* p, int x, int y);
-  void drawPlaneText(Aircraft* p);
-  void resolveLabelConflicts();
-  void drawPlanes();
-  void animateCenterAbsolute(float x, float y);
-  void moveCenterAbsolute(float x, float y);
-  void moveCenterRelative(float dx, float dy);
-  void zoomMapToTarget();
-  void moveMapToTarget();
-  void drawMouse();
-  void drawClick();
-  void registerClick(int tapcount, int x, int y);
-  void registerMouseMove(int x, int y);
-  void draw();
-
-  void SDL_init();
-  void font_init();
-
   View(AppData* appData);
   ~View();
 
-  ////////////////
-  bool metric;
+  /// Initialize SDL subsystems
+  void SDL_init();
 
-  bool fps;
+  /// Initialize fonts
+  void font_init();
 
-  int startupState;
+  /// Main draw function - orchestrates all rendering
+  void draw();
 
-  float maxDist;
-  float currentMaxDist;
+  /// Input event handlers
+  void registerClick(int tapcount, int x, int y);
+  void registerMouseMove(int x, int y);
 
-  float centerLon;
-  float centerLat;
+  /// Viewport control - delegates to MapView
+  void moveCenterRelative(float dx, float dy);
+  void moveCenterAbsolute(float x, float y);
+  void animateCenterAbsolute(float x, float y);
 
-  float mapTargetMaxDist;
-  float mapTargetLat;
-  float mapTargetLon;
+  // Configuration
+  bool metric{false};
+  bool fps{false};
 
-  int mapMoved;
-  int mapRedraw;
-  int mapAnimating;
+  // Screen configuration
+  int screen_upscale{1};
+  int screen_uiscale{1};
+  int screen_width{0};
+  int screen_height{0};
+  int screen_depth{32};
+  int fullscreen{0};
+  int screen_index{0};
 
-  bool highFramerate;
+  // SDL handles (public for compatibility with existing code)
+  SDL_Window* window{nullptr};
+  SDL_Renderer* renderer{nullptr};
 
-  float currentLon;
-  float currentLat;
-  float lastFrameTime;
+  // Expose map view for external access to viewport state
+  MapView& getMapView() { return mapView; }
+  const MapView& getMapView() const { return mapView; }
+
+private:
+  TTF_Font* loadFont(const char* name, int size);
+  void closeFont(TTF_Font* font);
+  void updateRenderContext();
+
+  // Core data
+  AppData* appData;
+  Aircraft* selectedAircraft{nullptr};
+
+  // Style
+  Style style;
+
+  // Components
+  MapView mapView;
+  AircraftRenderer aircraftRenderer;
+  UIOverlay uiOverlay;
+  InputFeedback inputFeedback;
+
+  // Shared render context
+  RenderContext renderContext;
+
+  // Fonts (owned by View, shared via RenderContext)
+  TTF_Font* mapFont{nullptr};
+  TTF_Font* mapBoldFont{nullptr};
+  TTF_Font* listFont{nullptr};
+  TTF_Font* messageFont{nullptr};
+  TTF_Font* labelFont{nullptr};
+
+  int mapFontWidth{5};
+  int mapFontHeight{12};
+  int labelFontWidth{6};
+  int labelFontHeight{12};
+  int messageFontWidth{6};
+  int messageFontHeight{12};
+
+  // Timing
+  float lastFrameTime{0.0f};
   std::chrono::high_resolution_clock::time_point drawStartTime;
-  std::chrono::high_resolution_clock::time_point lastRedraw;
 
-  Map map;
-
-  int screen_upscale;
-  int screen_uiscale;
-  int screen_width;
-  int screen_height;
-  int screen_depth;
-  int fullscreen;
-  int screen_index;
-
-  SDL_Window* window;
-  SDL_Renderer* renderer;
-  SDL_Texture* mapTexture;
-
-  TTF_Font* mapFont;
-  TTF_Font* mapBoldFont;
-  TTF_Font* listFont;
-
-  TTF_Font* messageFont;
-  TTF_Font* labelFont;
-
-  int mapFontWidth;
-  int mapFontHeight;
-  int labelFontWidth;
-  int labelFontHeight;
-  int messageFontWidth;
-  int messageFontHeight;
+  // State
+  int startupState{0};
+  bool highFramerate{false};
 };
 
-#endif
+}  // namespace viz1090
+
+#endif  // VIEW_H

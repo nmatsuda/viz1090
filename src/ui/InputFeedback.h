@@ -1,8 +1,6 @@
 // viz1090, a vizualizer for dump1090 ADSB output
 //
 // Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
-// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
-// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,30 +25,59 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef INPUT_H
-#define INPUT_H
-
-#include "app/AppData.h"
-#include "ui/View.h"
+#ifndef INPUT_FEEDBACK_H
+#define INPUT_FEEDBACK_H
 
 #include <chrono>
 
-class Input {
+#include "core/AircraftList.h"
+#include "ui/RenderContext.h"
+
+class Aircraft;
+
+namespace viz1090 {
+
+class MapView;
+
+/// Handles visual feedback for user input (clicks, mouse, selection)
+class InputFeedback {
 public:
-  void getInput();
+  InputFeedback() = default;
 
-  // should input know about view?
-  Input(AppData* appData, viz1090::View* view);
+  /// Draw all input feedback (click ripple, selection brackets)
+  void draw(const RenderContext& ctx, Aircraft* selectedAircraft);
 
-  viz1090::View* view;
-  AppData* appData;
+  /// Register a click event
+  void registerClick(int tapcount, int x, int y, AircraftList& aircraftList,
+                     Aircraft** selectedAircraft, MapView& mapView);
 
-  std::chrono::high_resolution_clock::time_point touchDownTime;
-  int touchx;
-  int touchy;
-  int tapCount;
+  /// Register mouse movement
+  void registerMouseMove(int x, int y);
+
+  /// Check if high framerate is needed for animations
+  [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
+  void resetHighFramerate() { highFramerate = false; }
+
+private:
+  void drawClickRipple(const RenderContext& ctx);
+  void drawSelectionBrackets(const RenderContext& ctx, Aircraft* selectedAircraft);
+  void drawMouse(const RenderContext& ctx);
+
+  // Click state
+  int clickx{0};
+  int clicky{0};
+  std::chrono::high_resolution_clock::time_point clickTime;
+
+  // Mouse state
+  int mousex{0};
+  int mousey{0};
+  bool mouseMoved{false};
+  std::chrono::high_resolution_clock::time_point mouseMovedTime;
+
+  bool highFramerate{false};
 };
 
-#endif
+}  // namespace viz1090
+
+#endif  // INPUT_FEEDBACK_H

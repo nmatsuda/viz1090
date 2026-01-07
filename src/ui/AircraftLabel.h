@@ -22,7 +22,8 @@ public:
 
   void draw(SDL_Renderer* renderer, bool selected);
 
-  AircraftLabel(Aircraft* p, bool metric, int screen_width, int screen_height, TTF_Font* font);
+  AircraftLabel(Aircraft* p, bool metric, int screen_width, int screen_height, TTF_Font* font,
+                const Style& style);
 
 private:
   SDL_Rect getFullRect(int labelLevel);
@@ -85,7 +86,7 @@ private:
   float edge_margin = 15.0f;
   float drag_force = 0.00f;
 
-  Style style;
+  const Style& style;
 };
 
 #endif  // AIRCRAFT_LABEL_H

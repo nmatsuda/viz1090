@@ -1,8 +1,6 @@
 // viz1090, a vizualizer for dump1090 ADSB output
 //
 // Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
-// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
-// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,30 +25,48 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef INPUT_H
-#define INPUT_H
+#ifndef UI_OVERLAY_H
+#define UI_OVERLAY_H
 
-#include "app/AppData.h"
-#include "ui/View.h"
+#include <SDL2/SDL.h>
+#include <string>
 
-#include <chrono>
+#include "ui/RenderContext.h"
 
-class Input {
+class AppData;
+
+namespace viz1090 {
+
+/// UI overlay for status boxes, buttons, and menus
+/// Renders HUD elements on top of the map view
+class UIOverlay {
 public:
-  void getInput();
+  UIOverlay() = default;
 
-  // should input know about view?
-  Input(AppData* appData, viz1090::View* view);
+  /// Draw all UI overlay elements
+  void draw(const RenderContext& ctx, const AppData& appData, float lastFrameTime,
+            float centerLat, float centerLon, int mapLoadPercent);
 
-  viz1090::View* view;
-  AppData* appData;
+  /// Draw a status box at the specified position
+  /// Updates left/top to position for the next box
+  void drawStatusBox(const RenderContext& ctx, int* left, int* top,
+                     const std::string& label, const std::string& message,
+                     SDL_Color color);
 
-  std::chrono::high_resolution_clock::time_point touchDownTime;
-  int touchx;
-  int touchy;
-  int tapCount;
+  /// Draw a centered status box
+  void drawCenteredStatusBox(const RenderContext& ctx,
+                             const std::string& label, const std::string& message,
+                             SDL_Color color);
+
+  // Configuration
+  void setShowFps(bool show) { showFps = show; }
+  [[nodiscard]] bool getShowFps() const { return showFps; }
+
+private:
+  bool showFps{false};
 };
 
-#endif
+}  // namespace viz1090
+
+#endif  // UI_OVERLAY_H

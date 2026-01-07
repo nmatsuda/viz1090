@@ -78,6 +78,10 @@ set(UI_SOURCES
   src/ui/Map.cpp
   src/ui/Label.cpp
   src/ui/AircraftLabel.cpp
+  src/ui/MapView.cpp
+  src/ui/AircraftRenderer.cpp
+  src/ui/UIOverlay.cpp
+  src/ui/InputFeedback.cpp
 )
 
 set(STYLE_SOURCES

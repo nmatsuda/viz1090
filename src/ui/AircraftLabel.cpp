@@ -604,38 +604,31 @@ AircraftLabel::getIsChanging() {
 }
 
 AircraftLabel::AircraftLabel(Aircraft* p, bool metric, int screen_width, int screen_height,
-                             TTF_Font* font) {
-  this->p = p;
-
-  this->metric = metric;
-
-  x = p->x;
-  y = p->y + 20;  //*screen_uiscale
-  w = 0;
-  h = 0;
-  target_w = 0;
-  target_h = 0;
-
-  opacity = 0.0f;
-  target_opacity = 0.0f;
-
-  dx = 0;
-  dy = 0;
-  ddx = 0;
-  ddy = 0;
-
+                             TTF_Font* font, const Style& style)
+    : p(p),
+      labelLevel(0),
+      metric(metric),
+      x(static_cast<float>(p->x)),
+      y(static_cast<float>(p->y) + 20.0f),
+      w(0),
+      h(0),
+      target_w(0),
+      target_h(0),
+      dx(0),
+      dy(0),
+      buffer_idx(0),
+      ddx(0),
+      ddy(0),
+      opacity(0.0f),
+      target_opacity(0.0f),
+      screen_width(screen_width),
+      screen_height(screen_height),
+      isChanging(false),
+      style(style) {
   for (int i = 0; i < buffer_length; i++) {
     x_buffer[i] = x;
     y_buffer[i] = y;
   }
-  buffer_idx = 0;
-
-  this->screen_width = screen_width;
-  this->screen_height = screen_height;
-
-  labelLevel = 0;
-
-  isChanging = false;
 
   flightLabel.setFont(font);
   altitudeLabel.setFont(font);
