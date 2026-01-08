@@ -42,11 +42,14 @@ namespace viz1090 {
 
 class MapView;
 
-/// Info for a single off-map plane bucket
-struct OffMapBucket {
+/// Info for a single off-map plane cluster (greedy distance-based)
+struct OffMapCluster {
   int count{0};
-  float avgX{0.0f};  // Average screen X position of planes in bucket
-  float avgY{0.0f};  // Average screen Y position of planes in bucket
+  float edgeX{0.0f};       // Screen edge position X (relative to center)
+  float edgeY{0.0f};       // Screen edge position Y (relative to center)
+  float dirX{0.0f};        // Normalized direction X from center
+  float dirY{0.0f};        // Normalized direction Y from center
+  float avgDistance{0.0f}; // Average distance from screen center (in pixels)
   SDL_Color color{0, 0, 0, 255};
   Aircraft* singleAircraft{nullptr};  // Set when count == 1, for label drawing
 };
@@ -93,12 +96,11 @@ private:
                      SDL_Color planeColor);
   void drawPlaneText(const RenderContext& ctx, Aircraft* p, Aircraft* selectedAircraft);
 
-  // Off-map bucketing helpers
-  void clearOffMapBuckets();
-  void addToOffMapBucket(const RenderContext& ctx, int x, int y, SDL_Color planeColor,
-                         Aircraft* aircraft);
-  void drawOffMapBuckets(const RenderContext& ctx, Aircraft* selectedAircraft);
-  int calculateBucketIndex(const RenderContext& ctx, int x, int y) const;
+  // Off-map clustering helpers (greedy distance-based)
+  void clearOffMapClusters(const RenderContext& ctx);
+  void addToOffMapCluster(const RenderContext& ctx, int x, int y, SDL_Color planeColor,
+                          Aircraft* aircraft);
+  void drawOffMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft);
   void drawOffMapArrow(const RenderContext& ctx, float edgeX, float edgeY,
                        float dirX, float dirY, SDL_Color planeColor, int count);
 
@@ -111,18 +113,15 @@ private:
   bool metric{false};
   bool highFramerate{false};
 
-  // Off-map plane buckets - sized based on screen perimeter and arrow size
-  std::vector<OffMapBucket> offMapBuckets_;
-  int numBuckets_{0};
-  float bucketAngularSize_{0.0f};
+  // Off-map plane clusters - greedy distance-based
+  std::vector<OffMapCluster> offMapClusters_;
+  float offMapClusterRadius_{0.0f};  // Angular clustering threshold (in screen edge coords)
 
   // On-map plane clusters - greedy distance-based
   std::vector<OnMapCluster> onMapClusters_;
   float clusterRadius_{0.0f};  // Distance threshold for clustering
 
   static constexpr float DISPLAY_ACTIVE = 30.0f;
-  static constexpr int MIN_BUCKETS = 16;
-  static constexpr int MAX_BUCKETS = 64;
 };
 
 }  // namespace viz1090

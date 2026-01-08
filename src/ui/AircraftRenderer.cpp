@@ -41,49 +41,6 @@
 
 namespace viz1090 {
 
-namespace {
-// Fast atan2 approximation using octant-based approach
-// Returns angle in range [0, 8) where each unit represents 45 degrees (one octant)
-// This avoids expensive trig and gives us bucket indices directly
-float fastAngleOctants(float x, float y) {
-  float absX = std::abs(x);
-  float absY = std::abs(y);
-
-  // Avoid division by zero
-  if (absX < 0.001f && absY < 0.001f) {
-    return 0.0f;
-  }
-
-  // Calculate ratio for interpolation within octant
-  float ratio;
-  int octant;
-
-  if (absX > absY) {
-    ratio = absY / absX;
-    if (x > 0) {
-      octant = (y > 0) ? 0 : 7;  // Right side: octant 0 (up-right) or 7 (down-right)
-    } else {
-      octant = (y > 0) ? 3 : 4;  // Left side: octant 3 (up-left) or 4 (down-left)
-    }
-  } else {
-    ratio = absX / absY;
-    if (y > 0) {
-      octant = (x > 0) ? 1 : 2;  // Top: octant 1 (right-up) or 2 (left-up)
-    } else {
-      octant = (x > 0) ? 6 : 5;  // Bottom: octant 6 (right-down) or 5 (left-down)
-    }
-  }
-
-  // Interpolate within octant based on ratio
-  // Adjust direction based on octant orientation
-  if (octant == 0 || octant == 3 || octant == 4 || octant == 7) {
-    return static_cast<float>(octant) + ratio;
-  } else {
-    return static_cast<float>(octant) + (1.0f - ratio);
-  }
-}
-}  // namespace
-
 void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList,
                             Aircraft* selectedAircraft, MapView& mapView) {
   PROFILE_SCOPE("drawPlanes");
@@ -93,8 +50,8 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
     mapView.setTarget(selectedAircraft->lon, selectedAircraft->lat);
   }
 
-  // Clear buckets/clusters for this frame
-  clearOffMapBuckets();
+  // Clear clusters for this frame
+  clearOffMapClusters(ctx);
   clearOnMapClusters(ctx);
 
   for (const auto& p : aircraftList) {
@@ -144,8 +101,8 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
 
         bool outOfBounds = (x < 0 || x >= ctx.screenWidth || y < 0 || y >= ctx.screenHeight);
         if (outOfBounds) {
-          // Add to bucket instead of drawing immediately
-          addToOffMapBucket(ctx, x, y, planeColor, p.get());
+          // Add to cluster instead of drawing immediately
+          addToOffMapCluster(ctx, x, y, planeColor, p.get());
         } else {
           if (elapsed(p->msSeenLatLon) < 500) {
             circleRGBA(ctx.renderer, p->x, p->y,
@@ -179,8 +136,8 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
   // Draw all on-map clusters first (so labels are on top)
   drawOnMapClusters(ctx, selectedAircraft);
 
-  // Draw all off-map bucket arrows
-  drawOffMapBuckets(ctx, selectedAircraft);
+  // Draw all off-map cluster arrows
+  drawOffMapClusters(ctx, selectedAircraft);
 }
 
 void AircraftRenderer::drawPlaneIcon(const RenderContext& ctx, int x, int y, float heading,
@@ -241,101 +198,117 @@ void AircraftRenderer::drawPlaneIcon(const RenderContext& ctx, int x, int y, flo
                    planeColor.r, planeColor.g, planeColor.b, SDL_ALPHA_OPAQUE);
 }
 
-// Off-map plane bucketing implementation
+// Off-map plane clustering implementation (greedy distance-based)
 
-void AircraftRenderer::clearOffMapBuckets() {
-  // Calculate number of buckets based on screen perimeter and arrow size
-  // We want arrows to not overlap, so bucket size is based on arrow footprint
-  float arrowWidth = 6.0f;  // Base arrow width before scaling
-  float arrowFootprint = arrowWidth * 4.0f;  // Double arrow takes ~4x arrow width
+void AircraftRenderer::clearOffMapClusters(const RenderContext& ctx) {
+  // Cluster radius based on arrow footprint on screen edge
+  // Arrows are ~4x arrow width, so use that as clustering distance
+  offMapClusterRadius_ = 24.0f * ctx.uiScale;
 
-  // Approximate perimeter in "arrow widths"
-  float perimeter = 2.0f * (1920.0f + 1080.0f);  // Use reference screen size
-  int idealBuckets = static_cast<int>(perimeter / arrowFootprint);
-
-  numBuckets_ = clamp(idealBuckets, MIN_BUCKETS, MAX_BUCKETS);
-  bucketAngularSize_ = 8.0f / static_cast<float>(numBuckets_);  // 8 octants total
-
-  offMapBuckets_.clear();
-  offMapBuckets_.resize(static_cast<size_t>(numBuckets_));
+  offMapClusters_.clear();
 }
 
-int AircraftRenderer::calculateBucketIndex(const RenderContext& ctx, int x, int y) const {
-  // Get direction from screen center
-  float dx = static_cast<float>(x - (ctx.screenWidth >> 1));
-  float dy = static_cast<float>(y - (ctx.screenHeight >> 1));
+void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y,
+                                           SDL_Color planeColor, Aircraft* aircraft) {
+  int centerX = ctx.screenWidth >> 1;
+  int centerY = ctx.screenHeight >> 1;
 
-  // Use fast angle approximation (returns 0-8 for full circle)
-  float angle = fastAngleOctants(dx, dy);
+  // Get direction from screen center to plane
+  float inx = static_cast<float>(x - centerX);
+  float iny = static_cast<float>(y - centerY);
 
-  // Convert to bucket index
-  int bucket = static_cast<int>(angle / bucketAngularSize_) % numBuckets_;
-  return bucket;
-}
+  // Calculate distance from center
+  float dist = std::sqrt(inx * inx + iny * iny);
 
-void AircraftRenderer::addToOffMapBucket(const RenderContext& ctx, int x, int y,
-                                          SDL_Color planeColor, Aircraft* aircraft) {
-  int bucket = calculateBucketIndex(ctx, x, y);
+  // Normalize direction
+  float dirX = (dist > 0.001f) ? inx / dist : 0.0f;
+  float dirY = (dist > 0.001f) ? iny / dist : 1.0f;
 
-  auto& b = offMapBuckets_[static_cast<size_t>(bucket)];
+  // Project to screen edge to get edge position
+  float outx = inx;
+  float outy = iny;
 
-  // Running average of positions
-  float newCount = static_cast<float>(b.count + 1);
-  b.avgX = (b.avgX * static_cast<float>(b.count) + static_cast<float>(x)) / newCount;
-  b.avgY = (b.avgY * static_cast<float>(b.count) + static_cast<float>(y)) / newCount;
-
-  // Average colors (simple lerp towards new color)
-  if (b.count == 0) {
-    b.color = planeColor;
-    b.singleAircraft = aircraft;
+  if (std::abs(inx) > std::abs(iny) *
+                          static_cast<float>(centerX) /
+                          static_cast<float>(centerY)) {
+    outx = static_cast<float>(centerX) * ((inx > 0) ? 1.0f : -1.0f);
+    outy = (outx) * iny / (inx);
   } else {
-    b.color = lerpColor(b.color, planeColor, 1.0f / newCount);
-    b.singleAircraft = nullptr;  // Multiple planes, no single aircraft
+    outy = static_cast<float>(ctx.screenHeight) * ((iny > 0) ? 0.5f : -0.5f);
+    outx = (outy) * inx / (iny);
   }
 
-  b.count++;
+  // Find nearest existing cluster within radius (based on edge position)
+  float radiusSq = offMapClusterRadius_ * offMapClusterRadius_;
+  OffMapCluster* nearest = nullptr;
+  float nearestDistSq = radiusSq;
+
+  for (auto& cluster : offMapClusters_) {
+    float cdx = outx - cluster.edgeX;
+    float cdy = outy - cluster.edgeY;
+    float cdistSq = cdx * cdx + cdy * cdy;
+
+    if (cdistSq < nearestDistSq) {
+      nearestDistSq = cdistSq;
+      nearest = &cluster;
+    }
+  }
+
+  if (nearest) {
+    // Add to existing cluster - update average distance
+    float newCount = static_cast<float>(nearest->count + 1);
+    nearest->avgDistance = (nearest->avgDistance * static_cast<float>(nearest->count) + dist) / newCount;
+    nearest->color = lerpColor(nearest->color, planeColor, 1.0f / newCount);
+    nearest->singleAircraft = nullptr;  // Multiple planes
+    nearest->count++;
+  } else {
+    // Create new cluster
+    OffMapCluster newCluster;
+    newCluster.count = 1;
+    newCluster.edgeX = outx;
+    newCluster.edgeY = outy;
+    newCluster.dirX = dirX;
+    newCluster.dirY = dirY;
+    newCluster.avgDistance = dist;
+    newCluster.color = planeColor;
+    newCluster.singleAircraft = aircraft;
+    offMapClusters_.push_back(newCluster);
+  }
 }
 
-void AircraftRenderer::drawOffMapBuckets(const RenderContext& ctx, Aircraft* selectedAircraft) {
-  for (const auto& bucket : offMapBuckets_) {
-    if (bucket.count == 0) {
+void AircraftRenderer::drawOffMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft) {
+  // Calculate distance thresholds for color lerping
+  // At screen edge (half diagonal) = full plane color
+  // At 2x view width beyond edge = grey_dark
+  float halfWidth = static_cast<float>(ctx.screenWidth >> 1);
+  float halfHeight = static_cast<float>(ctx.screenHeight >> 1);
+  float edgeDist = std::sqrt(halfWidth * halfWidth + halfHeight * halfHeight);
+  float fadeStartDist = edgeDist;
+  float fadeEndDist = edgeDist + 2.0f * static_cast<float>(ctx.screenWidth);
+
+  for (const auto& cluster : offMapClusters_) {
+    if (cluster.count == 0) {
       continue;
     }
 
-    // Calculate direction from screen center to average position
-    float inx = bucket.avgX - static_cast<float>(ctx.screenWidth >> 1);
-    float iny = bucket.avgY - static_cast<float>(ctx.screenHeight >> 1);
+    // Calculate color based on distance
+    float distRatio = clamp((cluster.avgDistance - fadeStartDist) / (fadeEndDist - fadeStartDist),
+                            0.0f, 1.0f);
+    SDL_Color drawColor = lerpColor(cluster.color, ctx.style->grey_dark, distRatio);
 
-    // Project to screen edge
-    float outx = inx;
-    float outy = iny;
-
-    if (std::abs(inx) > std::abs(iny) *
-                            static_cast<float>(ctx.screenWidth >> 1) /
-                            static_cast<float>(ctx.screenHeight >> 1)) {
-      outx = static_cast<float>(ctx.screenWidth >> 1) * ((inx > 0) ? 1.0f : -1.0f);
-      outy = (outx) * iny / (inx);
-    } else {
-      outy = static_cast<float>(ctx.screenHeight) * ((iny > 0) ? 0.5f : -0.5f);
-      outx = (outy) * inx / (iny);
-    }
-
-    // Normalize direction
-    float inmag = std::sqrt(inx * inx + iny * iny);
-    float dirX = (inmag > 0.001f) ? inx / inmag : 0.0f;
-    float dirY = (inmag > 0.001f) ? iny / inmag : 1.0f;
-
-    drawOffMapArrow(ctx, outx, outy, dirX, dirY, bucket.color, bucket.count);
+    drawOffMapArrow(ctx, cluster.edgeX, cluster.edgeY, cluster.dirX, cluster.dirY,
+                    drawColor, cluster.count);
 
     // For single planes, update position and draw normal label
-    if (bucket.count == 1 && bucket.singleAircraft) {
-      // Update aircraft's screen position to arrow location for label placement
+    if (cluster.count == 1 && cluster.singleAircraft) {
       float arrowWidth = 6.0f * ctx.uiScale;
       int centerX = ctx.screenWidth >> 1;
       int centerY = ctx.screenHeight >> 1;
-      bucket.singleAircraft->x = static_cast<int>(centerX + outx - 2.0f * arrowWidth * dirX);
-      bucket.singleAircraft->y = static_cast<int>(centerY + outy - 2.0f * arrowWidth * dirY);
-      drawPlaneText(ctx, bucket.singleAircraft, selectedAircraft);
+      cluster.singleAircraft->x = static_cast<int>(centerX + cluster.edgeX -
+                                                    2.0f * arrowWidth * cluster.dirX);
+      cluster.singleAircraft->y = static_cast<int>(centerY + cluster.edgeY -
+                                                    2.0f * arrowWidth * cluster.dirY);
+      drawPlaneText(ctx, cluster.singleAircraft, selectedAircraft);
     }
   }
 }
