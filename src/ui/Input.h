@@ -48,9 +48,15 @@ public:
   AppData* appData;
 
   std::chrono::high_resolution_clock::time_point touchDownTime;
-  int touchx;
-  int touchy;
-  int tapCount;
+  int touchx{0};
+  int touchy{0};
+  int tapCount{0};
+
+  // Mouse drag tracking - prevents click after drag
+  bool mouseDragging_{false};
+  int mouseDownX_{0};
+  int mouseDownY_{0};
+  static constexpr int DRAG_THRESHOLD = 5;  // Pixels of movement to trigger drag
 };
 
 #endif

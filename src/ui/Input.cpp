@@ -151,30 +151,50 @@ Input::getInput() {
         break;
 
       case SDL_MOUSEBUTTONDOWN:
-        if (event.button.which != SDL_TOUCH_MOUSEID) {
+        if (event.button.which != SDL_TOUCH_MOUSEID &&
+            event.button.button == SDL_BUTTON_LEFT) {
           if (elapsed(touchDownTime) > 500) {
             tapCount = 0;
           }
           touchDownTime = now();
+          mouseDragging_ = false;
+          mouseDownX_ = event.button.x;
+          mouseDownY_ = event.button.y;
         }
         break;
 
-      case SDL_MOUSEBUTTONUP:;
-        if (event.button.which != SDL_TOUCH_MOUSEID) {
-          touchx = event.motion.x;
-          touchy = event.motion.y;
-          tapCount = event.button.clicks;
-
-          view->registerClick(tapCount, touchx, touchy);
+      case SDL_MOUSEBUTTONUP:
+        if (event.button.which != SDL_TOUCH_MOUSEID &&
+            event.button.button == SDL_BUTTON_LEFT) {
+          // Only register click if we weren't dragging
+          if (!mouseDragging_) {
+            touchx = event.button.x;
+            touchy = event.button.y;
+            // event.button.clicks contains the click count (1 for single, 2 for double, etc.)
+            // Ensure we have at least 1 for a valid click
+            tapCount = (event.button.clicks > 0) ? event.button.clicks : 1;
+            view->registerClick(tapCount, touchx, touchy);
+          } else {
+            // Reset state after drag ends
+            tapCount = 0;
+          }
+          mouseDragging_ = false;
         }
         break;
 
-      case SDL_MOUSEMOTION:;
-
+      case SDL_MOUSEMOTION:
         if (event.motion.which != SDL_TOUCH_MOUSEID) {
           view->registerMouseMove(event.motion.x, event.motion.y);
 
           if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+            // Check if we've moved enough to be considered a drag
+            if (!mouseDragging_) {
+              int dx = event.motion.x - mouseDownX_;
+              int dy = event.motion.y - mouseDownY_;
+              if (dx * dx + dy * dy > DRAG_THRESHOLD * DRAG_THRESHOLD) {
+                mouseDragging_ = true;
+              }
+            }
             view->moveCenterRelative(event.motion.xrel, event.motion.yrel);
           }
         }

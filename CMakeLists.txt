@@ -117,6 +117,11 @@ target_link_libraries(viz1090 PRIVATE
   m
 )
 
+# GCC 8 requires explicit linking of stdc++fs for std::filesystem
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+  target_link_libraries(viz1090 PRIVATE stdc++fs)
+endif()
+
 # Link ASIO for future network migration
 target_link_libraries(viz1090 PRIVATE asio)
 
