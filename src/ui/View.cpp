@@ -31,6 +31,7 @@
 
 #include "ui/View.h"
 
+#include <cmath>
 #include <iostream>
 #include <thread>
 
@@ -175,12 +176,98 @@ View::animateCenterAbsolute(float x, float y) {
   highFramerate = true;
 }
 
+void
+View::frameAllAircraft() {
+  if (appData->aircraftList.empty()) {
+    return;
+  }
+
+  // Find bounding box of all aircraft with valid positions
+  float minLat = 90.0f;
+  float maxLat = -90.0f;
+  float minLon = 180.0f;
+  float maxLon = -180.0f;
+  int validCount = 0;
+
+  for (const auto& aircraft : appData->aircraftList) {
+    // Only include aircraft with valid lat/lon (non-zero and within valid range)
+    if (aircraft->lat != 0.0f || aircraft->lon != 0.0f) {
+      if (aircraft->lat >= -90.0f && aircraft->lat <= 90.0f &&
+          aircraft->lon >= -180.0f && aircraft->lon <= 180.0f) {
+        minLat = std::min(minLat, aircraft->lat);
+        maxLat = std::max(maxLat, aircraft->lat);
+        minLon = std::min(minLon, aircraft->lon);
+        maxLon = std::max(maxLon, aircraft->lon);
+        validCount++;
+      }
+    }
+  }
+
+  if (validCount == 0) {
+    return;
+  }
+
+  // Calculate center point
+  float centerLat = (minLat + maxLat) / 2.0f;
+  float centerLon = (minLon + maxLon) / 2.0f;
+
+  // Calculate distance needed to show all aircraft
+  // Convert spans to km
+  float latSpan = (maxLat - minLat) * LATLONMULT;
+  float lonSpan = (maxLon - minLon) * LATLONMULT * std::cos(centerLat * M_PI / 180.0f);
+
+  // Account for aspect ratio: maxDist maps to half the LARGER screen dimension,
+  // so we need to scale spans based on which screen axis they'll use.
+  // screenDist uses: scale_factor * 0.5 * d / maxDist, where scale_factor = max(w,h)
+  // The half-span in each direction is the required "radius" for that axis
+  float latHalfSpan = latSpan / 2.0f;  // vertical (Y axis)
+  float lonHalfSpan = lonSpan / 2.0f;  // horizontal (X axis)
+
+  // Scale based on aspect ratio: if screen is wider than tall, vertical space is limiting
+  float effectiveLatRadius = latHalfSpan;
+  float effectiveLonRadius = lonHalfSpan;
+  if (screen_width > screen_height) {
+    // Wider screen: Y axis is shorter, so lat needs more zoom (scale up)
+    effectiveLatRadius = latHalfSpan * (static_cast<float>(screen_width) / screen_height);
+  } else {
+    // Taller screen: X axis is shorter, so lon needs more zoom (scale up)
+    effectiveLonRadius = lonHalfSpan * (static_cast<float>(screen_height) / screen_width);
+  }
+
+  float maxRadius = std::max(effectiveLatRadius, effectiveLonRadius);
+
+  // Add 20% padding so aircraft aren't right at the edge
+  float newMaxDist = maxRadius * 1.2f;
+
+  // Set minimum zoom level
+  if (newMaxDist < 5.0f) {
+    newMaxDist = 5.0f;
+  }
+
+  // Clear any selected aircraft so view doesn't track it
+  selectedAircraft = nullptr;
+
+  // Animate to the new center and zoom level
+  mapView.mapTargetLon = centerLon;
+  mapView.mapTargetLat = centerLat;
+  mapView.mapTargetMaxDist = newMaxDist;
+  mapView.setMoved();
+  highFramerate = true;
+}
+
 //
 // Input handling - delegates to InputFeedback
 //
 
 void
 View::registerClick(int tapcount, int x, int y) {
+  // Check if UI elements handle the click first
+  if (uiOverlay.handleClick(x, y)) {
+    highFramerate = true;
+    return;
+  }
+
+  // Otherwise handle as map/aircraft interaction
   inputFeedback.registerClick(tapcount, x, y, appData->aircraftList, &selectedAircraft, mapView);
   highFramerate = true;
 }
@@ -240,12 +327,15 @@ View::draw() {
     aircraftRenderer.draw(renderContext, appData->aircraftList, selectedAircraft, mapView);
   }
 
-  // Draw status overlay
+  // Draw status overlay (status bar and menu button)
   uiOverlay.setShowFps(fps);
   uiOverlay.draw(renderContext, *appData, lastFrameTime, mapView.centerLat, mapView.centerLon,
                  mapView.map.loaded);
 
-  // Draw input feedback (click ripple, selection brackets)
+  // Draw menu panel (if open) - drawn on top of everything except input feedback
+  uiOverlay.drawMenuPanel(renderContext);
+
+  // Draw input feedback (click ripple, selection brackets, mouse cursor)
   inputFeedback.draw(renderContext, selectedAircraft);
 
   // Present frame
@@ -274,6 +364,9 @@ View::View(AppData* appData)
   // Set metric preference on components
   mapView.metric = metric;
   aircraftRenderer.setMetric(metric);
+
+  // Set up UI callbacks
+  uiOverlay.setFrameAllCallback([this]() { frameAllAircraft(); });
 
   // Start map loading in background thread
   std::thread t1(&Map::load, &mapView.map);

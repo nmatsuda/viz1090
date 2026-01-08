@@ -38,6 +38,24 @@
 
 namespace viz1090 {
 
+UIOverlay::UIOverlay() {
+  // Set up menu button
+  menuButton_.setLabel("menu");
+  menuButton_.setCallback([this]() { menuPanel_.open(); });
+}
+
+void UIOverlay::setFrameAllCallback(FrameAllCallback callback) {
+  frameAllCallback_ = std::move(callback);
+
+  // Add frame-all button to the menu panel
+  menuPanel_.addButton("frame all", [this]() {
+    if (frameAllCallback_) {
+      frameAllCallback_();
+    }
+    menuPanel_.close();
+  });
+}
+
 void UIOverlay::drawStatusBox(const RenderContext& ctx, int* left, int* top,
                               const std::string& label, const std::string& message,
                               SDL_Color color) {
@@ -87,6 +105,18 @@ void UIOverlay::drawStatusBox(const RenderContext& ctx, int* left, int* top,
   currentLabel.draw(ctx.renderer);
 
   *left = *left + labelWidth + messageWidth + ctx.padding();
+}
+
+void UIOverlay::drawButton(const RenderContext& ctx, int* left, int* top, Button& button) {
+  int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+
+  if (*left + buttonWidth + ctx.padding() > ctx.screenWidth) {
+    *left = ctx.padding();
+    *top = *top - ctx.messageFontHeight - ctx.padding();
+  }
+
+  button.draw(ctx, *left, *top);
+  *left = *left + buttonWidth + ctx.padding();
 }
 
 void UIOverlay::drawCenteredStatusBox(const RenderContext& ctx,
@@ -143,6 +173,27 @@ void UIOverlay::draw(const RenderContext& ctx, const AppData& appData, float las
     snprintf(loaded, 32, "loading map %d%%", mapLoadPercent);
     drawStatusBox(ctx, &left, &top, "init", loaded, ctx.style->orange);
   }
+
+  // Draw menu button after status labels
+  drawButton(ctx, &left, &top, menuButton_);
+}
+
+void UIOverlay::drawMenuPanel(const RenderContext& ctx) {
+  menuPanel_.draw(ctx);
+}
+
+bool UIOverlay::handleClick(int x, int y) {
+  // Check menu panel first (it's on top)
+  if (menuPanel_.isOpen()) {
+    return menuPanel_.handleClick(x, y);
+  }
+
+  // Check menu button
+  if (menuButton_.handleClick(x, y)) {
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace viz1090

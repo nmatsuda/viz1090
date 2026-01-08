@@ -30,8 +30,12 @@
 #define UI_OVERLAY_H
 
 #include <SDL2/SDL.h>
+
+#include <functional>
 #include <string>
 
+#include "ui/Button.h"
+#include "ui/MenuPanel.h"
 #include "ui/RenderContext.h"
 
 class AppData;
@@ -42,11 +46,16 @@ namespace viz1090 {
 /// Renders HUD elements on top of the map view
 class UIOverlay {
 public:
-  UIOverlay() = default;
+  using FrameAllCallback = std::function<void()>;
 
-  /// Draw all UI overlay elements
+  UIOverlay();
+
+  /// Draw status bar elements (status boxes and menu button)
   void draw(const RenderContext& ctx, const AppData& appData, float lastFrameTime,
             float centerLat, float centerLon, int mapLoadPercent);
+
+  /// Draw the menu panel (should be called after other UI elements, before input feedback)
+  void drawMenuPanel(const RenderContext& ctx);
 
   /// Draw a status box at the specified position
   /// Updates left/top to position for the next box
@@ -54,17 +63,30 @@ public:
                      const std::string& label, const std::string& message,
                      SDL_Color color);
 
+  /// Draw a button at the specified position (follows status box style)
+  /// Updates left/top to position for the next element
+  void drawButton(const RenderContext& ctx, int* left, int* top, Button& button);
+
   /// Draw a centered status box
   void drawCenteredStatusBox(const RenderContext& ctx,
                              const std::string& label, const std::string& message,
                              SDL_Color color);
 
+  /// Handle click events - returns true if a UI element was clicked
+  bool handleClick(int x, int y);
+
   // Configuration
   void setShowFps(bool show) { showFps = show; }
   [[nodiscard]] bool getShowFps() const { return showFps; }
 
+  /// Set callback for frame-all button
+  void setFrameAllCallback(FrameAllCallback callback);
+
 private:
   bool showFps{false};
+  Button menuButton_;
+  MenuPanel menuPanel_;
+  FrameAllCallback frameAllCallback_;
 };
 
 }  // namespace viz1090

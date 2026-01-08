@@ -16,6 +16,7 @@
     "scaleBar": [196, 196, 196, 255],
     "button": [196, 196, 196, 255],
     "buttonBackground": [0, 0, 0, 255],
+    "buttonTextColor": [196, 196, 196, 255],
     "buttonOutline": [196, 196, 196, 255],
     "click": [127, 127, 127, 255]
   },

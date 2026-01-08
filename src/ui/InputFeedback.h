@@ -72,8 +72,11 @@ private:
   // Mouse state
   int mousex{0};
   int mousey{0};
-  bool mouseMoved{false};
-  std::chrono::high_resolution_clock::time_point mouseMovedTime;
+  bool mouseActive{false};  // True when mouse is actively moving
+  bool mouseWasActive{false};  // Previous frame's active state (for edge detection)
+  std::chrono::high_resolution_clock::time_point mouseLastMoveTime;  // Last movement time
+  std::chrono::high_resolution_clock::time_point mouseFadeStartTime;  // When fade animation started
+  float mouseOpacity{0.0f};  // Current opacity (0.0 to 1.0)
 
   bool highFramerate{false};
 };

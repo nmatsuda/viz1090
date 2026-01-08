@@ -72,6 +72,9 @@ public:
   void moveCenterAbsolute(float x, float y);
   void animateCenterAbsolute(float x, float y);
 
+  /// Frame all visible aircraft in the viewport
+  void frameAllAircraft();
+
   // Configuration
   bool metric{false};
   bool fps{false};

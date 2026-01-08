@@ -82,6 +82,8 @@ set(UI_SOURCES
   src/ui/AircraftRenderer.cpp
   src/ui/UIOverlay.cpp
   src/ui/InputFeedback.cpp
+  src/ui/Button.cpp
+  src/ui/MenuPanel.cpp
 )
 
 set(STYLE_SOURCES

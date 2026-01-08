@@ -43,7 +43,7 @@ void InputFeedback::draw(const RenderContext& ctx, Aircraft* selectedAircraft) {
 
   drawClickRipple(ctx);
   drawSelectionBrackets(ctx, selectedAircraft);
-  // drawMouse(ctx);  // Currently commented out in original
+  drawMouse(ctx);
 }
 
 void InputFeedback::drawClickRipple(const RenderContext& ctx) {
@@ -120,22 +120,53 @@ void InputFeedback::drawSelectionBrackets(const RenderContext& ctx,
 }
 
 void InputFeedback::drawMouse(const RenderContext& ctx) {
-  if (!mouseMoved) {
+  constexpr uint64_t kFadeDurationMs = 100;
+  constexpr uint64_t kIdleTimeoutMs = 50;  // Time before we consider mouse "stopped"
+
+  // Check if mouse has stopped moving (no movement for kIdleTimeoutMs)
+  bool currentlyActive = elapsed(mouseLastMoveTime) < kIdleTimeoutMs;
+
+  // Detect state transitions
+  if (currentlyActive && !mouseWasActive) {
+    // Mouse just started moving - begin fade in
+    mouseFadeStartTime = now();
+  } else if (!currentlyActive && mouseWasActive) {
+    // Mouse just stopped - begin fade out
+    mouseFadeStartTime = now();
+  }
+
+  mouseWasActive = currentlyActive;
+
+  // Calculate opacity based on fade animation
+  uint64_t fadeElapsed = elapsed(mouseFadeStartTime);
+  float fadeProgress = std::min(1.0f, static_cast<float>(fadeElapsed) / kFadeDurationMs);
+
+  if (currentlyActive) {
+    // Fading in
+    mouseOpacity = fadeProgress;
+  } else {
+    // Fading out
+    mouseOpacity = 1.0f - fadeProgress;
+  }
+
+  // Don't draw if fully transparent
+  if (mouseOpacity <= 0.0f) {
+    mouseActive = false;
     return;
   }
 
-  if (elapsed(mouseMovedTime) > 1000) {
-    mouseMoved = false;
-    return;
-  }
+  mouseActive = true;
+  highFramerate = true;
 
-  int alpha = static_cast<int>(255.0f - 255.0f * elapsed(mouseMovedTime) / 1000.0f);
+  int alpha = static_cast<int>(255.0f * mouseOpacity);
+  int crosshairSize = static_cast<int>(10 * ctx.uiScale);
 
-  lineRGBA(ctx.renderer, mousex - 10 * ctx.uiScale, mousey, mousex + 10 * ctx.uiScale,
+  // Draw crosshairs
+  lineRGBA(ctx.renderer, mousex - crosshairSize, mousey, mousex + crosshairSize,
            mousey, ctx.style->white.r, ctx.style->white.g, ctx.style->white.b,
            static_cast<Uint8>(alpha));
-  lineRGBA(ctx.renderer, mousex, mousey - 10 * ctx.uiScale, mousex,
-           mousey + 10 * ctx.uiScale, ctx.style->white.r, ctx.style->white.g,
+  lineRGBA(ctx.renderer, mousex, mousey - crosshairSize, mousex,
+           mousey + crosshairSize, ctx.style->white.r, ctx.style->white.g,
            ctx.style->white.b, static_cast<Uint8>(alpha));
 }
 
@@ -175,8 +206,7 @@ void InputFeedback::registerClick(int tapcount, int x, int y,
 }
 
 void InputFeedback::registerMouseMove(int x, int y) {
-  mouseMoved = true;
-  mouseMovedTime = now();
+  mouseLastMoveTime = now();
   mousex = x;
   mousey = y;
   highFramerate = true;
