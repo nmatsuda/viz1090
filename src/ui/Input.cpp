@@ -116,14 +116,21 @@ Input::getInput() {
         }
         break;
 
-      case SDL_FINGERMOTION:;
+      case SDL_FINGERMOTION: {
         if (elapsed(touchDownTime) > 150) {
           tapCount = 0;
           // touchDownTime = 0;
         }
-        view->moveCenterRelative(view->screen_width * event.tfinger.dx,
-                                 view->screen_height * event.tfinger.dy);
+        float dx = event.tfinger.dx;
+        float dy = event.tfinger.dy;
+        if (flipTouch) {
+          dx = -dx;
+          dy = -dy;
+        }
+        view->moveCenterRelative(view->screen_width * dx,
+                                 view->screen_height * dy);
         break;
+      }
 
       case SDL_FINGERDOWN:
         if (elapsed(touchDownTime) > 500) {
@@ -136,10 +143,16 @@ Input::getInput() {
         }
         break;
 
-      case SDL_FINGERUP:
+      case SDL_FINGERUP: {
         if (elapsed(touchDownTime) < 150 && SDL_GetNumTouchFingers(event.tfinger.touchId) == 0) {
-          touchx = view->screen_width * event.tfinger.x;
-          touchy = view->screen_height * event.tfinger.y;
+          float fx = event.tfinger.x;
+          float fy = event.tfinger.y;
+          if (flipTouch) {
+            fx = 1.0f - fx;
+            fy = 1.0f - fy;
+          }
+          touchx = view->screen_width * fx;
+          touchy = view->screen_height * fy;
           tapCount++;
           view->registerClick(tapCount, touchx, touchy);
         } else {
@@ -149,6 +162,7 @@ Input::getInput() {
         }
 
         break;
+      }
 
       case SDL_MOUSEBUTTONDOWN:
         if (event.button.which != SDL_TOUCH_MOUSEID &&

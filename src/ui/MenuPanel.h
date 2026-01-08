@@ -45,11 +45,19 @@ namespace viz1090 {
 class MenuPanel {
 public:
   using ActionCallback = std::function<void()>;
+  using ThemeSelectedCallback = std::function<void(const std::string&)>;
+  using ThemeListProvider = std::function<std::vector<std::string>()>;
+  using CurrentThemeProvider = std::function<std::string()>;
 
   MenuPanel();
 
   /// Add a button to the menu
   void addButton(const std::string& label, ActionCallback callback);
+
+  /// Set up theme selection support
+  void setThemeSupport(ThemeListProvider listProvider,
+                       CurrentThemeProvider currentProvider,
+                       ThemeSelectedCallback selectedCallback);
 
   /// Draw the menu panel (call only when open)
   void draw(const RenderContext& ctx);
@@ -58,15 +66,27 @@ public:
   bool handleClick(int x, int y);
 
   /// Open/close the panel
-  void open() { open_ = true; }
-  void close() { open_ = false; }
-  void toggle() { open_ = !open_; }
+  void open() { open_ = true; showingThemes_ = false; }
+  void close() { open_ = false; showingThemes_ = false; }
+  void toggle() { if (open_) close(); else open(); }
   [[nodiscard]] bool isOpen() const { return open_; }
 
 private:
+  void drawMainMenu(const RenderContext& ctx);
+  void drawThemeList(const RenderContext& ctx);
+  void rebuildThemeButtons();
+
   std::vector<Button> buttons_;
   Button closeButton_;
   bool open_{false};
+
+  // Theme selection support
+  bool showingThemes_{false};
+  std::vector<Button> themeButtons_;
+  Button backButton_;
+  ThemeListProvider themeListProvider_;
+  CurrentThemeProvider currentThemeProvider_;
+  ThemeSelectedCallback themeSelectedCallback_;
 
   // Cached panel bounds
   SDL_Rect panelBounds_{0, 0, 0, 0};

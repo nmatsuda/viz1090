@@ -33,6 +33,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "ui/Button.h"
 #include "ui/MenuPanel.h"
@@ -47,6 +48,9 @@ namespace viz1090 {
 class UIOverlay {
 public:
   using FrameAllCallback = std::function<void()>;
+  using ThemeSelectedCallback = std::function<void(const std::string&)>;
+  using ThemeListProvider = std::function<std::vector<std::string>()>;
+  using CurrentThemeProvider = std::function<std::string()>;
 
   UIOverlay();
 
@@ -81,6 +85,11 @@ public:
 
   /// Set callback for frame-all button
   void setFrameAllCallback(FrameAllCallback callback);
+
+  /// Set up theme selection support
+  void setThemeSupport(ThemeListProvider listProvider,
+                       CurrentThemeProvider currentProvider,
+                       ThemeSelectedCallback selectedCallback);
 
 private:
   bool showFps{false};

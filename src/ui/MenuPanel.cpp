@@ -36,10 +36,50 @@ MenuPanel::MenuPanel() {
   // Close button is always present
   closeButton_.setLabel("close");
   closeButton_.setCallback([this]() { close(); });
+
+  // Back button for sub-menus
+  backButton_.setLabel("back");
+  backButton_.setCallback([this]() { showingThemes_ = false; });
 }
 
 void MenuPanel::addButton(const std::string& label, ActionCallback callback) {
   buttons_.emplace_back(label, std::move(callback));
+}
+
+void MenuPanel::setThemeSupport(ThemeListProvider listProvider,
+                                CurrentThemeProvider currentProvider,
+                                ThemeSelectedCallback selectedCallback) {
+  themeListProvider_ = std::move(listProvider);
+  currentThemeProvider_ = std::move(currentProvider);
+  themeSelectedCallback_ = std::move(selectedCallback);
+
+  // Add the theme button to the main menu that opens the theme list
+  buttons_.emplace_back("theme", [this]() {
+    rebuildThemeButtons();
+    showingThemes_ = true;
+  });
+}
+
+void MenuPanel::rebuildThemeButtons() {
+  themeButtons_.clear();
+  if (!themeListProvider_) {
+    return;
+  }
+
+  auto themes = themeListProvider_();
+  std::string currentTheme = currentThemeProvider_ ? currentThemeProvider_() : "";
+
+  for (const auto& themeName : themes) {
+    // Mark current theme with a bullet
+    std::string label = (themeName == currentTheme) ? "> " + themeName : themeName;
+    themeButtons_.emplace_back(label, [this, themeName]() {
+      if (themeSelectedCallback_) {
+        themeSelectedCallback_(themeName);
+        // Rebuild to update the current theme indicator
+        rebuildThemeButtons();
+      }
+    });
+  }
 }
 
 void MenuPanel::draw(const RenderContext& ctx) {
@@ -47,6 +87,14 @@ void MenuPanel::draw(const RenderContext& ctx) {
     return;
   }
 
+  if (showingThemes_) {
+    drawThemeList(ctx);
+  } else {
+    drawMainMenu(ctx);
+  }
+}
+
+void MenuPanel::drawMainMenu(const RenderContext& ctx) {
   // Calculate panel dimensions based on content
   // Panel width is based on widest button + padding
   int maxButtonWidth = 0;
@@ -75,10 +123,6 @@ void MenuPanel::draw(const RenderContext& ctx) {
   panelBounds_.y = panelTop;
   panelBounds_.w = panelWidth;
   panelBounds_.h = panelHeight;
-
-  // Draw semi-transparent background overlay
-  boxRGBA(ctx.renderer, 0, 0, ctx.screenWidth, ctx.screenHeight,
-          0, 0, 0, 128);
 
   // Draw panel background
   roundedBoxRGBA(ctx.renderer, panelLeft, panelTop,
@@ -110,6 +154,64 @@ void MenuPanel::draw(const RenderContext& ctx) {
   closeButton_.draw(ctx, centeredLeft, buttonTop);
 }
 
+void MenuPanel::drawThemeList(const RenderContext& ctx) {
+  // Calculate panel dimensions based on theme buttons
+  int maxButtonWidth = 0;
+  for (const auto& button : themeButtons_) {
+    int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+    maxButtonWidth = std::max(maxButtonWidth, buttonWidth);
+  }
+  // Include back button
+  int backWidth = static_cast<int>((backButton_.label().length() + 1) * ctx.labelFontWidth);
+  maxButtonWidth = std::max(maxButtonWidth, backWidth);
+
+  int panelPadding = ctx.padding() * 2;
+  int buttonSpacing = ctx.padding();
+  int numButtons = static_cast<int>(themeButtons_.size()) + 1;  // +1 for back button
+
+  int panelWidth = maxButtonWidth + panelPadding * 2;
+  int panelHeight = numButtons * ctx.labelFontHeight +
+                    (numButtons - 1) * buttonSpacing + panelPadding * 2;
+
+  // Center the panel on screen
+  int panelLeft = (ctx.screenWidth - panelWidth) / 2;
+  int panelTop = (ctx.screenHeight - panelHeight) / 2;
+
+  // Update cached bounds
+  panelBounds_.x = panelLeft;
+  panelBounds_.y = panelTop;
+  panelBounds_.w = panelWidth;
+  panelBounds_.h = panelHeight;
+
+  // Draw panel background
+  roundedBoxRGBA(ctx.renderer, panelLeft, panelTop,
+                 panelLeft + panelWidth, panelTop + panelHeight,
+                 ctx.cornerRadius() * 2,
+                 ctx.style->buttonBackground.r, ctx.style->buttonBackground.g,
+                 ctx.style->buttonBackground.b, SDL_ALPHA_OPAQUE);
+
+  // Draw panel border
+  roundedRectangleRGBA(ctx.renderer, panelLeft, panelTop,
+                       panelLeft + panelWidth, panelTop + panelHeight,
+                       ctx.cornerRadius() * 2,
+                       ctx.style->buttonOutline.r, ctx.style->buttonOutline.g,
+                       ctx.style->buttonOutline.b, SDL_ALPHA_OPAQUE);
+
+  // Draw theme buttons centered in the panel
+  int buttonTop = panelTop + panelPadding;
+
+  for (auto& button : themeButtons_) {
+    int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+    int centeredLeft = panelLeft + (panelWidth - buttonWidth) / 2;
+    button.draw(ctx, centeredLeft, buttonTop);
+    buttonTop += ctx.labelFontHeight + buttonSpacing;
+  }
+
+  // Draw back button last
+  int centeredLeft = panelLeft + (panelWidth - backWidth) / 2;
+  backButton_.draw(ctx, centeredLeft, buttonTop);
+}
+
 bool MenuPanel::handleClick(int x, int y) {
   if (!open_) {
     return false;
@@ -123,16 +225,30 @@ bool MenuPanel::handleClick(int x, int y) {
     return true;
   }
 
-  // Check buttons
-  for (auto& button : buttons_) {
-    if (button.handleClick(x, y)) {
+  if (showingThemes_) {
+    // Check theme buttons
+    for (auto& button : themeButtons_) {
+      if (button.handleClick(x, y)) {
+        return true;
+      }
+    }
+
+    // Check back button
+    if (backButton_.handleClick(x, y)) {
       return true;
     }
-  }
+  } else {
+    // Check main menu buttons
+    for (auto& button : buttons_) {
+      if (button.handleClick(x, y)) {
+        return true;
+      }
+    }
 
-  // Check close button
-  if (closeButton_.handleClick(x, y)) {
-    return true;
+    // Check close button
+    if (closeButton_.handleClick(x, y)) {
+      return true;
+    }
   }
 
   // Click was inside panel but not on a button - consume it

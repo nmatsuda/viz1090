@@ -57,6 +57,9 @@ public:
   int mouseDownX_{0};
   int mouseDownY_{0};
   static constexpr int DRAG_THRESHOLD = 5;  // Pixels of movement to trigger drag
+
+  // Touchscreen flip option (for inverted displays)
+  bool flipTouch{false};
 };
 
 #endif

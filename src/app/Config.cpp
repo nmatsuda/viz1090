@@ -54,6 +54,7 @@ Display options:
   --upscale <factor>    Render upscale factor
   --uiscale <factor>    UI element scale factor
   --fps                 Show FPS counter
+  --flip-touch          Flip touchscreen X and Y coordinates
 
 Map options:
   --lat <degrees>       Initial map center latitude
@@ -128,6 +129,8 @@ parseArgs(int aArgc, char* aArgv[], AppConfig& aConfig) {
       aConfig.display.uiScale = std::atoi(val);
     } else if (std::strcmp(arg, "--fps") == 0) {
       aConfig.display.showFps = true;
+    } else if (std::strcmp(arg, "--flip-touch") == 0) {
+      aConfig.display.flipTouch = true;
     }
     // Map options
     else if (std::strcmp(arg, "--lat") == 0) {

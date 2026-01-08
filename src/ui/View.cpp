@@ -137,7 +137,7 @@ View::updateRenderContext() {
   renderContext.screenWidth = screen_width;
   renderContext.screenHeight = screen_height;
   renderContext.uiScale = screen_uiscale;
-  renderContext.style = &style;
+  renderContext.style = &styleManager_.currentTheme();
   renderContext.mapFont = mapFont;
   renderContext.mapBoldFont = mapBoldFont;
   renderContext.labelFont = labelFont;
@@ -365,12 +365,27 @@ View::draw() {
 
 View::View(AppData* appData)
     : appData(appData) {
+  // Load themes from the themes directory
+  if (!styleManager_.loadFromDirectory("themes")) {
+    std::fprintf(stderr, "Warning: No themes loaded from 'themes' directory\n");
+  }
+
   // Set metric preference on components
   mapView.metric = metric;
   aircraftRenderer.setMetric(metric);
 
   // Set up UI callbacks
   uiOverlay.setFrameAllCallback([this]() { frameAllAircraft(); });
+  uiOverlay.setThemeSupport(
+      [this]() { return styleManager_.themeNames(); },
+      [this]() { return styleManager_.currentTheme().name; },
+      [this](const std::string& themeName) {
+        if (styleManager_.setTheme(themeName)) {
+          mapView.setMoved();
+          highFramerate = true;
+          std::fprintf(stderr, "Switched to theme: %s\n", themeName.c_str());
+        }
+      });
 
   // Start map loading in background thread
   std::thread t1(&Map::load, &mapView.map);

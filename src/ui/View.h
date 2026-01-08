@@ -39,7 +39,7 @@
 #include "SDL2/SDL_ttf.h"
 
 #include "app/AppData.h"
-#include "style/Style.h"
+#include "viz1090/StyleManager.h"
 #include "ui/AircraftRenderer.h"
 #include "ui/InputFeedback.h"
 #include "ui/MapView.h"
@@ -75,6 +75,9 @@ public:
   /// Frame all visible aircraft in the viewport
   void frameAllAircraft();
 
+  /// Get the style manager (for theme list access)
+  StyleManager& getStyleManager() { return styleManager_; }
+
   // Configuration
   bool metric{false};
   bool fps{false};
@@ -105,8 +108,8 @@ private:
   AppData* appData;
   Aircraft* selectedAircraft{nullptr};
 
-  // Style
-  Style style;
+  // Style manager for theme loading
+  StyleManager styleManager_;
 
   // Components
   MapView mapView;

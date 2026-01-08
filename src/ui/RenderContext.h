@@ -32,7 +32,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "style/Style.h"
+#include "viz1090/StyleManager.h"
 
 namespace viz1090 {
 
@@ -47,8 +47,8 @@ struct RenderContext {
   int screenHeight{0};
   int uiScale{1};
 
-  // Style reference for consistent theming
-  const Style* style{nullptr};
+  // Theme reference for consistent theming
+  const Theme* style{nullptr};
 
   // Fonts
   TTF_Font* mapFont{nullptr};

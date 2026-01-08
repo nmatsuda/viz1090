@@ -56,6 +56,14 @@ void UIOverlay::setFrameAllCallback(FrameAllCallback callback) {
   });
 }
 
+void UIOverlay::setThemeSupport(ThemeListProvider listProvider,
+                                CurrentThemeProvider currentProvider,
+                                ThemeSelectedCallback selectedCallback) {
+  menuPanel_.setThemeSupport(std::move(listProvider),
+                             std::move(currentProvider),
+                             std::move(selectedCallback));
+}
+
 void UIOverlay::drawStatusBox(const RenderContext& ctx, int* left, int* top,
                               const std::string& label, const std::string& message,
                               SDL_Color color) {
