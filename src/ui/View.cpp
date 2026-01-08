@@ -323,7 +323,11 @@ View::draw() {
       aircraftRenderer.resolveLabelConflicts(appData->aircraftList);
     }
 
-    // Draw aircraft (icons, trails, labels)
+    // Draw trails first (behind aircraft icons)
+    aircraftRenderer.drawTrails(renderContext, appData->aircraftList, mapView,
+                                0, 0, screen_width, screen_height);
+
+    // Draw aircraft (icons and labels)
     aircraftRenderer.draw(renderContext, appData->aircraftList, selectedAircraft, mapView);
   }
 
