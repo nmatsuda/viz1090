@@ -31,6 +31,8 @@
 
 #include <SDL2/SDL.h>
 
+#include <vector>
+
 #include "core/AircraftList.h"
 #include "ui/RenderContext.h"
 
@@ -39,6 +41,25 @@ class Aircraft;
 namespace viz1090 {
 
 class MapView;
+
+/// Info for a single off-map plane bucket
+struct OffMapBucket {
+  int count{0};
+  float avgX{0.0f};  // Average screen X position of planes in bucket
+  float avgY{0.0f};  // Average screen Y position of planes in bucket
+  SDL_Color color{0, 0, 0, 255};
+  Aircraft* singleAircraft{nullptr};  // Set when count == 1, for label drawing
+};
+
+/// Info for a single on-map plane cluster (greedy distance-based)
+struct OnMapCluster {
+  int count{0};
+  float centerX{0.0f};  // Cluster center X (first plane position)
+  float centerY{0.0f};  // Cluster center Y (first plane position)
+  float avgHeading{0.0f};  // Average heading for icon drawing
+  SDL_Color color{0, 0, 0, 255};
+  Aircraft* singleAircraft{nullptr};  // Set when count == 1, for normal drawing
+};
 
 /// Renders aircraft icons, trails, and labels
 class AircraftRenderer {
@@ -70,14 +91,38 @@ public:
 private:
   void drawPlaneIcon(const RenderContext& ctx, int x, int y, float heading,
                      SDL_Color planeColor);
-  void drawPlaneOffMap(const RenderContext& ctx, int x, int y, int* returnx,
-                       int* returny, SDL_Color planeColor);
   void drawPlaneText(const RenderContext& ctx, Aircraft* p, Aircraft* selectedAircraft);
+
+  // Off-map bucketing helpers
+  void clearOffMapBuckets();
+  void addToOffMapBucket(const RenderContext& ctx, int x, int y, SDL_Color planeColor,
+                         Aircraft* aircraft);
+  void drawOffMapBuckets(const RenderContext& ctx, Aircraft* selectedAircraft);
+  int calculateBucketIndex(const RenderContext& ctx, int x, int y) const;
+  void drawOffMapArrow(const RenderContext& ctx, float edgeX, float edgeY,
+                       float dirX, float dirY, SDL_Color planeColor, int count);
+
+  // On-map clustering helpers (greedy distance-based)
+  void clearOnMapClusters(const RenderContext& ctx);
+  void addToOnMapCluster(const RenderContext& ctx, int x, int y, float heading,
+                         SDL_Color planeColor, Aircraft* aircraft);
+  void drawOnMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft);
 
   bool metric{false};
   bool highFramerate{false};
 
+  // Off-map plane buckets - sized based on screen perimeter and arrow size
+  std::vector<OffMapBucket> offMapBuckets_;
+  int numBuckets_{0};
+  float bucketAngularSize_{0.0f};
+
+  // On-map plane clusters - greedy distance-based
+  std::vector<OnMapCluster> onMapClusters_;
+  float clusterRadius_{0.0f};  // Distance threshold for clustering
+
   static constexpr float DISPLAY_ACTIVE = 30.0f;
+  static constexpr int MIN_BUCKETS = 16;
+  static constexpr int MAX_BUCKETS = 64;
 };
 
 }  // namespace viz1090

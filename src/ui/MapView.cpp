@@ -334,40 +334,119 @@ void MapView::drawLinesRecursive(const RenderContext& ctx, QuadTree* tree,
 void MapView::drawPlaceNames(const RenderContext& ctx) {
   PROFILE_SCOPE("drawPlaceNames");
 
+  // Collect all visible labels with their screen positions and bounding boxes
+  struct VisibleLabel {
+    std::string text;
+    int x, y;
+    int width, height;
+    Uint8 alpha{255};
+  };
+
+  std::vector<VisibleLabel> visibleLabels;
+  visibleLabels.reserve(map.mapnames.size() + map.airportnames.size());
+
+  // Estimate text dimensions based on font metrics
+  int charWidth = ctx.mapFontWidth;
+  int charHeight = ctx.mapFontHeight;
+
+  // Collect map place names
+  for (const auto& label : map.mapnames) {
+    float dx, dy;
+    int x, y;
+
+    pxFromLonLat(&dx, &dy, label->location.lon, label->location.lat);
+    screenCoords(&x, &y, dx, dy, ctx.screenWidth, ctx.screenHeight);
+
+    if (x < 0 || x >= ctx.screenWidth || y < 0 || y >= ctx.screenHeight) {
+      continue;
+    }
+
+    VisibleLabel vl;
+    vl.text = label->text;
+    vl.x = x;
+    vl.y = y;
+    vl.width = static_cast<int>(label->text.length()) * charWidth;
+    vl.height = charHeight;
+    visibleLabels.push_back(vl);
+  }
+
+  // Collect airport names
+  for (const auto& label : map.airportnames) {
+    float dx, dy;
+    int x, y;
+
+    pxFromLonLat(&dx, &dy, label->location.lon, label->location.lat);
+    screenCoords(&x, &y, dx, dy, ctx.screenWidth, ctx.screenHeight);
+
+    if (x < 0 || x >= ctx.screenWidth || y < 0 || y >= ctx.screenHeight) {
+      continue;
+    }
+
+    VisibleLabel vl;
+    vl.text = label->text;
+    vl.x = x;
+    vl.y = y;
+    vl.width = static_cast<int>(label->text.length()) * charWidth;
+    vl.height = charHeight;
+    visibleLabels.push_back(vl);
+  }
+
+  // Detect overlaps and assign alpha values
+  // Use greedy approach: first label stays visible, overlapping ones fade out
+  // Add padding around labels for overlap detection
+  int padding = charWidth;
+
+  for (size_t i = 0; i < visibleLabels.size(); ++i) {
+    auto& labelA = visibleLabels[i];
+
+    // Skip already faded labels
+    if (labelA.alpha == 0) {
+      continue;
+    }
+
+    // Check against all subsequent labels
+    for (size_t j = i + 1; j < visibleLabels.size(); ++j) {
+      auto& labelB = visibleLabels[j];
+
+      // Skip already faded labels
+      if (labelB.alpha == 0) {
+        continue;
+      }
+
+      // Check bounding box overlap with padding
+      int aLeft = labelA.x - padding;
+      int aRight = labelA.x + labelA.width + padding;
+      int aTop = labelA.y - padding;
+      int aBottom = labelA.y + labelA.height + padding;
+
+      int bLeft = labelB.x - padding;
+      int bRight = labelB.x + labelB.width + padding;
+      int bTop = labelB.y - padding;
+      int bBottom = labelB.y + labelB.height + padding;
+
+      bool overlaps = !(aRight < bLeft || bRight < aLeft ||
+                        aBottom < bTop || bBottom < aTop);
+
+      if (overlaps) {
+        // Fade out the later label (labelB)
+        labelB.alpha = 0;
+      }
+    }
+  }
+
+  // Draw all labels with their computed alpha
   Label currentLabel;
   currentLabel.setFont(ctx.mapFont);
   currentLabel.setColor(ctx.style->geoColor);
 
-  for (auto label = map.mapnames.begin(); label != map.mapnames.end(); ++label) {
-    float dx, dy;
-    int x, y;
-
-    pxFromLonLat(&dx, &dy, (*label)->location.lon, (*label)->location.lat);
-    screenCoords(&x, &y, dx, dy, ctx.screenWidth, ctx.screenHeight);
-
-    if (x < 0 || x >= ctx.screenWidth || y < 0 || y >= ctx.screenHeight) {
+  for (const auto& vl : visibleLabels) {
+    if (vl.alpha == 0) {
       continue;
     }
 
-    currentLabel.setText((*label)->text);
-    currentLabel.setPosition(x, y);
-    currentLabel.draw(ctx.renderer);
-  }
-
-  for (auto label = map.airportnames.begin(); label != map.airportnames.end(); ++label) {
-    float dx, dy;
-    int x, y;
-
-    pxFromLonLat(&dx, &dy, (*label)->location.lon, (*label)->location.lat);
-    screenCoords(&x, &y, dx, dy, ctx.screenWidth, ctx.screenHeight);
-
-    if (x < 0 || x >= ctx.screenWidth || y < 0 || y >= ctx.screenHeight) {
-      continue;
-    }
-
-    currentLabel.setText((*label)->text);
-    currentLabel.setPosition(x, y);
-    currentLabel.draw(ctx.renderer);
+    currentLabel.setText(vl.text);
+    currentLabel.setPosition(vl.x, vl.y);
+    currentLabel.draw(ctx.renderer, vl.alpha);
   }
 }
 

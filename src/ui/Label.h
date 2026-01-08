@@ -1,3 +1,5 @@
+#ifndef LABEL_H
+#define LABEL_H
 
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_ttf.h"
@@ -6,6 +8,7 @@
 class Label {
 public:
   void draw(SDL_Renderer* renderer);
+  void draw(SDL_Renderer* renderer, Uint8 alpha);
 
   void setText(std::string text);
   void setPosition(int x, int y);
@@ -27,3 +30,5 @@ private:
   SDL_Color color;
   SDL_Surface* surface;
 };
+
+#endif  // LABEL_H

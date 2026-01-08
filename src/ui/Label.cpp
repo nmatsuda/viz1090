@@ -3,6 +3,11 @@
 
 void
 Label::draw(SDL_Renderer* renderer) {
+  draw(renderer, SDL_ALPHA_OPAQUE);
+}
+
+void
+Label::draw(SDL_Renderer* renderer, Uint8 alpha) {
   SDL_Rect rect = getRect();
 
   if (rect.h == 0 || rect.w == 0) {
@@ -10,6 +15,9 @@ Label::draw(SDL_Renderer* renderer) {
   }
 
   SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+  if (alpha < SDL_ALPHA_OPAQUE) {
+    SDL_SetTextureAlphaMod(texture, alpha);
+  }
   SDL_RenderCopy(renderer, texture, NULL, &rect);
   SDL_DestroyTexture(texture);
 }
