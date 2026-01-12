@@ -90,6 +90,11 @@ Input::getInput() {
             view->getMapView().setMoved();
             break;
 
+          // toggle FPS box
+          case SDLK_f:
+            view->getUIOverlay()->setShowFps(!view->getUIOverlay()->getShowFps());
+            break;
+
           default:
             break;
         }
