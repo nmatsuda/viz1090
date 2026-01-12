@@ -90,6 +90,11 @@ Input::getInput() {
             view->getMapView().setMoved();
             break;
 
+          // toggle origin marker
+          case SDLK_o:
+            view->getMapView().setDrawCenterOrigin(!view->getMapView().getDrawCenterOrigin());
+            break;
+
           default:
             break;
         }

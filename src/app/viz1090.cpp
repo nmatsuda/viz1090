@@ -84,9 +84,11 @@ main(int argc, char** argv) {
     } else if (!std::strcmp(argv[j], "--lat") && more) {
       appData.userLat = std::atof(argv[++j]);
       view.getMapView().centerLat = static_cast<float>(appData.userLat);
+      view.getMapView().originLat = view.getMapView().centerLat;
     } else if (!std::strcmp(argv[j], "--lon") && more) {
       appData.userLon = std::atof(argv[++j]);
       view.getMapView().centerLon = static_cast<float>(appData.userLon);
+      view.getMapView().originLon = view.getMapView().centerLon;
     } else if (!std::strcmp(argv[j], "--metric")) {
       view.metric = 1;
     } else if (!std::strcmp(argv[j], "--fps")) {
