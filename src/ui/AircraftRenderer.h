@@ -84,8 +84,7 @@ public:
   void moveLabels(AircraftList& aircraftList, float dx, float dy);
 
   // Configuration
-  void setMetric(bool metric) { this->metric = metric; }
-  [[nodiscard]] bool getMetric() const { return metric; }
+  void setMetric(bool* metric) { this->metric = metric; }
 
   // Check if any animation needs high framerate
   [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
@@ -110,7 +109,7 @@ private:
                          SDL_Color planeColor, Aircraft* aircraft);
   void drawOnMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft);
 
-  bool metric{false};
+  bool* metric{nullptr};
   bool highFramerate{false};
 
   // Off-map plane clusters - greedy distance-based

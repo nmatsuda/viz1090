@@ -22,7 +22,7 @@ public:
 
   void draw(SDL_Renderer* renderer, bool selected);
 
-  AircraftLabel(Aircraft* p, bool metric, int screen_width, int screen_height, TTF_Font* font,
+  AircraftLabel(Aircraft* p, bool& metric, int screen_width, int screen_height, TTF_Font* font,
                 const Style& style);
 
 private:
@@ -38,7 +38,7 @@ private:
 
   float labelLevel;
 
-  bool metric;
+  bool& metric;
 
   float x;
   float y;

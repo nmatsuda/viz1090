@@ -37,7 +37,7 @@
 
 namespace viz1090 {
 
-MapView::MapView() {
+MapView::MapView(bool& metric) : metric{metric} {
   lastRedraw = now();
 }
 
@@ -456,26 +456,30 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
   int scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
                                 ctx.screenWidth, ctx.screenHeight);
 
+  const float baseUnit = metric ? 1.0 : 1.852; // 1 Mn = 1852 m;
+
   char scaleLabel[13] = "";
 
-  lineRGBA(ctx.renderer, 10, 10, 10, 10 * ctx.uiScale, ctx.style->scaleBarColor.r,
-           ctx.style->scaleBarColor.g, ctx.style->scaleBarColor.b, 255);
+  // not sure what is this supposed to draw?
+  // lineRGBA(ctx.renderer, 10, 10, 10, 10 * ctx.uiScale, ctx.style->scaleBarColor.r,
+  //          ctx.style->scaleBarColor.g, ctx.style->scaleBarColor.b, 255);
 
-  while (scaleBarDist < ctx.screenWidth) {
-    lineRGBA(ctx.renderer, 10 + scaleBarDist, 8, 10 + scaleBarDist, 16 * ctx.uiScale,
+  while (baseUnit * scaleBarDist < ctx.screenWidth) {
+
+    lineRGBA(ctx.renderer, baseUnit * (10 + scaleBarDist), 8, baseUnit * (10 + scaleBarDist), 16 * ctx.uiScale,
              ctx.style->scaleBarColor.r, ctx.style->scaleBarColor.g,
              ctx.style->scaleBarColor.b, 255);
 
     if (metric) {
-      snprintf(scaleLabel, 13, "%dkm", static_cast<int>(std::pow(10, scalePower)));
+      snprintf(scaleLabel, 13, "%d km", static_cast<int>(std::pow(10, scalePower)));
     } else {
-      snprintf(scaleLabel, 13, "%dmi", static_cast<int>(std::pow(10, scalePower)));
+      snprintf(scaleLabel, 13, "%d Mm", static_cast<int>(std::pow(10, scalePower)));
     }
 
     Label currentLabel;
     currentLabel.setFont(ctx.mapFont);
     currentLabel.setColor(ctx.style->scaleBarColor);
-    currentLabel.setPosition(10 + scaleBarDist, 15 * ctx.uiScale);
+    currentLabel.setPosition(baseUnit * (10 + scaleBarDist), 15 * ctx.uiScale);
     currentLabel.setText(scaleLabel);
     currentLabel.draw(ctx.renderer);
 
@@ -488,7 +492,7 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
   scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
                             ctx.screenWidth, ctx.screenHeight);
 
-  lineRGBA(ctx.renderer, 10, 10 + 5 * ctx.uiScale, 10 + scaleBarDist, 10 + 5 * ctx.uiScale,
+  lineRGBA(ctx.renderer, 0, 10 + 5 * ctx.uiScale, baseUnit * (10 + scaleBarDist), 10 + 5 * ctx.uiScale,
            ctx.style->scaleBarColor.r, ctx.style->scaleBarColor.g,
            ctx.style->scaleBarColor.b, 255);
 }

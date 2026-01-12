@@ -364,15 +364,14 @@ View::draw() {
 //
 
 View::View(AppData* appData)
-    : appData(appData) {
+    : appData(appData), mapView(metric) {
   // Load themes from the themes directory
   if (!styleManager_.loadFromDirectory("themes")) {
     std::fprintf(stderr, "Warning: No themes loaded from 'themes' directory\n");
   }
 
   // Set metric preference on components
-  mapView.metric = metric;
-  aircraftRenderer.setMetric(metric);
+  aircraftRenderer.setMetric(&metric);
 
   // Set up UI callbacks
   uiOverlay.setFrameAllCallback([this]() { frameAllAircraft(); });

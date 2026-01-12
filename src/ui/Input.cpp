@@ -90,6 +90,11 @@ Input::getInput() {
             view->getMapView().setMoved();
             break;
 
+          // toggle metric/imperial units
+          case SDLK_m:
+            view->metric = !view->metric;
+            break;
+
           default:
             break;
         }
