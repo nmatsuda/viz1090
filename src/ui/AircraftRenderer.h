@@ -83,6 +83,10 @@ public:
   /// Move all labels by offset (for viewport panning)
   void moveLabels(AircraftList& aircraftList, float dx, float dy);
 
+  /// Sync all labels to their aircraft's current screen position
+  /// Call this after any view transformation (zoom, recenter) that changes aircraft screen coords
+  void syncLabelsToAircraft(AircraftList& aircraftList);
+
   // Configuration
   void setMetric(bool* metric) { this->metric = metric; }
 

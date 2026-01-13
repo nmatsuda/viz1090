@@ -158,21 +158,18 @@ View::updateRenderContext() {
 
 void
 View::moveCenterRelative(float dx, float dy) {
-  aircraftRenderer.moveLabels(appData->aircraftList, dx, dy);
   mapView.moveCenterRelative(dx, dy, screen_width, screen_height);
   highFramerate = true;
 }
 
 void
 View::moveCenterAbsolute(float x, float y) {
-  aircraftRenderer.moveLabels(appData->aircraftList, x, y);
   mapView.moveCenterAbsolute(x, y, screen_width, screen_height);
   highFramerate = true;
 }
 
 void
 View::animateCenterAbsolute(float x, float y) {
-  aircraftRenderer.moveLabels(appData->aircraftList, x, y);
   mapView.animateCenterAbsolute(x, y, screen_width, screen_height);
   highFramerate = true;
 }
@@ -331,19 +328,22 @@ View::draw() {
 
   // Draw aircraft if connected
   if (appData->connected()) {
+    // Draw trails first (behind aircraft icons)
+    aircraftRenderer.drawTrails(renderContext, appData->aircraftList, mapView,
+                                0, 0, screen_width, screen_height);
+
+    // Draw aircraft (icons and labels) - this updates aircraft screen positions
+    aircraftRenderer.draw(renderContext, appData->aircraftList, selectedAircraft, mapView);
+
+    // Sync labels to updated aircraft positions (handles zoom/recenter view changes)
+    aircraftRenderer.syncLabelsToAircraft(appData->aircraftList);
+
     // Resolve label conflicts (physics simulation)
     for (int i = 0; i < 8; i++) {
       aircraftRenderer.resolveLabelConflicts(appData->aircraftList);
     }
     // Clear the density changed flag after all labels have been updated
     AircraftLabel::clearDensityChanged();
-
-    // Draw trails first (behind aircraft icons)
-    aircraftRenderer.drawTrails(renderContext, appData->aircraftList, mapView,
-                                0, 0, screen_width, screen_height);
-
-    // Draw aircraft (icons and labels)
-    aircraftRenderer.draw(renderContext, appData->aircraftList, selectedAircraft, mapView);
   }
 
   // Draw status overlay (status bar and menu button)

@@ -18,6 +18,7 @@ public:
   void calculateForces(const AircraftList& aircraftList);
   void applyForces();
   void move(float dx, float dy);
+  void syncToAircraftPosition();  // Reposition label based on aircraft's current screen position
   bool getIsChanging();
 
   void draw(SDL_Renderer* renderer, bool selected);
@@ -82,6 +83,10 @@ private:
   int screen_height;
 
   bool isChanging;
+
+  // Last known aircraft screen position (for detecting view changes)
+  float lastAircraftX;
+  float lastAircraftY;
 
   std::chrono::high_resolution_clock::time_point lastLevelChange;
 

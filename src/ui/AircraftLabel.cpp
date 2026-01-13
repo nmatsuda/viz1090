@@ -450,6 +450,22 @@ AircraftLabel::move(float dx, float dy) {
 }
 
 void
+AircraftLabel::syncToAircraftPosition() {
+  // Calculate how much the aircraft's screen position has changed
+  float aircraft_dx = static_cast<float>(p->x) - lastAircraftX;
+  float aircraft_dy = static_cast<float>(p->y) - lastAircraftY;
+
+  // Move the label by the same amount
+  if (aircraft_dx != 0.0f || aircraft_dy != 0.0f) {
+    move(aircraft_dx, aircraft_dy);
+  }
+
+  // Update the last known position
+  lastAircraftX = static_cast<float>(p->x);
+  lastAircraftY = static_cast<float>(p->y);
+}
+
+void
 AircraftLabel::draw(SDL_Renderer* renderer, bool selected) {
   // Skip drawing if labels are globally disabled (unless this aircraft is selected)
   if (!showLabels_ && !selected) {
@@ -644,6 +660,8 @@ AircraftLabel::AircraftLabel(Aircraft* p, bool& metric, int screen_width, int sc
       screen_width(screen_width),
       screen_height(screen_height),
       isChanging(false),
+      lastAircraftX(static_cast<float>(p->x)),
+      lastAircraftY(static_cast<float>(p->y)),
       style(style) {
   for (int i = 0; i < buffer_length; i++) {
     x_buffer[i] = x;

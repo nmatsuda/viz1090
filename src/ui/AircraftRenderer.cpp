@@ -553,4 +553,12 @@ void AircraftRenderer::moveLabels(AircraftList& aircraftList, float dx, float dy
   }
 }
 
+void AircraftRenderer::syncLabelsToAircraft(AircraftList& aircraftList) {
+  for (const auto& aircraft : aircraftList) {
+    if (aircraft->label) {
+      aircraft->label->syncToAircraftPosition();
+    }
+  }
+}
+
 }  // namespace viz1090
