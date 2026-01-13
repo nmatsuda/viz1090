@@ -188,6 +188,9 @@ View::recenterOnOrigin() {
 
 void
 View::frameAllAircraft() {
+  // Lock aircraft list for thread-safe iteration
+  auto lock = appData->lockAircraftList();
+
   if (appData->aircraftList.empty()) {
     return;
   }
@@ -278,7 +281,11 @@ View::registerClick(int tapcount, int x, int y) {
   }
 
   // Otherwise handle as map/aircraft interaction
-  inputFeedback.registerClick(tapcount, x, y, appData->aircraftList, &selectedAircraft, mapView);
+  {
+    // Lock aircraft list for thread-safe iteration during click detection
+    auto lock = appData->lockAircraftList();
+    inputFeedback.registerClick(tapcount, x, y, appData->aircraftList, &selectedAircraft, mapView);
+  }
   highFramerate = true;
 }
 
@@ -328,6 +335,9 @@ View::draw() {
 
   // Draw aircraft if connected
   if (appData->connected()) {
+    // Lock aircraft list for thread-safe iteration during render
+    auto lock = appData->lockAircraftList();
+
     // Draw trails first (behind aircraft icons)
     aircraftRenderer.drawTrails(renderContext, appData->aircraftList, mapView,
                                 0, 0, screen_width, screen_height);

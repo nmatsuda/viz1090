@@ -73,8 +73,14 @@ public:
   double userLat = 0.0;
   double userLon = 0.0;
 
-  // Aircraft list (thread-safe access)
+  // Aircraft list (thread-safe access via lockAircraftList())
   AircraftList aircraftList;
+
+  /// Lock the aircraft list for thread-safe iteration
+  /// Returns a lock guard that releases when destroyed
+  [[nodiscard]] std::unique_lock<std::mutex> lockAircraftList() {
+    return std::unique_lock<std::mutex>(mMessageMutex);
+  }
 
   // Statistics
   int numVisiblePlanes = 0;
