@@ -87,6 +87,7 @@ public:
   float centerLat{0.0f};
   float originLon{0.0f};
   float originLat{0.0f};
+  bool originSet{false};  // True if --lat/--lon was specified
   float maxDist{25.0f};
 
   float mapTargetLon{0.0f};

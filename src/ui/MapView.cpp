@@ -496,7 +496,8 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
            ctx.style->scaleBarColor.r, ctx.style->scaleBarColor.g,
            ctx.style->scaleBarColor.b, 255);
 
-  if (drawCenterOrigin) {
+  // Only draw origin marker if enabled AND lat/lon was actually specified
+  if (drawCenterOrigin && originSet) {
     drawCenterOriginPoint(ctx);
   }
 }
