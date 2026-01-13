@@ -48,6 +48,10 @@ public:
   /// Initialize the map texture for caching
   void initTexture(SDL_Renderer* renderer, int width, int height);
 
+  // Configuration
+  void setDrawCenterOrigin(bool draw) { drawCenterOrigin = draw; }
+  [[nodiscard]] bool getDrawCenterOrigin() const { return drawCenterOrigin; }
+
   /// Draw the geography (map lines, place names)
   void drawGeography(const RenderContext& ctx);
 
@@ -81,6 +85,8 @@ public:
   // Viewport state
   float centerLon{0.0f};
   float centerLat{0.0f};
+  float originLon{0.0f};
+  float originLat{0.0f};
   float maxDist{25.0f};
 
   float mapTargetLon{0.0f};
@@ -101,6 +107,9 @@ private:
   void moveMapToTarget();
   void zoomMapToTarget();
 
+  /// Draw point at center lon/lat
+  void drawCenterOriginPoint(const RenderContext& ctx);
+
   // Cached map texture
   SDL_Texture* mapTexture{nullptr};
 
@@ -110,6 +119,7 @@ private:
   float currentMaxDist{0.0f};
 
   // State flags
+  bool drawCenterOrigin{true};
   int mapMoved{1};
   int mapRedraw{1};
   int mapAnimating{0};
