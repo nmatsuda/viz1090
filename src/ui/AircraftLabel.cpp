@@ -39,6 +39,16 @@ sign(float x) {
   return (x > 0) - (x < 0);
 }
 
+void AircraftLabel::forceCollapse() {
+  labelLevel = 3.0f;
+  lastLevelChange = now();
+}
+
+void AircraftLabel::forceExpand() {
+  labelLevel = 0.0f;
+  lastLevelChange = now();
+}
+
 SDL_Rect
 AircraftLabel::getFullRect(int labelLevel) {
   SDL_Rect rect = {static_cast<int>(x), static_cast<int>(y), 0, 0};
@@ -310,91 +320,85 @@ AircraftLabel::calculateForces(const AircraftList& aircraftList) {
     }
   }
 
-  // add drag force
-  ddx -= drag_force * dx * dx * sign(dx);
-  ddy -= drag_force * dy * dy * sign(dy);
+  // add drag force (using implicit velocity from Verlet)
+  float vel_x = x - prev_x;
+  float vel_y = y - prev_y;
+  ddx -= drag_force * vel_x * vel_x * sign(vel_x);
+  ddy -= drag_force * vel_y * vel_y * sign(vel_y);
 }
 
 void
 AircraftLabel::applyForces() {
-  float new_dx = dx + ddx;
-  float new_dy = dy + ddy;
+  // Verlet integration with oscillation detection
+  //
+  // The key insight: small-amplitude oscillations (1-2 pixels) are the problem.
+  // Large movements should flow freely. So we detect when:
+  // 1. Velocity is small (< 2 pixels)
+  // 2. Velocity is about to reverse direction (vel * accel < 0)
+  // In that case, we kill the velocity entirely to prevent oscillation.
 
-  new_dx *= damping_force;
-  new_dy *= damping_force;
+  float vel_x = x - prev_x;
+  float vel_y = y - prev_y;
 
-  /*
-  if(sign(new_dx) != sign(dx) && dx != 0) {
-    new_dx = 0;
+  // Base damping - fairly gentle to allow smooth movement
+  float base_damp = 0.8f;
+
+  // Detect small-amplitude oscillation conditions:
+  // If velocity is small AND acceleration opposes it, we're oscillating
+  constexpr float oscillation_threshold = 1.5f;  // pixels
+
+  // X-axis oscillation check
+  if (fabs(vel_x) < oscillation_threshold && vel_x * ddx < 0) {
+    // Small velocity about to reverse - kill it
+    vel_x = 0;
+    // Also reduce acceleration to let it settle
+    ddx *= 0.5f;
+  } else {
+    vel_x *= base_damp;
   }
 
-  if(sign(new_dy) != sign(dy) && dy != 0) {
-    new_dy = 0;
-  }
-  */
-
-  // if(dx > 0 || dy > 0 || new_dx > 0.01 || new_dy > 0.01) {
-  dx = new_dx;
-  dy = new_dy;
-  //}
-
-  if (fabs(dx) > velocity_limit) {
-    dx = sign(dx) * velocity_limit;
+  // Y-axis oscillation check
+  if (fabs(vel_y) < oscillation_threshold && vel_y * ddy < 0) {
+    vel_y = 0;
+    ddy *= 0.5f;
+  } else {
+    vel_y *= base_damp;
   }
 
-  if (fabs(dy) > velocity_limit) {
-    dy = sign(dy) * velocity_limit;
+  // Apply velocity limit
+  if (fabs(vel_x) > velocity_limit) {
+    vel_x = sign(vel_x) * velocity_limit;
+  }
+  if (fabs(vel_y) > velocity_limit) {
+    vel_y = sign(vel_y) * velocity_limit;
   }
 
-  if (fabs(dx) < 0.01f) {
-    dx = 0;
-  }
+  // Calculate new position
+  float new_x = x + vel_x + ddx;
+  float new_y = y + vel_y + ddy;
 
-  if (fabs(dy) < 0.01f) {
-    dy = 0;
-  }
+  // Update previous position to current before moving
+  prev_x = x;
+  prev_y = y;
 
-  if (dx < 1 || dy < 1) {
+  // Update current position
+  x = new_x;
+  y = new_y;
+
+  // Check if still changing (implicit velocity is non-trivial)
+  if (fabs(vel_x) > 0.01f || fabs(vel_y) > 0.01f || fabs(ddx) > 0.01f || fabs(ddy) > 0.01f) {
     isChanging = true;
   }
 
-  float new_x = 0;
-  float new_y = 0;
-
-  for (int i = 0; i < buffer_length; i++) {
-    new_x += x_buffer[i] / static_cast<float>(buffer_length);
-    new_y += y_buffer[i] / static_cast<float>(buffer_length);
-  }
-
-  x_buffer[buffer_idx] = new_x + dx;
-  y_buffer[buffer_idx] = new_y + dy;
-
-  buffer_idx = (buffer_idx + 1) % buffer_length;
-
-  // new_x += dx;
-  // new_y += dy;
-
-  // new_x = x + dx;
-  // new_y = y + dy;
-
-  // if(abs(new_x - x) > 1 || abs(new_y - y) > 1) {
-  x = new_x;
-  y = new_y;
-  //}
-
-  // x += dx;
-  // y += dy;
-
+  // Handle NaN
   if (isnan(x)) {
     x = 0;
+    prev_x = 0;
   }
-
   if (isnan(y)) {
     y = 0;
+    prev_y = 0;
   }
-
-  // x = p->cx + (int)round(p->ox);
-  // y = p->cy + (int)round(p->oy);
 }
 
 // SDL_Color signalToColor(int signal) {
@@ -440,13 +444,11 @@ AircraftLabel::applyForces() {
 
 void
 AircraftLabel::move(float dx, float dy) {
-  for (int i = 0; i < buffer_length; i++) {
-    x_buffer[i] += dx;
-    y_buffer[i] += dy;
-  }
-
+  // Move both current and previous position to preserve implicit velocity
   x += dx;
   y += dy;
+  prev_x += dx;
+  prev_y += dy;
 }
 
 void
@@ -650,9 +652,8 @@ AircraftLabel::AircraftLabel(Aircraft* p, bool& metric, int screen_width, int sc
       h(0),
       target_w(0),
       target_h(0),
-      dx(0),
-      dy(0),
-      buffer_idx(0),
+      prev_x(static_cast<float>(p->x)),        // Verlet: previous position = current (no initial velocity)
+      prev_y(static_cast<float>(p->y) + 20.0f),
       ddx(0),
       ddy(0),
       opacity(0.0f),
@@ -663,11 +664,6 @@ AircraftLabel::AircraftLabel(Aircraft* p, bool& metric, int screen_width, int sc
       lastAircraftX(static_cast<float>(p->x)),
       lastAircraftY(static_cast<float>(p->y)),
       style(style) {
-  for (int i = 0; i < buffer_length; i++) {
-    x_buffer[i] = x;
-    y_buffer[i] = y;
-  }
-
   flightLabel.setFont(font);
   altitudeLabel.setFont(font);
   speedLabel.setFont(font);

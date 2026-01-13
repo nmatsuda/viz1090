@@ -41,6 +41,18 @@
 
 namespace viz1090 {
 
+// Easing functions for smooth animation
+// Both go 0→1, but with different acceleration curves
+static float easeOutQuad(float t) {
+  // Starts fast, decelerates toward end (for merge: quick start, gentle arrival)
+  return t * (2.0f - t);
+}
+
+static float easeInQuad(float t) {
+  // Starts slow, accelerates toward end (for unmerge: gentle start, quick departure)
+  return t * t;
+}
+
 void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList,
                             Aircraft* selectedAircraft, MapView& mapView) {
   PROFILE_SCOPE("drawPlanes");
@@ -49,6 +61,10 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
   if (selectedAircraft) {
     mapView.setTarget(selectedAircraft->lon, selectedAircraft->lat);
   }
+
+  // Store last frame's clusters as previous, then clear for this frame
+  prevOnMapClusters_ = std::move(onMapClusters_);
+  prevOffMapClusters_ = std::move(offMapClusters_);
 
   // Clear clusters for this frame
   clearOffMapClusters(ctx);
@@ -70,13 +86,31 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
 
       float age_ms = elapsed(p->created);
       if (age_ms < 500) {
-        float ratio = age_ms / 500.0f;
-        float radius = (1.0f - ratio * ratio) * ctx.screenWidth / 8;
-        for (float theta = 0; theta < 2 * M_PI; theta += M_PI / 4) {
-          pixelRGBA(ctx.renderer, static_cast<int>(x + radius * std::cos(theta)),
-                    static_cast<int>(y + radius * std::sin(theta)),
-                    ctx.style->planeColor.r, ctx.style->planeColor.g,
-                    ctx.style->planeColor.b, static_cast<Uint8>(255 * ratio));
+        // Only draw appear animation if not appearing directly into a cluster
+        bool inPrevCluster = false;
+        for (const auto& cluster : prevOnMapClusters_) {
+          if (cluster.count > 1 && cluster.memberAddrs.count(p->addr) > 0) {
+            inPrevCluster = true;
+            break;
+          }
+        }
+        if (!inPrevCluster) {
+          for (const auto& cluster : prevOffMapClusters_) {
+            if (cluster.count > 1 && cluster.memberAddrs.count(p->addr) > 0) {
+              inPrevCluster = true;
+              break;
+            }
+          }
+        }
+        if (!inPrevCluster) {
+          float ratio = age_ms / 500.0f;
+          float radius = (1.0f - ratio * ratio) * ctx.screenWidth / 8;
+          for (float theta = 0; theta < 2 * M_PI; theta += M_PI / 4) {
+            pixelRGBA(ctx.renderer, static_cast<int>(x + radius * std::cos(theta)),
+                      static_cast<int>(y + radius * std::sin(theta)),
+                      ctx.style->planeColor.r, ctx.style->planeColor.g,
+                      ctx.style->planeColor.b, static_cast<Uint8>(255 * ratio));
+          }
         }
       } else if (1000 * DISPLAY_ACTIVE - elapsed(p->msSeen) > 500) {
         int usex = x;
@@ -105,10 +139,20 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
           addToOffMapCluster(ctx, x, y, planeColor, p.get());
         } else {
           if (elapsed(p->msSeenLatLon) < 500) {
-            circleRGBA(ctx.renderer, p->x, p->y,
-                       static_cast<int>(elapsed(p->msSeenLatLon) * ctx.screenWidth / 8192),
-                       127, 127, 127,
-                       static_cast<Uint8>(255 - 255.0 * elapsed(p->msSeenLatLon) / 500.0));
+            // Only draw ping circle if not in a multi-plane cluster (check previous frame)
+            bool inPrevCluster = false;
+            for (const auto& cluster : prevOnMapClusters_) {
+              if (cluster.count > 1 && cluster.memberAddrs.count(p->addr) > 0) {
+                inPrevCluster = true;
+                break;
+              }
+            }
+            if (!inPrevCluster) {
+              circleRGBA(ctx.renderer, p->x, p->y,
+                         static_cast<int>(elapsed(p->msSeenLatLon) * ctx.screenWidth / 8192),
+                         127, 127, 127,
+                         static_cast<Uint8>(255 - 255.0 * elapsed(p->msSeenLatLon) / 500.0));
+            }
 
             mapView.pxFromLonLat(&dx, &dy, p->getLastLon(), p->getLastLat());
             mapView.screenCoords(&x, &y, dx, dy, ctx.screenWidth, ctx.screenHeight);
@@ -133,11 +177,24 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
     }
   }
 
+  // Detect unmerge events (compares current frame clusters with previous frame)
+  // Must happen after clusters are built but before drawing
+  detectOnMapUnmergeEvents(ctx, aircraftList);
+  detectOffMapUnmergeEvents(ctx, aircraftList);
+
   // Draw all on-map clusters first (so labels are on top)
   drawOnMapClusters(ctx, selectedAircraft);
 
   // Draw all off-map cluster arrows
   drawOffMapClusters(ctx, selectedAircraft);
+
+  // Draw animating cluster members (merge/unmerge animations)
+  drawAnimatingClusterMembers(ctx, onMapAnimStates_, aircraftList);
+  drawAnimatingClusterMembers(ctx, offMapAnimStates_, aircraftList);
+
+  // Cleanup finished animations
+  cleanupFinishedAnimations(onMapAnimStates_);
+  cleanupFinishedAnimations(offMapAnimStates_);
 }
 
 void AircraftRenderer::drawPlaneIcon(const RenderContext& ctx, int x, int y, float heading,
@@ -210,6 +267,7 @@ void AircraftRenderer::clearOffMapClusters(const RenderContext& ctx) {
 
 void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y,
                                            SDL_Color planeColor, Aircraft* aircraft) {
+  uint32_t addr = aircraft->addr;
   int centerX = ctx.screenWidth >> 1;
   int centerY = ctx.screenHeight >> 1;
 
@@ -255,12 +313,59 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
   }
 
   if (nearest) {
+    // Check if this aircraft is new to this cluster (was not in it last frame)
+    bool wasInCluster = false;
+    for (const auto& prevCluster : prevOffMapClusters_) {
+      if (prevCluster.memberAddrs.count(addr) > 0) {
+        // Check if it was in the same cluster (by edge position proximity)
+        float pdx = nearest->edgeX - prevCluster.edgeX;
+        float pdy = nearest->edgeY - prevCluster.edgeY;
+        if (pdx * pdx + pdy * pdy < radiusSq) {
+          wasInCluster = true;
+          break;
+        }
+      }
+    }
+
+    // If this aircraft is joining a cluster with count > 0, start merge animation
+    // But don't start if any animation already exists, or if within hysteresis period
+    if (!wasInCluster && nearest->count >= 1) {
+      if (offMapAnimStates_.find(addr) == offMapAnimStates_.end()) {
+        // Check hysteresis - don't merge if recently unmerged
+        auto memberIt = offMapMembership_.find(addr);
+        bool withinHysteresis = (memberIt != offMapMembership_.end() &&
+                                 !memberIt->second.inCluster &&
+                                 elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
+        if (!withinHysteresis) {
+          ClusterMemberState& animState = offMapAnimStates_[addr];
+          animState.aircraftAddr = addr;
+          // Use an existing cluster member as anchor for dynamic position lookup
+          animState.clusterAnchorAddr = *nearest->memberAddrs.begin();
+          animState.heading = 0.0f;  // Not used for off-map
+          animState.color = planeColor;
+          animState.animStartTime = now();
+          animState.isMerging = true;
+          highFramerate = true;
+
+          // Collapse the label when merging into cluster
+          if (aircraft->label) {
+            aircraft->label->forceCollapse();
+          }
+
+          // Update membership state
+          offMapMembership_[addr] = {now(), true};
+        }
+      }
+    }
+
     // Add to existing cluster - update average distance
     float newCount = static_cast<float>(nearest->count + 1);
     nearest->avgDistance = (nearest->avgDistance * static_cast<float>(nearest->count) + dist) / newCount;
     nearest->color = lerpColor(nearest->color, planeColor, 1.0f / newCount);
     nearest->singleAircraft = nullptr;  // Multiple planes
     nearest->count++;
+    nearest->memberAddrs.insert(addr);
+    nearest->lastStateChange = now();
   } else {
     // Create new cluster
     OffMapCluster newCluster;
@@ -272,6 +377,8 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
     newCluster.avgDistance = dist;
     newCluster.color = planeColor;
     newCluster.singleAircraft = aircraft;
+    newCluster.memberAddrs.insert(addr);
+    newCluster.lastStateChange = now();
     offMapClusters_.push_back(newCluster);
   }
 }
@@ -289,6 +396,24 @@ void AircraftRenderer::drawOffMapClusters(const RenderContext& ctx, Aircraft* se
   for (const auto& cluster : offMapClusters_) {
     if (cluster.count == 0) {
       continue;
+    }
+
+    // Check if this is a single aircraft in an unmerge animation
+    if (cluster.count == 1 && cluster.singleAircraft) {
+      uint32_t addr = cluster.singleAircraft->addr;
+      auto animIt = offMapAnimStates_.find(addr);
+      if (animIt != offMapAnimStates_.end() && !animIt->second.isMerging) {
+        // Aircraft is unmerging - don't draw the arrow yet, animation will handle it
+        // Still update position for label attachment
+        float arrowWidth = 6.0f * ctx.uiScale;
+        int centerX = ctx.screenWidth >> 1;
+        int centerY = ctx.screenHeight >> 1;
+        cluster.singleAircraft->x = static_cast<int>(centerX + cluster.edgeX -
+                                                      2.0f * arrowWidth * cluster.dirX);
+        cluster.singleAircraft->y = static_cast<int>(centerY + cluster.edgeY -
+                                                      2.0f * arrowWidth * cluster.dirY);
+        continue;
+      }
     }
 
     // Calculate color based on distance
@@ -383,6 +508,7 @@ void AircraftRenderer::clearOnMapClusters(const RenderContext& ctx) {
 
 void AircraftRenderer::addToOnMapCluster(const RenderContext& /* ctx */, int x, int y, float heading,
                                           SDL_Color planeColor, Aircraft* aircraft) {
+  uint32_t addr = aircraft->addr;
   float fx = static_cast<float>(x);
   float fy = static_cast<float>(y);
   float radiusSq = clusterRadius_ * clusterRadius_;
@@ -403,12 +529,59 @@ void AircraftRenderer::addToOnMapCluster(const RenderContext& /* ctx */, int x, 
   }
 
   if (nearest) {
+    // Check if this aircraft is new to this cluster (was not in it last frame)
+    bool wasInCluster = false;
+    for (const auto& prevCluster : prevOnMapClusters_) {
+      if (prevCluster.memberAddrs.count(addr) > 0) {
+        // Check if it was in the same cluster (by center position proximity)
+        float pdx = nearest->centerX - prevCluster.centerX;
+        float pdy = nearest->centerY - prevCluster.centerY;
+        if (pdx * pdx + pdy * pdy < radiusSq) {
+          wasInCluster = true;
+          break;
+        }
+      }
+    }
+
+    // If this aircraft is joining a cluster with count > 0, start merge animation
+    // But don't start if any animation already exists, or if within hysteresis period
+    if (!wasInCluster && nearest->count >= 1) {
+      if (onMapAnimStates_.find(addr) == onMapAnimStates_.end()) {
+        // Check hysteresis - don't merge if recently unmerged
+        auto memberIt = onMapMembership_.find(addr);
+        bool withinHysteresis = (memberIt != onMapMembership_.end() &&
+                                 !memberIt->second.inCluster &&
+                                 elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
+        if (!withinHysteresis) {
+          ClusterMemberState& animState = onMapAnimStates_[addr];
+          animState.aircraftAddr = addr;
+          // Use an existing cluster member as anchor for dynamic position lookup
+          animState.clusterAnchorAddr = *nearest->memberAddrs.begin();
+          animState.heading = heading;
+          animState.color = planeColor;
+          animState.animStartTime = now();
+          animState.isMerging = true;
+          highFramerate = true;
+
+          // Collapse the label when merging into cluster
+          if (aircraft->label) {
+            aircraft->label->forceCollapse();
+          }
+
+          // Update membership state
+          onMapMembership_[addr] = {now(), true};
+        }
+      }
+    }
+
     // Add to existing cluster
     float newCount = static_cast<float>(nearest->count + 1);
     nearest->avgHeading = lerpAngle(nearest->avgHeading, heading, 1.0f / newCount);
     nearest->color = lerpColor(nearest->color, planeColor, 1.0f / newCount);
     nearest->singleAircraft = nullptr;  // Multiple planes
     nearest->count++;
+    nearest->memberAddrs.insert(addr);
+    nearest->lastStateChange = now();
   } else {
     // Create new cluster centered on this plane
     OnMapCluster newCluster;
@@ -418,6 +591,8 @@ void AircraftRenderer::addToOnMapCluster(const RenderContext& /* ctx */, int x, 
     newCluster.avgHeading = heading;
     newCluster.color = planeColor;
     newCluster.singleAircraft = aircraft;
+    newCluster.memberAddrs.insert(addr);
+    newCluster.lastStateChange = now();
     onMapClusters_.push_back(newCluster);
   }
 }
@@ -432,6 +607,17 @@ void AircraftRenderer::drawOnMapClusters(const RenderContext& ctx, Aircraft* sel
     int y = static_cast<int>(cluster.centerY);
 
     if (cluster.count == 1 && cluster.singleAircraft) {
+      // Check if this aircraft is currently in an unmerge animation
+      uint32_t addr = cluster.singleAircraft->addr;
+      auto animIt = onMapAnimStates_.find(addr);
+      if (animIt != onMapAnimStates_.end() && !animIt->second.isMerging) {
+        // Aircraft is unmerging - don't draw the icon yet, animation will handle it
+        // Still update position for label attachment
+        cluster.singleAircraft->x = x;
+        cluster.singleAircraft->y = y;
+        continue;
+      }
+
       // Single plane - draw normal icon and label
       drawPlaneIcon(ctx, x, y, cluster.avgHeading, cluster.color);
       cluster.singleAircraft->x = x;
@@ -479,6 +665,11 @@ void AircraftRenderer::drawTrails(const RenderContext& ctx, const AircraftList& 
 
   for (const auto& aircraft : aircraftList) {
     if (aircraft->positionHistory.empty()) {
+      continue;
+    }
+
+    // Skip trails for aircraft in multi-plane clusters (performance optimization)
+    if (isInMultiPlaneCluster(aircraft->addr)) {
       continue;
     }
 
@@ -557,6 +748,293 @@ void AircraftRenderer::syncLabelsToAircraft(AircraftList& aircraftList) {
   for (const auto& aircraft : aircraftList) {
     if (aircraft->label) {
       aircraft->label->syncToAircraftPosition();
+    }
+  }
+}
+
+// Animation helper: get progress [0, 1] clamped
+float AircraftRenderer::getAnimProgress(ClusterTimePoint startTime) const {
+  float ms = elapsed(startTime);
+  return std::min(ms / CLUSTER_ANIM_DURATION_MS, 1.0f);
+}
+
+// Detect when aircraft leave on-map clusters (unmerge events)
+void AircraftRenderer::detectOnMapUnmergeEvents(const RenderContext& /* ctx */,
+                                                 const AircraftList& aircraftList) {
+  float radiusSq = clusterRadius_ * clusterRadius_;
+
+  // For each aircraft that was in a multi-plane cluster last frame
+  for (const auto& prevCluster : prevOnMapClusters_) {
+    if (prevCluster.count <= 1) continue;  // Only care about multi-plane clusters
+
+    for (uint32_t addr : prevCluster.memberAddrs) {
+      // Check if this aircraft is still in a cluster this frame
+      bool stillInCluster = false;
+      for (const auto& currCluster : onMapClusters_) {
+        if (currCluster.count > 1 && currCluster.memberAddrs.count(addr) > 0) {
+          // Check if it's the same cluster (by center proximity)
+          float pdx = currCluster.centerX - prevCluster.centerX;
+          float pdy = currCluster.centerY - prevCluster.centerY;
+          if (pdx * pdx + pdy * pdy < radiusSq * 4.0f) {  // Slightly larger threshold for matching
+            stillInCluster = true;
+            break;
+          }
+        }
+      }
+
+      if (!stillInCluster) {
+        // Skip if animation already exists for this aircraft (don't reset in-progress animations)
+        if (onMapAnimStates_.find(addr) != onMapAnimStates_.end()) {
+          continue;
+        }
+
+        // Check hysteresis - don't unmerge if recently merged
+        auto memberIt = onMapMembership_.find(addr);
+        bool withinHysteresis = (memberIt != onMapMembership_.end() &&
+                                 memberIt->second.inCluster &&
+                                 elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
+        if (withinHysteresis) {
+          continue;
+        }
+
+        // Aircraft left the cluster - start unmerge animation
+        // Find an aircraft that stayed in the cluster to use as anchor
+        uint32_t anchorAddr = 0;
+        for (uint32_t otherAddr : prevCluster.memberAddrs) {
+          if (otherAddr != addr) {
+            // Check if this other aircraft is still in the same cluster position
+            for (const auto& currCluster : onMapClusters_) {
+              if (currCluster.count > 1 && currCluster.memberAddrs.count(otherAddr) > 0) {
+                anchorAddr = otherAddr;
+                break;
+              }
+            }
+            if (anchorAddr != 0) break;
+          }
+        }
+
+        ClusterMemberState& animState = onMapAnimStates_[addr];
+        animState.aircraftAddr = addr;
+        animState.clusterAnchorAddr = anchorAddr;  // May be 0 if cluster dissolved
+        animState.heading = prevCluster.avgHeading;
+        animState.color = prevCluster.color;
+        animState.animStartTime = now();
+        animState.isMerging = false;  // Unmerging
+        highFramerate = true;
+
+        // Expand the label when unmerging from cluster
+        Aircraft* aircraft = findAircraftByAddr(aircraftList, addr);
+        if (aircraft && aircraft->label) {
+          aircraft->label->forceExpand();
+        }
+
+        // Update membership state
+        onMapMembership_[addr] = {now(), false};
+      }
+    }
+  }
+}
+
+// Detect when aircraft leave off-map clusters (unmerge events)
+void AircraftRenderer::detectOffMapUnmergeEvents(const RenderContext& /* ctx */,
+                                                  const AircraftList& aircraftList) {
+  float radiusSq = offMapClusterRadius_ * offMapClusterRadius_;
+
+  // For each aircraft that was in a multi-plane cluster last frame
+  for (const auto& prevCluster : prevOffMapClusters_) {
+    if (prevCluster.count <= 1) continue;  // Only care about multi-plane clusters
+
+    for (uint32_t addr : prevCluster.memberAddrs) {
+      // Check if this aircraft is still in a cluster this frame
+      bool stillInCluster = false;
+      for (const auto& currCluster : offMapClusters_) {
+        if (currCluster.count > 1 && currCluster.memberAddrs.count(addr) > 0) {
+          // Check if it's the same cluster (by edge position proximity)
+          float pdx = currCluster.edgeX - prevCluster.edgeX;
+          float pdy = currCluster.edgeY - prevCluster.edgeY;
+          if (pdx * pdx + pdy * pdy < radiusSq * 4.0f) {
+            stillInCluster = true;
+            break;
+          }
+        }
+      }
+
+      if (!stillInCluster) {
+        // Skip if animation already exists for this aircraft (don't reset in-progress animations)
+        if (offMapAnimStates_.find(addr) != offMapAnimStates_.end()) {
+          continue;
+        }
+
+        // Check hysteresis - don't unmerge if recently merged
+        auto memberIt = offMapMembership_.find(addr);
+        bool withinHysteresis = (memberIt != offMapMembership_.end() &&
+                                 memberIt->second.inCluster &&
+                                 elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
+        if (withinHysteresis) {
+          continue;
+        }
+
+        // Aircraft left the cluster - start unmerge animation
+        // Find an aircraft that stayed in the cluster to use as anchor
+        uint32_t anchorAddr = 0;
+        for (uint32_t otherAddr : prevCluster.memberAddrs) {
+          if (otherAddr != addr) {
+            // Check if this other aircraft is still in a cluster
+            for (const auto& currCluster : offMapClusters_) {
+              if (currCluster.count > 1 && currCluster.memberAddrs.count(otherAddr) > 0) {
+                anchorAddr = otherAddr;
+                break;
+              }
+            }
+            if (anchorAddr != 0) break;
+          }
+        }
+
+        ClusterMemberState& animState = offMapAnimStates_[addr];
+        animState.aircraftAddr = addr;
+        animState.clusterAnchorAddr = anchorAddr;  // May be 0 if cluster dissolved
+        animState.heading = 0.0f;
+        animState.color = prevCluster.color;
+        animState.animStartTime = now();
+        animState.isMerging = false;  // Unmerging
+        highFramerate = true;
+
+        // Expand the label when unmerging from cluster
+        Aircraft* aircraft = findAircraftByAddr(aircraftList, addr);
+        if (aircraft && aircraft->label) {
+          aircraft->label->forceExpand();
+        }
+
+        // Update membership state
+        offMapMembership_[addr] = {now(), false};
+      }
+    }
+  }
+}
+
+// Helper to find aircraft by address
+Aircraft* AircraftRenderer::findAircraftByAddr(const AircraftList& aircraftList, uint32_t addr) const {
+  for (const auto& aircraft : aircraftList) {
+    if (aircraft->addr == addr) {
+      return aircraft.get();
+    }
+  }
+  return nullptr;
+}
+
+// Helper to find cluster center by member address
+bool AircraftRenderer::findClusterCenter(
+    const std::vector<OnMapCluster>& clusters, uint32_t memberAddr,
+    float& outX, float& outY) const {
+  for (const auto& cluster : clusters) {
+    if (cluster.memberAddrs.count(memberAddr) > 0) {
+      outX = cluster.centerX;
+      outY = cluster.centerY;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Helper to check if aircraft is in a multi-plane cluster (on-map or off-map)
+bool AircraftRenderer::isInMultiPlaneCluster(uint32_t addr) const {
+  // Check on-map clusters
+  for (const auto& cluster : onMapClusters_) {
+    if (cluster.count > 1 && cluster.memberAddrs.count(addr) > 0) {
+      return true;
+    }
+  }
+  // Check off-map clusters
+  for (const auto& cluster : offMapClusters_) {
+    if (cluster.count > 1 && cluster.memberAddrs.count(addr) > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Draw all animating cluster members (both merge and unmerge)
+void AircraftRenderer::drawAnimatingClusterMembers(
+    const RenderContext& ctx, std::unordered_map<uint32_t, ClusterMemberState>& animStates,
+    const AircraftList& aircraftList) {
+  for (auto& [addr, state] : animStates) {
+    float progress = getAnimProgress(state.animStartTime);
+    if (progress >= 1.0f) continue;  // Animation finished
+
+    // Look up current positions dynamically (handles zoom/pan during animation)
+    Aircraft* animatingAircraft = findAircraftByAddr(aircraftList, state.aircraftAddr);
+    if (!animatingAircraft) continue;  // Aircraft gone
+
+    // Get current screen position of the animating aircraft
+    float aircraftX = static_cast<float>(animatingAircraft->x);
+    float aircraftY = static_cast<float>(animatingAircraft->y);
+
+    // Get current cluster position (find cluster containing anchor, use its center)
+    float clusterX = aircraftX;
+    float clusterY = aircraftY;
+    if (state.clusterAnchorAddr != 0) {
+      // Try to find the cluster center from current clusters
+      if (!findClusterCenter(onMapClusters_, state.clusterAnchorAddr, clusterX, clusterY)) {
+        // Fall back to anchor aircraft position if cluster not found
+        Aircraft* anchorAircraft = findAircraftByAddr(aircraftList, state.clusterAnchorAddr);
+        if (anchorAircraft) {
+          clusterX = static_cast<float>(anchorAircraft->x);
+          clusterY = static_cast<float>(anchorAircraft->y);
+        }
+      }
+    }
+
+    // Apply easing based on direction:
+    // Merge: ease-out (0→1), starts fast, slows down as it reaches cluster
+    // Unmerge: ease-in (0→1), starts slow, speeds up as it leaves cluster
+    float easedProgress;
+    if (state.isMerging) {
+      easedProgress = easeOutQuad(progress);  // 0→1, decelerating
+    } else {
+      easedProgress = easeInQuad(progress);   // 0→1, accelerating
+    }
+
+    // Interpolate position based on merge/unmerge direction
+    float animX, animY;
+    if (state.isMerging) {
+      // Merge: aircraft position → cluster position
+      animX = lerp(aircraftX, clusterX, easedProgress);
+      animY = lerp(aircraftY, clusterY, easedProgress);
+    } else {
+      // Unmerge: cluster position → aircraft position
+      animX = lerp(clusterX, aircraftX, easedProgress);
+      animY = lerp(clusterY, aircraftY, easedProgress);
+    }
+
+    // Calculate alpha: fade out when merging, fade in when unmerging
+    Uint8 alpha;
+    if (state.isMerging) {
+      alpha = static_cast<Uint8>(255.0f * (1.0f - easedProgress));
+    } else {
+      alpha = static_cast<Uint8>(255.0f * easedProgress);
+    }
+
+    // Draw the animating plane icon
+    // TODO: Replace with custom animation drawing that uses alpha
+    (void)alpha;  // Currently unused - available for custom animation
+
+    circleRGBA(ctx.renderer, static_cast<int>(animX), static_cast<int>(animY),
+      4 * ctx.uiScale,
+      ctx.style->planeColor.r, ctx.style->planeColor.g, ctx.style->planeColor.b,
+      127);
+
+    highFramerate = true;  // Keep high framerate while animating
+  }
+}
+
+// Remove finished animations from the map
+void AircraftRenderer::cleanupFinishedAnimations(
+    std::unordered_map<uint32_t, ClusterMemberState>& animStates) {
+  for (auto it = animStates.begin(); it != animStates.end();) {
+    if (getAnimProgress(it->second.animStartTime) >= 1.0f) {
+      it = animStates.erase(it);
+    } else {
+      ++it;
     }
   }
 }

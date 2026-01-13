@@ -31,6 +31,9 @@
 
 #include <SDL2/SDL.h>
 
+#include <chrono>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "core/AircraftList.h"
@@ -42,6 +45,27 @@ namespace viz1090 {
 
 class MapView;
 
+// Use same time_point type as MathUtils.h for compatibility with now()/elapsed()
+using ClusterTimePoint = std::chrono::high_resolution_clock::time_point;
+
+/// Per-aircraft cluster animation state
+struct ClusterMemberState {
+  // For merge: aircraftAddr is the merging plane, clusterAnchorAddr is another plane in the cluster
+  // For unmerge: aircraftAddr is the unmerging plane, clusterAnchorAddr is a plane that stayed in cluster
+  uint32_t aircraftAddr{0};       // The aircraft being animated
+  uint32_t clusterAnchorAddr{0};  // An aircraft to use as cluster position reference (0 if none)
+  float heading{0.0f};            // Heading for icon drawing during animation
+  SDL_Color color{255, 255, 255, 255};
+  ClusterTimePoint animStartTime; // When this aircraft started its merge/unmerge animation
+  bool isMerging{true};           // true = merging into cluster, false = unmerging out
+};
+
+/// Per-aircraft cluster membership tracking (for hysteresis)
+struct ClusterMembershipState {
+  ClusterTimePoint lastStateChange;  // When aircraft last merged or unmerged
+  bool inCluster{false};             // Currently in a multi-plane cluster
+};
+
 /// Info for a single off-map plane cluster (greedy distance-based)
 struct OffMapCluster {
   int count{0};
@@ -52,6 +76,10 @@ struct OffMapCluster {
   float avgDistance{0.0f}; // Average distance from screen center (in pixels)
   SDL_Color color{0, 0, 0, 255};
   Aircraft* singleAircraft{nullptr};  // Set when count == 1, for label drawing
+
+  // Animation state
+  ClusterTimePoint lastStateChange;             // When cluster count last changed
+  std::unordered_set<uint32_t> memberAddrs;     // Aircraft addresses currently in this cluster
 };
 
 /// Info for a single on-map plane cluster (greedy distance-based)
@@ -62,6 +90,10 @@ struct OnMapCluster {
   float avgHeading{0.0f};  // Average heading for icon drawing
   SDL_Color color{0, 0, 0, 255};
   Aircraft* singleAircraft{nullptr};  // Set when count == 1, for normal drawing
+
+  // Animation state
+  ClusterTimePoint lastStateChange;             // When cluster count last changed
+  std::unordered_set<uint32_t> memberAddrs;     // Aircraft addresses currently in this cluster
 };
 
 /// Renders aircraft icons, trails, and labels
@@ -113,6 +145,19 @@ private:
                          SDL_Color planeColor, Aircraft* aircraft);
   void drawOnMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft);
 
+  // Cluster animation helpers
+  void detectOnMapUnmergeEvents(const RenderContext& ctx, const AircraftList& aircraftList);
+  void detectOffMapUnmergeEvents(const RenderContext& ctx, const AircraftList& aircraftList);
+  void drawAnimatingClusterMembers(const RenderContext& ctx,
+                                   std::unordered_map<uint32_t, ClusterMemberState>& animStates,
+                                   const AircraftList& aircraftList);
+  void cleanupFinishedAnimations(std::unordered_map<uint32_t, ClusterMemberState>& animStates);
+  float getAnimProgress(ClusterTimePoint startTime) const;
+  Aircraft* findAircraftByAddr(const AircraftList& aircraftList, uint32_t addr) const;
+  bool findClusterCenter(const std::vector<OnMapCluster>& clusters, uint32_t memberAddr,
+                         float& outX, float& outY) const;
+  bool isInMultiPlaneCluster(uint32_t addr) const;
+
   bool* metric{nullptr};
   bool highFramerate{false};
 
@@ -124,6 +169,21 @@ private:
   std::vector<OnMapCluster> onMapClusters_;
   float clusterRadius_{0.0f};  // Distance threshold for clustering
 
+  // Previous frame cluster state (for detecting unmerge events)
+  std::vector<OnMapCluster> prevOnMapClusters_;
+  std::vector<OffMapCluster> prevOffMapClusters_;
+
+  // Per-aircraft animation state (keyed by aircraft address)
+  std::unordered_map<uint32_t, ClusterMemberState> onMapAnimStates_;
+  std::unordered_map<uint32_t, ClusterMemberState> offMapAnimStates_;
+
+  // Per-aircraft cluster membership tracking (for hysteresis)
+  std::unordered_map<uint32_t, ClusterMembershipState> onMapMembership_;
+  std::unordered_map<uint32_t, ClusterMembershipState> offMapMembership_;
+
+  // Animation timing constants
+  static constexpr float CLUSTER_ANIM_DURATION_MS = 250.0f;
+  static constexpr float CLUSTER_HYSTERESIS_MS = 1000.0f;  // Min time between merge/unmerge
   static constexpr float DISPLAY_ACTIVE = 30.0f;
 };
 

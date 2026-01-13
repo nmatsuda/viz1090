@@ -40,6 +40,10 @@ public:
   static void setShowLabels(bool show) { showLabels_ = show; }
   static void toggleShowLabels() { showLabels_ = !showLabels_; }
 
+  // Force label to collapse (for cluster merge) or expand (for cluster unmerge)
+  void forceCollapse();
+  void forceExpand();
+
 private:
   SDL_Rect getFullRect(int labelLevel);
   float calculateDensity(const AircraftList& aircraftList, int labelLevel);
@@ -63,15 +67,11 @@ private:
   float target_w;
   float target_h;
 
-  float dx;
-  float dy;
+  // Verlet integration: previous position (replaces velocity dx/dy)
+  float prev_x;
+  float prev_y;
 
-  float x_buffer[15];
-  float y_buffer[15];
-  int buffer_idx;
-  int buffer_length = 15;
-
-  float ddx;
+  float ddx;  // acceleration
   float ddy;
 
   float opacity;
