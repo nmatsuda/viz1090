@@ -108,23 +108,11 @@ Input::getInput() {
             break;
 
           case SDLK_MINUS:
-            view->getMapView().maxDist *= 1.0 + 0.5 * sgn(1);
-            if (view->getMapView().maxDist < 0.001f) {
-              view->getMapView().maxDist = 0.001f;
-            }
-
-            view->getMapView().mapTargetMaxDist = 0;
-            view->getMapView().setMoved();
+            view->getMapView().animateZoomRelative(1.5f);  // Zoom out
             break;
 
           case SDLK_EQUALS:
-            view->getMapView().maxDist *= 1.0 + 0.5 * sgn(-1);
-            if (view->getMapView().maxDist < 0.001f) {
-              view->getMapView().maxDist = 0.001f;
-            }
-
-            view->getMapView().mapTargetMaxDist = 0;
-            view->getMapView().setMoved();
+            view->getMapView().animateZoomRelative(0.667f);  // Zoom in (1/1.5)
             break;
 
           // toggle metric/imperial units
@@ -167,21 +155,25 @@ Input::getInput() {
             AircraftLabel::adjustDensityMult(0.1f);
             break;
 
-          // arrow keys to pan the map (5% of screen size)
+          // arrow keys to pan the map (10% of screen size, animated)
           case SDLK_LEFT:
-            view->moveCenterRelative(0.05f * view->screen_width, 0);
+            view->getMapView().animateCenterRelative(
+                0.1f * view->screen_width, 0, view->screen_width, view->screen_height);
             break;
 
           case SDLK_RIGHT:
-            view->moveCenterRelative(-0.05f * view->screen_width, 0);
+            view->getMapView().animateCenterRelative(
+                -0.1f * view->screen_width, 0, view->screen_width, view->screen_height);
             break;
 
           case SDLK_UP:
-            view->moveCenterRelative(0, 0.05f * view->screen_height);
+            view->getMapView().animateCenterRelative(
+                0, 0.1f * view->screen_height, view->screen_width, view->screen_height);
             break;
 
           case SDLK_DOWN:
-            view->moveCenterRelative(0, -0.05f * view->screen_height);
+            view->getMapView().animateCenterRelative(
+                0, -0.1f * view->screen_height, view->screen_width, view->screen_height);
             break;
 
           default:

@@ -73,6 +73,8 @@ public:
   void moveCenterRelative(float dx, float dy, int screenWidth, int screenHeight);
   void moveCenterAbsolute(float x, float y, int screenWidth, int screenHeight);
   void animateCenterAbsolute(float x, float y, int screenWidth, int screenHeight);
+  void animateCenterRelative(float dx, float dy, int screenWidth, int screenHeight);
+  void animateZoomRelative(float factor);
   void setTarget(float lon, float lat);
   void setTargetZoom(float zoom);
 

@@ -186,6 +186,51 @@ void MapView::setTargetZoom(float zoom) {
   mapTargetMaxDist = zoom;
 }
 
+void MapView::animateCenterRelative(float dx, float dy, int screenWidth, int screenHeight) {
+  float scale_factor = (screenWidth > screenHeight) ? screenWidth : screenHeight;
+
+  // Convert screen pixels to lat/lon delta
+  float dxKm = -1.0f * dx * maxDist / (0.95f * scale_factor * 0.5f);
+  float dyKm = 1.0f * dy * maxDist / (0.95f * scale_factor * 0.5f);
+
+  float deltaLat = dyKm * (1.0f / 6371.0f) * (180.0f / static_cast<float>(M_PI));
+  float deltaLon = dxKm * (1.0f / 6371.0f) * (180.0f / static_cast<float>(M_PI)) /
+                   std::cos((centerLat / 2.0f) * static_cast<float>(M_PI) / 180.0f);
+
+  // If already animating, add to current target; otherwise start from current position
+  if (mapTargetLon != 0.0f || mapTargetLat != 0.0f) {
+    mapTargetLon += deltaLon;
+    mapTargetLat += deltaLat;
+  } else {
+    mapTargetLon = centerLon + deltaLon;
+    mapTargetLat = centerLat + deltaLat;
+  }
+
+  mapMoved = 1;
+  highFramerate = true;
+}
+
+void MapView::animateZoomRelative(float factor) {
+  // Calculate new target zoom level
+  float newMaxDist = maxDist * factor;
+  if (newMaxDist < 0.001f) {
+    newMaxDist = 0.001f;
+  }
+
+  // If already animating zoom, multiply the target; otherwise start from current
+  if (mapTargetMaxDist != 0.0f) {
+    mapTargetMaxDist *= factor;
+    if (mapTargetMaxDist < 0.001f) {
+      mapTargetMaxDist = 0.001f;
+    }
+  } else {
+    mapTargetMaxDist = newMaxDist;
+  }
+
+  mapMoved = 1;
+  highFramerate = true;
+}
+
 void MapView::drawGeography(const RenderContext& ctx) {
   PROFILE_SCOPE("drawGeography");
 
