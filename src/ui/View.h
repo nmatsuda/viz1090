@@ -75,6 +75,9 @@ public:
   /// Frame all visible aircraft in the viewport
   void frameAllAircraft();
 
+  /// Recenter view on the startup position (origin lat/lon)
+  void recenterOnOrigin();
+
   /// Get the style manager (for theme list access)
   StyleManager& getStyleManager() { return styleManager_; }
 

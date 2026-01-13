@@ -25,6 +25,20 @@ public:
   AircraftLabel(Aircraft* p, bool& metric, int screen_width, int screen_height, TTF_Font* font,
                 const Style& style);
 
+  // Global label density multiplier (controls how aggressively labels are hidden)
+  static float getDensityMult() { return densityMult_; }
+  static void setDensityMult(float value);
+  static void adjustDensityMult(float delta);
+
+  // Flag to force immediate density recalculation (bypasses timing check)
+  static bool densityChanged() { return densityChanged_; }
+  static void clearDensityChanged() { densityChanged_ = false; }
+
+  // Global toggle for showing/hiding all labels
+  static bool getShowLabels() { return showLabels_; }
+  static void setShowLabels(bool show) { showLabels_ = show; }
+  static void toggleShowLabels() { showLabels_ = !showLabels_; }
+
 private:
   SDL_Rect getFullRect(int labelLevel);
   float calculateDensity(const AircraftList& aircraftList, int labelLevel);
@@ -87,6 +101,11 @@ private:
   float drag_force = 0.00f;
 
   const Style& style;
+
+  // Static density multiplier shared across all labels
+  static float densityMult_;
+  static bool densityChanged_;
+  static bool showLabels_;
 };
 
 #endif  // AIRCRAFT_LABEL_H

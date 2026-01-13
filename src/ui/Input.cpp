@@ -30,7 +30,36 @@
 //
 
 #include "ui/Input.h"
+#include "ui/AircraftLabel.h"
 #include "viz1090/Profiler.h"
+
+#include <cstdio>
+
+void
+printKeyboardShortcuts() {
+  std::printf(
+      "\n"
+      "Keyboard Shortcuts:\n"
+      "-------------------\n"
+      "  Esc         Quit\n"
+      "  ?           Show this help\n"
+      "\n"
+      "  Navigation:\n"
+      "  Arrow Keys  Pan the map\n"
+      "  +/=         Zoom in\n"
+      "  -           Zoom out\n"
+      "  H           Recenter on startup position (home)\n"
+      "  A           Frame all aircraft\n"
+      "\n"
+      "  Display:\n"
+      "  M           Toggle metric/imperial units\n"
+      "  O           Toggle origin marker\n"
+      "  F           Toggle FPS display\n"
+      "  L           Toggle aircraft labels\n"
+      "  [           Show fewer labels (decrease density)\n"
+      "  ]           Show more labels (increase density)\n"
+      "\n");
+}
 
 static std::chrono::high_resolution_clock::time_point
 now() {
@@ -70,6 +99,14 @@ Input::getInput() {
             exit(0);
             break;
 
+          // show keyboard shortcuts help
+          case SDLK_SLASH:
+            // '?' is Shift+/ so we check for the shift modifier
+            if (event.key.keysym.mod & KMOD_SHIFT) {
+              printKeyboardShortcuts();
+            }
+            break;
+
           case SDLK_MINUS:
             view->getMapView().maxDist *= 1.0 + 0.5 * sgn(1);
             if (view->getMapView().maxDist < 0.001f) {
@@ -99,6 +136,63 @@ Input::getInput() {
           // toggle FPS box
           case SDLK_f:
             view->getUIOverlay()->setShowFps(!view->getUIOverlay()->getShowFps());
+            break;
+
+          // toggle metric/imperial units
+          case SDLK_m:
+            view->metric = !view->metric;
+            break;
+
+          // toggle origin marker
+          case SDLK_o:
+            view->getMapView().setDrawCenterOrigin(!view->getMapView().getDrawCenterOrigin());
+            break;
+
+          // toggle FPS box
+          case SDLK_f:
+            view->getUIOverlay()->setShowFps(!view->getUIOverlay()->getShowFps());
+            break;
+
+          // toggle aircraft labels
+          case SDLK_l:
+            AircraftLabel::toggleShowLabels();
+            break;
+
+          // recenter on startup position (origin)
+          case SDLK_h:
+            view->recenterOnOrigin();
+            break;
+
+          // frame all aircraft
+          case SDLK_a:
+            view->frameAllAircraft();
+            break;
+
+          // increase label density (show more labels)
+          case SDLK_RIGHTBRACKET:
+            AircraftLabel::adjustDensityMult(-0.1f);
+            break;
+
+          // decrease label density (show fewer labels)
+          case SDLK_LEFTBRACKET:
+            AircraftLabel::adjustDensityMult(0.1f);
+            break;
+
+          // arrow keys to pan the map (5% of screen size)
+          case SDLK_LEFT:
+            view->moveCenterRelative(0.05f * view->screen_width, 0);
+            break;
+
+          case SDLK_RIGHT:
+            view->moveCenterRelative(-0.05f * view->screen_width, 0);
+            break;
+
+          case SDLK_UP:
+            view->moveCenterRelative(0, 0.05f * view->screen_height);
+            break;
+
+          case SDLK_DOWN:
+            view->moveCenterRelative(0, -0.05f * view->screen_height);
             break;
 
           default:

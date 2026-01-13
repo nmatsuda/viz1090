@@ -37,6 +37,9 @@
 
 #include <chrono>
 
+// Print keyboard shortcuts to stdout
+void printKeyboardShortcuts();
+
 class Input {
 public:
   void getInput();

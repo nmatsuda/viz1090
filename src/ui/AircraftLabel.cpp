@@ -4,6 +4,22 @@
 
 #include <algorithm>
 
+// Static member definitions
+float AircraftLabel::densityMult_ = 0.15f;
+bool AircraftLabel::densityChanged_ = false;
+bool AircraftLabel::showLabels_ = true;
+
+void AircraftLabel::setDensityMult(float value) {
+  if (value < 0.0f) value = 0.0f;
+  if (value > 1.0f) value = 1.0f;
+  densityMult_ = value;
+}
+
+void AircraftLabel::adjustDensityMult(float delta) {
+  setDensityMult(densityMult_ + delta);
+  densityChanged_ = true;
+}
+
 #include "SDL2/SDL2_gfxPrimitives.h"
 
 using fmilliseconds = std::chrono::duration<float, std::milli>;
@@ -267,12 +283,11 @@ AircraftLabel::calculateForces(const AircraftList& aircraftList) {
     ddy += density_force * all_y / count;
   }
 
-  float density_mult = 0.15f;
   float level_rate = 0.25f;
 
   float randtime = 5000.0f + 5000.0f * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-  if (elapsed(lastLevelChange) > randtime) {
-    if (labelLevel < -1.2f + density_mult * calculateDensity(aircraftList, labelLevel - 1)) {
+  if (densityChanged_ || elapsed(lastLevelChange) > randtime) {
+    if (labelLevel < -1.2f + densityMult_ * calculateDensity(aircraftList, labelLevel - 1)) {
       if (labelLevel <= 2) {
         if (ceil(labelLevel) - labelLevel <= level_rate) {
           labelLevel += 0.5f;
@@ -282,7 +297,7 @@ AircraftLabel::calculateForces(const AircraftList& aircraftList) {
         isChanging = true;
         lastLevelChange = now();
       }
-    } else if (labelLevel > 1.2f + density_mult * calculateDensity(aircraftList, labelLevel + 1)) {
+    } else if (labelLevel > 1.2f + densityMult_ * calculateDensity(aircraftList, labelLevel + 1)) {
       if (labelLevel >= 0) {
         if (labelLevel - floor(labelLevel) <= level_rate) {
           labelLevel -= 0.5f;
@@ -436,6 +451,11 @@ AircraftLabel::move(float dx, float dy) {
 
 void
 AircraftLabel::draw(SDL_Renderer* renderer, bool selected) {
+  // Skip drawing if labels are globally disabled (unless this aircraft is selected)
+  if (!showLabels_ && !selected) {
+    return;
+  }
+
   if (x == 0 || y == 0) {
     return;
   }

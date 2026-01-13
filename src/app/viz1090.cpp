@@ -128,6 +128,9 @@ main(int argc, char** argv) {
   // Start connection
   appData.connect();
 
+  // Show keyboard shortcuts at startup
+  printKeyboardShortcuts();
+
   bool running = true;
   while (running) {
     input.getInput();

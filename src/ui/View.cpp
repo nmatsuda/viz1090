@@ -35,6 +35,7 @@
 #include <iostream>
 #include <thread>
 
+#include "ui/AircraftLabel.h"
 #include "ui/MathUtils.h"
 #include "viz1090/Profiler.h"
 
@@ -173,6 +174,18 @@ void
 View::animateCenterAbsolute(float x, float y) {
   aircraftRenderer.moveLabels(appData->aircraftList, x, y);
   mapView.animateCenterAbsolute(x, y, screen_width, screen_height);
+  highFramerate = true;
+}
+
+void
+View::recenterOnOrigin() {
+  // Clear any selected aircraft so view doesn't track it
+  selectedAircraft = nullptr;
+
+  // Animate to the origin position
+  mapView.mapTargetLon = mapView.originLon;
+  mapView.mapTargetLat = mapView.originLat;
+  mapView.setMoved();
   highFramerate = true;
 }
 
@@ -322,6 +335,8 @@ View::draw() {
     for (int i = 0; i < 8; i++) {
       aircraftRenderer.resolveLabelConflicts(appData->aircraftList);
     }
+    // Clear the density changed flag after all labels have been updated
+    AircraftLabel::clearDensityChanged();
 
     // Draw trails first (behind aircraft icons)
     aircraftRenderer.drawTrails(renderContext, appData->aircraftList, mapView,
