@@ -80,7 +80,6 @@ public:
 
   // Configuration
   bool metric{false};
-  bool fps{false};
 
   // Screen configuration
   int screen_upscale{1};
@@ -98,6 +97,8 @@ public:
   // Expose map view for external access to viewport state
   MapView& getMapView() { return mapView; }
   const MapView& getMapView() const { return mapView; }
+
+  UIOverlay* getUIOverlay() { return &uiOverlay; }
 
 private:
   TTF_Font* loadFont(const char* name, int size);

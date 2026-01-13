@@ -332,7 +332,6 @@ View::draw() {
   }
 
   // Draw status overlay (status bar and menu button)
-  uiOverlay.setShowFps(fps);
   uiOverlay.draw(renderContext, *appData, lastFrameTime, mapView.centerLat, mapView.centerLon,
                  mapView.map.loaded);
 
