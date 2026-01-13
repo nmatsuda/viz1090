@@ -92,7 +92,7 @@ main(int argc, char** argv) {
     } else if (!std::strcmp(argv[j], "--metric")) {
       view.metric = 1;
     } else if (!std::strcmp(argv[j], "--fps")) {
-      view.fps = 1;
+      view.getUIOverlay()->setShowFps(1);
     } else if (!std::strcmp(argv[j], "--fullscreen")) {
       view.fullscreen = 1;
     } else if (!std::strcmp(argv[j], "--flip-touch")) {

@@ -93,6 +93,9 @@ Input::getInput() {
           // toggle origin marker
           case SDLK_o:
             view->getMapView().setDrawCenterOrigin(!view->getMapView().getDrawCenterOrigin());
+          // toggle FPS box
+          case SDLK_f:
+            view->getUIOverlay()->setShowFps(!view->getUIOverlay()->getShowFps());
             break;
 
           default:
