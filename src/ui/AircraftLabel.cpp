@@ -64,18 +64,18 @@ AircraftLabel::update() {
 
   char alt[10] = "";
   if (metric) {
-    snprintf(alt, 10, " %dm", static_cast<int>(p->altitude / 3.2828));
+    snprintf(alt, 10, "%d m", static_cast<int>(p->altitude / 3.2828));
   } else {
-    snprintf(alt, 10, " %d'", p->altitude);
+    snprintf(alt, 10, "%d'", p->altitude);
   }
 
   altitudeLabel.setText(alt);
 
   char speed[10] = "";
   if (metric) {
-    snprintf(speed, 10, " %dkm/h", static_cast<int>(p->speed * 1.852));
+    snprintf(speed, 10, "%d km/h", static_cast<int>(p->speed * 1.852));
   } else {
-    snprintf(speed, 10, " %dmph", p->speed);
+    snprintf(speed, 10, "%d mph", p->speed);
   }
 
   speedLabel.setText(speed);
@@ -603,7 +603,7 @@ AircraftLabel::getIsChanging() {
   return isChanging;
 }
 
-AircraftLabel::AircraftLabel(Aircraft* p, bool metric, int screen_width, int screen_height,
+AircraftLabel::AircraftLabel(Aircraft* p, bool& metric, int screen_width, int screen_height,
                              TTF_Font* font, const Style& style)
     : p(p),
       labelLevel(0),

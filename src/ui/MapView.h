@@ -43,7 +43,7 @@ constexpr float LATLONMULT = 111.195f;  // 6371.0 * M_PI / 180.0
 /// Handles map viewport, coordinate transformations, and geography rendering
 class MapView {
 public:
-  MapView();
+  MapView(bool& metric);
 
   /// Initialize the map texture for caching
   void initTexture(SDL_Renderer* renderer, int width, int height);
@@ -93,7 +93,7 @@ public:
   float mapTargetLat{0.0f};
   float mapTargetMaxDist{0.0f};
 
-  bool metric{false};
+  bool& metric;
 
   // Map data
   Map map;

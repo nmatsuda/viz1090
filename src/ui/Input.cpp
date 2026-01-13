@@ -90,6 +90,9 @@ Input::getInput() {
             view->getMapView().setMoved();
             break;
 
+          // toggle metric/imperial units
+          case SDLK_m:
+            view->metric = !view->metric;
           // toggle origin marker
           case SDLK_o:
             view->getMapView().setDrawCenterOrigin(!view->getMapView().getDrawCenterOrigin());

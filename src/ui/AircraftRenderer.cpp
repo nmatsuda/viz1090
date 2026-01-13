@@ -463,7 +463,7 @@ void AircraftRenderer::drawOnMapClusters(const RenderContext& ctx, Aircraft* sel
 void AircraftRenderer::drawPlaneText(const RenderContext& ctx, Aircraft* p,
                                      Aircraft* selectedAircraft) {
   if (!p->label) {
-    p->label = std::make_unique<AircraftLabel>(p, metric, ctx.screenWidth, ctx.screenHeight,
+    p->label = std::make_unique<AircraftLabel>(p, *metric, ctx.screenWidth, ctx.screenHeight,
                                                ctx.mapFont, *ctx.style);
   }
 
