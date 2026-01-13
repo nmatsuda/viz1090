@@ -130,17 +130,6 @@ Input::getInput() {
           // toggle metric/imperial units
           case SDLK_m:
             view->metric = !view->metric;
-          // toggle origin marker
-          case SDLK_o:
-            view->getMapView().setDrawCenterOrigin(!view->getMapView().getDrawCenterOrigin());
-          // toggle FPS box
-          case SDLK_f:
-            view->getUIOverlay()->setShowFps(!view->getUIOverlay()->getShowFps());
-            break;
-
-          // toggle metric/imperial units
-          case SDLK_m:
-            view->metric = !view->metric;
             break;
 
           // toggle origin marker
