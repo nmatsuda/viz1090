@@ -78,6 +78,12 @@ set(UI_SOURCES
   src/ui/Map.cpp
   src/ui/Label.cpp
   src/ui/AircraftLabel.cpp
+  src/ui/MapView.cpp
+  src/ui/AircraftRenderer.cpp
+  src/ui/UIOverlay.cpp
+  src/ui/InputFeedback.cpp
+  src/ui/Button.cpp
+  src/ui/MenuPanel.cpp
 )
 
 set(STYLE_SOURCES
@@ -110,6 +116,11 @@ target_link_libraries(viz1090 PRIVATE
   pthread
   m
 )
+
+# GCC 8 requires explicit linking of stdc++fs for std::filesystem
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+  target_link_libraries(viz1090 PRIVATE stdc++fs)
+endif()
 
 # Link ASIO for future network migration
 target_link_libraries(viz1090 PRIVATE asio)

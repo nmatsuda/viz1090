@@ -62,6 +62,7 @@ struct AppConfig {
     int screenIndex = 0;    // Which display to use
     bool vsync = true;
     bool showFps = false;
+    bool flipTouch = false; // Flip touchscreen coordinates (both X and Y)
   } display;
 
   // Map settings

@@ -140,7 +140,29 @@ viz1090 will open an SDL window set to the resolution of your screen.
 | --lon                         | Specify your longitude in degrees | 
 | --screensize [width] [height]	| Specify a resolution, otherwise use resolution of display | 
 | --uiscale [scale]				| Scale up UI elements by integer amounts for high resolution screen | 
-| --fullscreen					| Render fullscreen rather than in a window | 
+| --fullscreen					| Render fullscreen rather than in a window |
+
+### KEYBOARD SHORTCUTS
+
+Keyboard shortcuts are displayed at startup and can be shown again by pressing `?`.
+
+| Key | Action |
+| --- | ------ |
+| Esc | Quit |
+| ? | Show keyboard shortcuts help |
+| **Navigation** | |
+| Arrow Keys | Pan the map |
+| +/= | Zoom in |
+| - | Zoom out |
+| H | Recenter on startup position (home) |
+| A | Frame all aircraft |
+| **Display** | |
+| M | Toggle metric/imperial units |
+| O | Toggle origin marker |
+| F | Toggle FPS display |
+| L | Toggle aircraft labels |
+| [ | Show fewer labels (decrease density) |
+| ] | Show more labels (increase density) |
 
 ### MAPS
 

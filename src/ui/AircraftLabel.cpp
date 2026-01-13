@@ -4,6 +4,22 @@
 
 #include <algorithm>
 
+// Static member definitions
+float AircraftLabel::densityMult_ = 0.15f;
+bool AircraftLabel::densityChanged_ = false;
+bool AircraftLabel::showLabels_ = true;
+
+void AircraftLabel::setDensityMult(float value) {
+  if (value < 0.0f) value = 0.0f;
+  if (value > 1.0f) value = 1.0f;
+  densityMult_ = value;
+}
+
+void AircraftLabel::adjustDensityMult(float delta) {
+  setDensityMult(densityMult_ + delta);
+  densityChanged_ = true;
+}
+
 #include "SDL2/SDL2_gfxPrimitives.h"
 
 using fmilliseconds = std::chrono::duration<float, std::milli>;
@@ -64,18 +80,18 @@ AircraftLabel::update() {
 
   char alt[10] = "";
   if (metric) {
-    snprintf(alt, 10, " %dm", static_cast<int>(p->altitude / 3.2828));
+    snprintf(alt, 10, "%d m", static_cast<int>(p->altitude / 3.2828));
   } else {
-    snprintf(alt, 10, " %d'", p->altitude);
+    snprintf(alt, 10, "%d'", p->altitude);
   }
 
   altitudeLabel.setText(alt);
 
   char speed[10] = "";
   if (metric) {
-    snprintf(speed, 10, " %dkm/h", static_cast<int>(p->speed * 1.852));
+    snprintf(speed, 10, "%d km/h", static_cast<int>(p->speed * 1.852));
   } else {
-    snprintf(speed, 10, " %dmph", p->speed);
+    snprintf(speed, 10, "%d mph", p->speed);
   }
 
   speedLabel.setText(speed);
@@ -267,12 +283,11 @@ AircraftLabel::calculateForces(const AircraftList& aircraftList) {
     ddy += density_force * all_y / count;
   }
 
-  float density_mult = 0.15f;
   float level_rate = 0.25f;
 
   float randtime = 5000.0f + 5000.0f * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-  if (elapsed(lastLevelChange) > randtime) {
-    if (labelLevel < -1.2f + density_mult * calculateDensity(aircraftList, labelLevel - 1)) {
+  if (densityChanged_ || elapsed(lastLevelChange) > randtime) {
+    if (labelLevel < -1.2f + densityMult_ * calculateDensity(aircraftList, labelLevel - 1)) {
       if (labelLevel <= 2) {
         if (ceil(labelLevel) - labelLevel <= level_rate) {
           labelLevel += 0.5f;
@@ -282,7 +297,7 @@ AircraftLabel::calculateForces(const AircraftList& aircraftList) {
         isChanging = true;
         lastLevelChange = now();
       }
-    } else if (labelLevel > 1.2f + density_mult * calculateDensity(aircraftList, labelLevel + 1)) {
+    } else if (labelLevel > 1.2f + densityMult_ * calculateDensity(aircraftList, labelLevel + 1)) {
       if (labelLevel >= 0) {
         if (labelLevel - floor(labelLevel) <= level_rate) {
           labelLevel -= 0.5f;
@@ -435,7 +450,28 @@ AircraftLabel::move(float dx, float dy) {
 }
 
 void
+AircraftLabel::syncToAircraftPosition() {
+  // Calculate how much the aircraft's screen position has changed
+  float aircraft_dx = static_cast<float>(p->x) - lastAircraftX;
+  float aircraft_dy = static_cast<float>(p->y) - lastAircraftY;
+
+  // Move the label by the same amount
+  if (aircraft_dx != 0.0f || aircraft_dy != 0.0f) {
+    move(aircraft_dx, aircraft_dy);
+  }
+
+  // Update the last known position
+  lastAircraftX = static_cast<float>(p->x);
+  lastAircraftY = static_cast<float>(p->y);
+}
+
+void
 AircraftLabel::draw(SDL_Renderer* renderer, bool selected) {
+  // Skip drawing if labels are globally disabled (unless this aircraft is selected)
+  if (!showLabels_ && !selected) {
+    return;
+  }
+
   if (x == 0 || y == 0) {
     return;
   }
@@ -603,39 +639,34 @@ AircraftLabel::getIsChanging() {
   return isChanging;
 }
 
-AircraftLabel::AircraftLabel(Aircraft* p, bool metric, int screen_width, int screen_height,
-                             TTF_Font* font) {
-  this->p = p;
-
-  this->metric = metric;
-
-  x = p->x;
-  y = p->y + 20;  //*screen_uiscale
-  w = 0;
-  h = 0;
-  target_w = 0;
-  target_h = 0;
-
-  opacity = 0.0f;
-  target_opacity = 0.0f;
-
-  dx = 0;
-  dy = 0;
-  ddx = 0;
-  ddy = 0;
-
+AircraftLabel::AircraftLabel(Aircraft* p, bool& metric, int screen_width, int screen_height,
+                             TTF_Font* font, const Style& style)
+    : p(p),
+      labelLevel(0),
+      metric(metric),
+      x(static_cast<float>(p->x)),
+      y(static_cast<float>(p->y) + 20.0f),
+      w(0),
+      h(0),
+      target_w(0),
+      target_h(0),
+      dx(0),
+      dy(0),
+      buffer_idx(0),
+      ddx(0),
+      ddy(0),
+      opacity(0.0f),
+      target_opacity(0.0f),
+      screen_width(screen_width),
+      screen_height(screen_height),
+      isChanging(false),
+      lastAircraftX(static_cast<float>(p->x)),
+      lastAircraftY(static_cast<float>(p->y)),
+      style(style) {
   for (int i = 0; i < buffer_length; i++) {
     x_buffer[i] = x;
     y_buffer[i] = y;
   }
-  buffer_idx = 0;
-
-  this->screen_width = screen_width;
-  this->screen_height = screen_height;
-
-  labelLevel = 0;
-
-  isChanging = false;
 
   flightLabel.setFont(font);
   altitudeLabel.setFont(font);

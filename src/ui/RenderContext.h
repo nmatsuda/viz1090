@@ -1,8 +1,6 @@
 // viz1090, a vizualizer for dump1090 ADSB output
 //
 // Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
-// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
-// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,42 +25,51 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef INPUT_H
-#define INPUT_H
+#ifndef RENDER_CONTEXT_H
+#define RENDER_CONTEXT_H
 
-#include "app/AppData.h"
-#include "ui/View.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
-#include <chrono>
+#include "viz1090/StyleManager.h"
 
-// Print keyboard shortcuts to stdout
-void printKeyboardShortcuts();
+namespace viz1090 {
 
-class Input {
-public:
-  void getInput();
+/// Shared rendering context passed to all drawing components
+/// Bundles commonly needed rendering state to avoid passing many parameters
+struct RenderContext {
+  // SDL rendering
+  SDL_Renderer* renderer{nullptr};
 
-  // should input know about view?
-  Input(AppData* appData, viz1090::View* view);
+  // Screen dimensions
+  int screenWidth{0};
+  int screenHeight{0};
+  int uiScale{1};
 
-  viz1090::View* view;
-  AppData* appData;
+  // Theme reference for consistent theming
+  const Theme* style{nullptr};
 
-  std::chrono::high_resolution_clock::time_point touchDownTime;
-  int touchx{0};
-  int touchy{0};
-  int tapCount{0};
+  // Fonts
+  TTF_Font* mapFont{nullptr};
+  TTF_Font* mapBoldFont{nullptr};
+  TTF_Font* labelFont{nullptr};
+  TTF_Font* messageFont{nullptr};
+  TTF_Font* listFont{nullptr};
 
-  // Mouse drag tracking - prevents click after drag
-  bool mouseDragging_{false};
-  int mouseDownX_{0};
-  int mouseDownY_{0};
-  static constexpr int DRAG_THRESHOLD = 5;  // Pixels of movement to trigger drag
+  // Font dimensions
+  int mapFontWidth{5};
+  int mapFontHeight{12};
+  int labelFontWidth{6};
+  int labelFontHeight{12};
+  int messageFontWidth{6};
+  int messageFontHeight{12};
 
-  // Touchscreen flip option (for inverted displays)
-  bool flipTouch{false};
+  // Helper accessors
+  [[nodiscard]] int padding() const { return 5; }
+  [[nodiscard]] int cornerRadius() const { return 3; }
 };
 
-#endif
+}  // namespace viz1090
+
+#endif  // RENDER_CONTEXT_H

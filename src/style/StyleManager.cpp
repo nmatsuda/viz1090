@@ -338,6 +338,7 @@ bool StyleManager::loadTheme(std::string_view aPath) {
       if (colors.count("scaleBar")) theme.scaleBarColor = parseColor(colors["scaleBar"]);
       if (colors.count("button")) theme.buttonColor = parseColor(colors["button"]);
       if (colors.count("buttonBackground")) theme.buttonBackground = parseColor(colors["buttonBackground"]);
+      if (colors.count("buttonTextColor")) theme.buttonTextColor = parseColor(colors["buttonTextColor"]);
       if (colors.count("buttonOutline")) theme.buttonOutline = parseColor(colors["buttonOutline"]);
       if (colors.count("click")) theme.clickColor = parseColor(colors["click"]);
     }

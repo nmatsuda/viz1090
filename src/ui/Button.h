@@ -1,8 +1,6 @@
 // viz1090, a vizualizer for dump1090 ADSB output
 //
 // Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
-// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
-// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,42 +25,59 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef INPUT_H
-#define INPUT_H
+#ifndef BUTTON_H
+#define BUTTON_H
 
-#include "app/AppData.h"
-#include "ui/View.h"
+#include <SDL2/SDL.h>
 
-#include <chrono>
+#include <functional>
+#include <string>
 
-// Print keyboard shortcuts to stdout
-void printKeyboardShortcuts();
+#include "ui/RenderContext.h"
 
-class Input {
+namespace viz1090 {
+
+/// A clickable button that follows the status box visual style
+class Button {
 public:
-  void getInput();
+  using ClickCallback = std::function<void()>;
 
-  // should input know about view?
-  Input(AppData* appData, viz1090::View* view);
+  Button() = default;
+  Button(const std::string& label, ClickCallback callback);
 
-  viz1090::View* view;
-  AppData* appData;
+  /// Draw the button at the specified position
+  /// Returns the width of the button for layout purposes
+  int draw(const RenderContext& ctx, int left, int top);
 
-  std::chrono::high_resolution_clock::time_point touchDownTime;
-  int touchx{0};
-  int touchy{0};
-  int tapCount{0};
+  /// Check if point is within button bounds
+  [[nodiscard]] bool containsPoint(int x, int y) const;
 
-  // Mouse drag tracking - prevents click after drag
-  bool mouseDragging_{false};
-  int mouseDownX_{0};
-  int mouseDownY_{0};
-  static constexpr int DRAG_THRESHOLD = 5;  // Pixels of movement to trigger drag
+  /// Handle click - returns true if button was clicked
+  bool handleClick(int x, int y);
 
-  // Touchscreen flip option (for inverted displays)
-  bool flipTouch{false};
+  /// Setters
+  void setLabel(const std::string& label) { label_ = label; }
+  void setCallback(ClickCallback callback) { callback_ = std::move(callback); }
+  void setColor(SDL_Color color) { color_ = color; }
+
+  /// Getters
+  [[nodiscard]] const std::string& label() const { return label_; }
+  [[nodiscard]] int width() const { return width_; }
+  [[nodiscard]] int height() const { return height_; }
+  [[nodiscard]] const SDL_Rect& bounds() const { return bounds_; }
+
+private:
+  std::string label_;
+  ClickCallback callback_;
+  SDL_Color color_{196, 196, 196, 255};  // Default to buttonColor
+
+  // Cached bounds for hit testing
+  SDL_Rect bounds_{0, 0, 0, 0};
+  int width_{0};
+  int height_{0};
 };
 
-#endif
+}  // namespace viz1090
+
+#endif  // BUTTON_H

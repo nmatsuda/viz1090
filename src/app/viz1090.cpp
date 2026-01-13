@@ -38,7 +38,6 @@
 #include <cstdlib>
 #include <cstring>
 
-Style style;
 
 //
 // ================================ Main ====================================
@@ -49,6 +48,7 @@ showHelp() {
       "-----------------------------------------------------------------------------\n"
       "|                        viz1090 ADSB Viewer        Ver : 0.2 |\n"
       "-----------------------------------------------------------------------------\n"
+      "--flip-touch                     Flip touchscreen X and Y coordinates\n"
       "--fps                            Show current framerate\n"
       "--fullscreen                     Start fullscreen\n"
       "--help                           Show this help\n"
@@ -70,7 +70,8 @@ showHelp() {
 int
 main(int argc, char** argv) {
   AppData appData;
-  View view(&appData);
+  viz1090::View view(&appData);
+  bool flipTouch = false;
 
   // Parse the command line options
   for (int j = 1; j < argc; j++) {
@@ -82,16 +83,22 @@ main(int argc, char** argv) {
       appData.server = argv[++j];
     } else if (!std::strcmp(argv[j], "--lat") && more) {
       appData.userLat = std::atof(argv[++j]);
-      view.centerLat = appData.userLat;
+      view.getMapView().centerLat = static_cast<float>(appData.userLat);
+      view.getMapView().originLat = view.getMapView().centerLat;
+      view.getMapView().originSet = true;
     } else if (!std::strcmp(argv[j], "--lon") && more) {
       appData.userLon = std::atof(argv[++j]);
-      view.centerLon = appData.userLon;
+      view.getMapView().centerLon = static_cast<float>(appData.userLon);
+      view.getMapView().originLon = view.getMapView().centerLon;
+      view.getMapView().originSet = true;
     } else if (!std::strcmp(argv[j], "--metric")) {
       view.metric = 1;
     } else if (!std::strcmp(argv[j], "--fps")) {
-      view.fps = 1;
+      view.getUIOverlay()->setShowFps(1);
     } else if (!std::strcmp(argv[j], "--fullscreen")) {
       view.fullscreen = 1;
+    } else if (!std::strcmp(argv[j], "--flip-touch")) {
+      flipTouch = true;
     } else if (!std::strcmp(argv[j], "--screenindex")) {
       view.screen_index = std::atoi(argv[++j]);
     } else if (!std::strcmp(argv[j], "--uiscale") && more) {
@@ -116,11 +123,15 @@ main(int argc, char** argv) {
   view.font_init();
 
   Input input(&appData, &view);
+  input.flipTouch = flipTouch;
 
   std::signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
 
   // Start connection
   appData.connect();
+
+  // Show keyboard shortcuts at startup
+  printKeyboardShortcuts();
 
   bool running = true;
   while (running) {

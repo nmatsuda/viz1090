@@ -29,6 +29,7 @@
 #ifndef VIZ1090_PROFILER_H
 #define VIZ1090_PROFILER_H
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <map>

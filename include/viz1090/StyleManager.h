@@ -74,6 +74,7 @@ struct Theme {
   SDL_Color scaleBarColor{196, 196, 196, 255};
   SDL_Color buttonColor{196, 196, 196, 255};
   SDL_Color buttonBackground{0, 0, 0, 255};
+  SDL_Color buttonTextColor{196, 196, 196, 255};
   SDL_Color buttonOutline{196, 196, 196, 255};
   SDL_Color clickColor{127, 127, 127, 255};
 
