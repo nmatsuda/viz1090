@@ -495,6 +495,28 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
   lineRGBA(ctx.renderer, 0, 10 + 5 * ctx.uiScale, baseUnit * (10 + scaleBarDist), 10 + 5 * ctx.uiScale,
            ctx.style->scaleBarColor.r, ctx.style->scaleBarColor.g,
            ctx.style->scaleBarColor.b, 255);
+
+  if (drawCenterOrigin) {
+    drawCenterOriginPoint(ctx);
+  }
+}
+
+void MapView::drawCenterOriginPoint(const RenderContext& ctx) {
+  PROFILE_SCOPE("drawCenterOriginPoint");
+
+  const int length = 8;
+  const int radius = 5;
+
+  float dx, dy;
+  int x, y;
+
+  pxFromLonLat(&dx, &dy, originLon, originLat);
+  screenCoords(&x, &y, dx, dy, ctx.screenWidth, ctx.screenHeight);
+
+  SDL_RenderDrawLine(ctx.renderer, x - length, y - length, x + length, y + length);
+  SDL_RenderDrawLine(ctx.renderer, x + length, y - length, x - length, y + length);
+  const SDL_Rect rect = {x - radius, y - radius, 2 * radius, 2 * radius};
+  SDL_RenderDrawRect(ctx.renderer, &rect);
 }
 
 }  // namespace viz1090

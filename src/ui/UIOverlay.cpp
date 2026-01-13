@@ -150,7 +150,7 @@ void UIOverlay::draw(const RenderContext& ctx, const AppData& appData, float las
 
   if (showFps) {
     char fps[60] = " ";
-    snprintf(fps, 40, "%.1f", 1000.0f / lastFrameTime);
+    snprintf(fps, 40, "%5.1f", 1000.0f / lastFrameTime);
 
     drawStatusBox(ctx, &left, &top, "fps", fps, ctx.style->grey_dark);
   }
@@ -159,7 +159,7 @@ void UIOverlay::draw(const RenderContext& ctx, const AppData& appData, float las
     drawStatusBox(ctx, &left, &top, "init", "connecting", ctx.style->red);
   } else {
     char strLoc[20] = " ";
-    snprintf(strLoc, 20, "%3.3fN %3.3f%c", centerLat, std::fabs(centerLon),
+    snprintf(strLoc, 20, "%7.3fN %7.3f%c", centerLat, std::fabs(centerLon),
              (centerLon > 0) ? 'E' : 'W');
     drawStatusBox(ctx, &left, &top, "loc", strLoc, ctx.style->buttonColor);
 
