@@ -8,6 +8,8 @@
 float AircraftLabel::densityMult_ = 0.15f;
 bool AircraftLabel::densityChanged_ = false;
 bool AircraftLabel::showLabels_ = true;
+int AircraftLabel::uiStatusBarTopY_ = 0;
+int AircraftLabel::uiStatusBarRightX_ = 0;
 
 void AircraftLabel::setDensityMult(float value) {
   if (value < 0.0f) value = 0.0f;
@@ -192,8 +194,15 @@ AircraftLabel::calculateForces(const AircraftList& aircraftList) {
     ddy += boundary_force * (edge_margin - p_top);
   }
 
-  if (p_bottom > screen_height - edge_margin) {
-    ddy += boundary_force * (screen_height - edge_margin - p_bottom);
+  // Bottom edge boundary - respect UI status bar bounds
+  float effectiveBottomEdge = static_cast<float>(screen_height);
+  if (uiStatusBarTopY_ > 0 && p_left < static_cast<float>(uiStatusBarRightX_)) {
+    // Label is in the region where status bar exists - use status bar top as boundary
+    effectiveBottomEdge = static_cast<float>(uiStatusBarTopY_);
+  }
+
+  if (p_bottom > effectiveBottomEdge - edge_margin) {
+    ddy += boundary_force * (effectiveBottomEdge - edge_margin - p_bottom);
   }
 
   float all_x = 0;

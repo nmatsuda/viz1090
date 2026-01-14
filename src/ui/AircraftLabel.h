@@ -44,6 +44,12 @@ public:
   void forceCollapse();
   void forceExpand();
 
+  // UI bounds for label avoidance (status bar at bottom)
+  static void setUIBounds(int statusBarTopY, int statusBarRightX) {
+    uiStatusBarTopY_ = statusBarTopY;
+    uiStatusBarRightX_ = statusBarRightX;
+  }
+
 private:
   SDL_Rect getFullRect(int labelLevel);
   float calculateDensity(const AircraftList& aircraftList, int labelLevel);
@@ -111,6 +117,10 @@ private:
   static float densityMult_;
   static bool densityChanged_;
   static bool showLabels_;
+
+  // Static UI bounds for label avoidance
+  static int uiStatusBarTopY_;
+  static int uiStatusBarRightX_;
 };
 
 #endif  // AIRCRAFT_LABEL_H

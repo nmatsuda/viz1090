@@ -296,6 +296,25 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
     outx = (outy) * inx / (iny);
   }
 
+  // Check if arrow would be in UI overlay area at bottom of screen
+  // and adjust to avoid overlapping with status bar
+  if (uiStatusBarTopY_ > 0 && iny > 0) {
+    // Arrow is pointing toward bottom edge
+    // Convert to absolute screen coordinates to check
+    float absX = static_cast<float>(centerX) + outx;
+    float absY = static_cast<float>(centerY) + outy;
+
+    // Check if within the status bar area (bottom of screen, left side where status boxes are)
+    if (absY > static_cast<float>(uiStatusBarTopY_) && absX < static_cast<float>(uiStatusBarRightX_)) {
+      // Move arrow up to sit above the status bar
+      outy = static_cast<float>(uiStatusBarTopY_ - centerY);
+      // Recalculate outx to maintain direction from center to plane
+      if (std::abs(iny) > 0.001f) {
+        outx = outy * inx / iny;
+      }
+    }
+  }
+
   // Find nearest existing cluster within radius (based on edge position)
   float radiusSq = offMapClusterRadius_ * offMapClusterRadius_;
   OffMapCluster* nearest = nullptr;

@@ -79,6 +79,17 @@ public:
   /// Handle click events - returns true if a UI element was clicked
   bool handleClick(int x, int y);
 
+  /// Get the bounding rectangles of status bar elements
+  /// Returns rects in screen coordinates for collision avoidance
+  struct StatusBarBounds {
+    int topY{0};      // Y coordinate of top of highest row (smallest Y value)
+    int bottomY{0};   // Y coordinate of bottom of lowest row (largest Y value, typically screen bottom)
+    int rightX{0};    // X coordinate of rightmost element in bottom row
+  };
+  [[nodiscard]] StatusBarBounds calculateStatusBarBounds(const RenderContext& ctx,
+                                                          const AppData& appData,
+                                                          int mapLoadPercent) const;
+
   // Configuration
   void setShowFps(bool show) { showFps = show; }
   [[nodiscard]] bool getShowFps() const { return showFps; }

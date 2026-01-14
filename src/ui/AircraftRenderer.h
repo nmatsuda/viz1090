@@ -122,6 +122,14 @@ public:
   // Configuration
   void setMetric(bool* metric) { this->metric = metric; }
 
+  /// Set the UI overlay bounds for off-map arrow avoidance
+  /// statusBarTopY: top Y coordinate of the highest status bar row
+  /// statusBarRightX: right X coordinate of status elements in bottom row
+  void setUIBounds(int statusBarTopY, int statusBarRightX) {
+    uiStatusBarTopY_ = statusBarTopY;
+    uiStatusBarRightX_ = statusBarRightX;
+  }
+
   // Check if any animation needs high framerate
   [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
   void resetHighFramerate() { highFramerate = false; }
@@ -185,6 +193,10 @@ private:
   static constexpr float CLUSTER_ANIM_DURATION_MS = 250.0f;
   static constexpr float CLUSTER_HYSTERESIS_MS = 1000.0f;  // Min time between merge/unmerge
   static constexpr float DISPLAY_ACTIVE = 30.0f;
+
+  // UI overlay bounds for off-map arrow avoidance
+  int uiStatusBarTopY_{0};     // Top Y coordinate of status bar (0 = use screen edge)
+  int uiStatusBarRightX_{0};   // Right X coordinate of bottom row elements
 };
 
 }  // namespace viz1090

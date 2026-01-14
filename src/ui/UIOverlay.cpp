@@ -30,6 +30,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 
 #include "SDL2/SDL2_gfxPrimitives.h"
 #include "app/AppData.h"
@@ -202,6 +203,98 @@ bool UIOverlay::handleClick(int x, int y) {
   }
 
   return false;
+}
+
+UIOverlay::StatusBarBounds UIOverlay::calculateStatusBarBounds(const RenderContext& ctx,
+                                                                const AppData& appData,
+                                                                int mapLoadPercent) const {
+  StatusBarBounds bounds;
+  bounds.bottomY = ctx.screenHeight;
+  bounds.topY = ctx.screenHeight - ctx.messageFontHeight - ctx.padding();
+
+  int left = ctx.padding();
+  int top = bounds.topY;
+
+  // Helper to simulate adding an element - matches drawStatusBox logic exactly
+  // Width = (label.length() + 1) * labelFontWidth + (message.length() + 1) * messageFontWidth
+  auto simulateStatusBox = [&](const char* label, size_t messageLen) {
+    size_t labelLen = std::strlen(label);
+    int labelWidth = static_cast<int>((labelLen + 1) * ctx.labelFontWidth);
+    int messageWidth = static_cast<int>((messageLen + 1) * ctx.messageFontWidth);
+    int totalWidth = labelWidth + messageWidth;
+
+    if (left + totalWidth + ctx.padding() > ctx.screenWidth) {
+      left = ctx.padding();
+      top = top - ctx.messageFontHeight - ctx.padding();
+    }
+    left = left + totalWidth + ctx.padding();
+    if (top < bounds.topY) {
+      bounds.topY = top;
+    }
+  };
+
+  auto simulateButton = [&](size_t labelLen) {
+    int buttonWidth = static_cast<int>((labelLen + 1) * ctx.labelFontWidth);
+    if (left + buttonWidth + ctx.padding() > ctx.screenWidth) {
+      left = ctx.padding();
+      top = top - ctx.messageFontHeight - ctx.padding();
+    }
+    left = left + buttonWidth + ctx.padding();
+    if (top < bounds.topY) {
+      bounds.topY = top;
+    }
+  };
+
+  // Simulate fps box if shown: "fps" + "XXX.X" (5 chars typical)
+  if (showFps) {
+    simulateStatusBox("fps", 5);
+  }
+
+  if (!appData.connected()) {
+    // "init" + "connecting" (10 chars)
+    simulateStatusBox("init", 10);
+  } else {
+    // "loc" + "XX.XXXN XXX.XXXE" (17 chars from "%7.3fN %7.3f%c")
+    simulateStatusBox("loc", 17);
+
+    // "disp" + "XX/XX" (5 chars typical, could be more with many planes)
+    char strPlaneCount[10];
+    snprintf(strPlaneCount, 10, "%d/%d", appData.numVisiblePlanes, appData.numPlanes);
+    simulateStatusBox("disp", std::strlen(strPlaneCount));
+
+    // "rate" + "XXXX/s" (6 chars typical)
+    char strMsgRate[18];
+    snprintf(strMsgRate, 18, "%.0f/s", appData.msgRate);
+    simulateStatusBox("rate", std::strlen(strMsgRate));
+
+    // "sAvg" + "XXX%" (4 chars typical)
+    char strSig[18];
+    snprintf(strSig, 18, "%.0f%%", 100.0 * appData.avgSig / 1024.0);
+    simulateStatusBox("sAvg", std::strlen(strSig));
+  }
+
+  if (mapLoadPercent < 100) {
+    // "init" + "loading map XX%" (15 chars typical)
+    char loaded[32];
+    snprintf(loaded, 32, "loading map %d%%", mapLoadPercent);
+    simulateStatusBox("init", std::strlen(loaded));
+  }
+
+  // Menu button
+  simulateButton(menuButton_.label().length());
+
+  // Track the rightmost extent of the bottom row
+  int bottomRowTop = ctx.screenHeight - ctx.messageFontHeight - ctx.padding();
+  if (top == bottomRowTop) {
+    // All elements fit on one row
+    bounds.rightX = left;
+  } else {
+    // Multiple rows - need to find right edge of bottom row
+    // For simplicity, set rightX to full width when wrapped (conservative)
+    bounds.rightX = ctx.screenWidth;
+  }
+
+  return bounds;
 }
 
 }  // namespace viz1090
