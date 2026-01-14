@@ -130,6 +130,14 @@ public:
     uiStatusBarRightX_ = statusBarRightX;
   }
 
+  /// Set the scale bar bounds for off-map arrow avoidance
+  /// scaleBarBottomY: bottom Y coordinate of scale bar area
+  /// scaleBarRightX: right X coordinate of scale bar elements
+  void setScaleBarBounds(int scaleBarBottomY, int scaleBarRightX) {
+    scaleBarBottomY_ = scaleBarBottomY;
+    scaleBarRightX_ = scaleBarRightX;
+  }
+
   // Check if any animation needs high framerate
   [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
   void resetHighFramerate() { highFramerate = false; }
@@ -199,6 +207,10 @@ private:
   // UI overlay bounds for off-map arrow avoidance
   int uiStatusBarTopY_{0};     // Top Y coordinate of status bar (0 = use screen edge)
   int uiStatusBarRightX_{0};   // Right X coordinate of bottom row elements
+
+  // Scale bar bounds for off-map arrow avoidance
+  int scaleBarBottomY_{0};     // Bottom Y coordinate of scale bar area
+  int scaleBarRightX_{0};      // Right X coordinate of scale bar elements
 };
 
 }  // namespace viz1090

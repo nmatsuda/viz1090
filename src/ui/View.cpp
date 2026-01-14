@@ -338,6 +338,10 @@ View::draw() {
   aircraftRenderer.setUIBounds(uiBounds.topY, uiBounds.rightX);
   AircraftLabel::setUIBounds(uiBounds.topY, uiBounds.rightX);
 
+  // Calculate scale bar bounds for off-map arrow avoidance
+  auto scaleBarBounds = mapView.calculateScaleBarBounds(renderContext);
+  aircraftRenderer.setScaleBarBounds(scaleBarBounds.bottomY, scaleBarBounds.rightX);
+
   // Draw aircraft if connected
   if (appData->connected()) {
     // Lock aircraft list for thread-safe iteration during render

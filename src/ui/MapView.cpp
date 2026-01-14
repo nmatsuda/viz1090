@@ -29,6 +29,8 @@
 #include "ui/MapView.h"
 
 #include <cmath>
+#include <cstring>
+#include <vector>
 
 #include "SDL2/SDL2_gfxPrimitives.h"
 #include "ui/Label.h"
@@ -501,38 +503,79 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
   int scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
                                 ctx.screenWidth, ctx.screenHeight);
 
-  const float baseUnit = metric ? 1.0 : 1.852; // 1 Mn = 1852 m;
+  const float baseUnit = metric ? 1.0f : 1.852f;
 
   char scaleLabel[13] = "";
 
-  // not sure what is this supposed to draw?
-  // lineRGBA(ctx.renderer, 10, 10, 10, 10 * ctx.uiScale, ctx.style->scaleBarColor.r,
-  //          ctx.style->scaleBarColor.g, ctx.style->scaleBarColor.b, 255);
+  // Collect all scale bar tick positions and labels first
+  struct ScaleBarTick {
+    int xPos;
+    int labelWidth;
+    int power;
+  };
+  std::vector<ScaleBarTick> ticks;
 
   while (baseUnit * scaleBarDist < ctx.screenWidth) {
+    ScaleBarTick tick;
+    tick.xPos = static_cast<int>(baseUnit * (10 + scaleBarDist));
+    tick.power = scalePower;
 
-    lineRGBA(ctx.renderer, baseUnit * (10 + scaleBarDist), 8, baseUnit * (10 + scaleBarDist), 16 * ctx.uiScale,
-             ctx.style->scaleBarColor.r, ctx.style->scaleBarColor.g,
-             ctx.style->scaleBarColor.b, 255);
-
+    // Calculate label width
     if (metric) {
       snprintf(scaleLabel, 13, "%d km", static_cast<int>(std::pow(10, scalePower)));
     } else {
       snprintf(scaleLabel, 13, "%d Mm", static_cast<int>(std::pow(10, scalePower)));
     }
+    tick.labelWidth = static_cast<int>(std::strlen(scaleLabel)) * ctx.mapFontWidth;
 
-    Label currentLabel;
-    currentLabel.setFont(ctx.mapFont);
-    currentLabel.setColor(ctx.style->scaleBarColor);
-    currentLabel.setPosition(baseUnit * (10 + scaleBarDist), 15 * ctx.uiScale);
-    currentLabel.setText(scaleLabel);
-    currentLabel.draw(ctx.renderer);
+    ticks.push_back(tick);
 
     scalePower++;
     scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
                               ctx.screenWidth, ctx.screenHeight);
   }
 
+  // Draw tick marks for all scale bars
+  for (const auto& tick : ticks) {
+    lineRGBA(ctx.renderer, tick.xPos, 8, tick.xPos, 16 * ctx.uiScale,
+             ctx.style->scaleBarColor.r, ctx.style->scaleBarColor.g,
+             ctx.style->scaleBarColor.b, 255);
+  }
+
+  // Draw labels, skipping those that would overlap with the next (larger) label
+  for (size_t i = 0; i < ticks.size(); i++) {
+    const auto& tick = ticks[i];
+
+    // Check if this label would overlap with the next one
+    bool wouldOverlap = false;
+    if (i + 1 < ticks.size()) {
+      int labelEnd = tick.xPos + tick.labelWidth;
+      int nextLabelStart = ticks[i + 1].xPos;
+      if (labelEnd >= nextLabelStart) {
+        wouldOverlap = true;
+      }
+    }
+
+    // Skip this label if it would overlap (prefer the larger scale label)
+    if (wouldOverlap) {
+      continue;
+    }
+
+    if (metric) {
+      snprintf(scaleLabel, 13, "%d km", static_cast<int>(std::pow(10, tick.power)));
+    } else {
+      snprintf(scaleLabel, 13, "%d Mm", static_cast<int>(std::pow(10, tick.power)));
+    }
+
+    Label currentLabel;
+    currentLabel.setFont(ctx.mapFont);
+    currentLabel.setColor(ctx.style->scaleBarColor);
+    currentLabel.setPosition(tick.xPos, 15 * ctx.uiScale);
+    currentLabel.setText(scaleLabel);
+    currentLabel.draw(ctx.renderer);
+  }
+
+  // Draw the horizontal scale bar line
   scalePower--;
   scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
                             ctx.screenWidth, ctx.screenHeight);
@@ -563,6 +606,42 @@ void MapView::drawCenterOriginPoint(const RenderContext& ctx) {
   SDL_RenderDrawLine(ctx.renderer, x + length, y - length, x - length, y + length);
   const SDL_Rect rect = {x - radius, y - radius, 2 * radius, 2 * radius};
   SDL_RenderDrawRect(ctx.renderer, &rect);
+}
+
+MapView::ScaleBarBounds MapView::calculateScaleBarBounds(const RenderContext& ctx) const {
+  ScaleBarBounds bounds;
+
+  // Calculate the same way as drawScaleBars
+  int scalePower = 0;
+  int scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
+                                ctx.screenWidth, ctx.screenHeight);
+
+  const float baseUnit = metric ? 1.0f : 1.852f;
+
+  // Find the largest scale bar that fits on screen (same logic as drawScaleBars)
+  while (baseUnit * scaleBarDist < ctx.screenWidth) {
+    scalePower++;
+    scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
+                              ctx.screenWidth, ctx.screenHeight);
+  }
+
+  // Step back to the last one that fit
+  scalePower--;
+  scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
+                            ctx.screenWidth, ctx.screenHeight);
+
+  // The rightmost extent of the scale bar
+  bounds.rightX = static_cast<int>(baseUnit * (10 + scaleBarDist));
+
+  // Add some padding for the label text that appears after the last tick
+  // Label format is "X km" or "X Mm" - estimate width
+  int labelChars = scalePower + 4;  // digits + " km" or " Mm"
+  bounds.rightX += labelChars * ctx.mapFontWidth;
+
+  // Bottom Y is the lowest element - the label at 15 * uiScale plus font height
+  bounds.bottomY = static_cast<int>(15 * ctx.uiScale) + ctx.mapFontHeight;
+
+  return bounds;
 }
 
 }  // namespace viz1090

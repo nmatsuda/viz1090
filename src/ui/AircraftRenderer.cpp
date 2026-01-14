@@ -317,6 +317,25 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
     }
   }
 
+  // Check if arrow would be in scale bar area at top of screen
+  // and adjust to avoid overlapping with scale bars
+  if (scaleBarBottomY_ > 0 && iny < 0) {
+    // Arrow is pointing toward top edge
+    // Convert to absolute screen coordinates to check
+    float absX = static_cast<float>(centerX) + outx;
+    float absY = static_cast<float>(centerY) + outy;
+
+    // Check if within the scale bar area (top of screen, left side where scale bars are)
+    if (absY < static_cast<float>(scaleBarBottomY_) && absX < static_cast<float>(scaleBarRightX_)) {
+      // Move arrow down to sit below the scale bar
+      outy = static_cast<float>(scaleBarBottomY_ - centerY);
+      // Recalculate outx to maintain direction from center to plane
+      if (std::abs(iny) > 0.001f) {
+        outx = outy * inx / iny;
+      }
+    }
+  }
+
   // Find nearest existing cluster within radius (based on edge position)
   float radiusSq = offMapClusterRadius_ * offMapClusterRadius_;
   OffMapCluster* nearest = nullptr;

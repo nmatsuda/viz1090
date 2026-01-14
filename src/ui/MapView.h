@@ -58,6 +58,13 @@ public:
   /// Draw scale bars
   void drawScaleBars(const RenderContext& ctx);
 
+  /// Get the bounding area of the scale bars for collision avoidance
+  struct ScaleBarBounds {
+    int bottomY{0};  // Y coordinate of bottom of scale bar area
+    int rightX{0};   // X coordinate of rightmost scale bar element
+  };
+  [[nodiscard]] ScaleBarBounds calculateScaleBarBounds(const RenderContext& ctx) const;
+
   /// Update viewport animation (call each frame)
   void update();
 
