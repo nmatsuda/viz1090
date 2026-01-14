@@ -143,7 +143,8 @@ private:
   void clearOffMapClusters(const RenderContext& ctx);
   void addToOffMapCluster(const RenderContext& ctx, int x, int y, SDL_Color planeColor,
                           Aircraft* aircraft);
-  void drawOffMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft);
+  void drawOffMapClusterArrows(const RenderContext& ctx);
+  void drawOffMapClusterLabels(const RenderContext& ctx, Aircraft* selectedAircraft);
   void drawOffMapArrow(const RenderContext& ctx, float edgeX, float edgeY,
                        float dirX, float dirY, SDL_Color planeColor, int count);
 
@@ -151,7 +152,8 @@ private:
   void clearOnMapClusters(const RenderContext& ctx);
   void addToOnMapCluster(const RenderContext& ctx, int x, int y, float heading,
                          SDL_Color planeColor, Aircraft* aircraft);
-  void drawOnMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft);
+  void drawOnMapClusterIcons(const RenderContext& ctx);
+  void drawOnMapClusterLabels(const RenderContext& ctx, Aircraft* selectedAircraft);
 
   // Cluster animation helpers
   void detectOnMapUnmergeEvents(const RenderContext& ctx, const AircraftList& aircraftList);

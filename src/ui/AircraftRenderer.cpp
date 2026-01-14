@@ -182,15 +182,17 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
   detectOnMapUnmergeEvents(ctx, aircraftList);
   detectOffMapUnmergeEvents(ctx, aircraftList);
 
-  // Draw all on-map clusters first (so labels are on top)
-  drawOnMapClusters(ctx, selectedAircraft);
-
-  // Draw all off-map cluster arrows
-  drawOffMapClusters(ctx, selectedAircraft);
+  // Draw all icons/arrows first (before labels)
+  drawOnMapClusterIcons(ctx);
+  drawOffMapClusterArrows(ctx);
 
   // Draw animating cluster members (merge/unmerge animations)
   drawAnimatingClusterMembers(ctx, onMapAnimStates_, aircraftList);
   drawAnimatingClusterMembers(ctx, offMapAnimStates_, aircraftList);
+
+  // Draw all labels last (on top of icons)
+  drawOnMapClusterLabels(ctx, selectedAircraft);
+  drawOffMapClusterLabels(ctx, selectedAircraft);
 
   // Cleanup finished animations
   cleanupFinishedAnimations(onMapAnimStates_);
@@ -402,7 +404,7 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
   }
 }
 
-void AircraftRenderer::drawOffMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft) {
+void AircraftRenderer::drawOffMapClusterArrows(const RenderContext& ctx) {
   // Calculate distance thresholds for color lerping
   // At screen edge (half diagonal) = full plane color
   // At 2x view width beyond edge = grey_dark
@@ -443,7 +445,7 @@ void AircraftRenderer::drawOffMapClusters(const RenderContext& ctx, Aircraft* se
     drawOffMapArrow(ctx, cluster.edgeX, cluster.edgeY, cluster.dirX, cluster.dirY,
                     drawColor, cluster.count);
 
-    // For single planes, update position and draw normal label
+    // For single planes, update position (labels drawn separately)
     if (cluster.count == 1 && cluster.singleAircraft) {
       float arrowWidth = 6.0f * ctx.uiScale;
       int centerX = ctx.screenWidth >> 1;
@@ -452,6 +454,25 @@ void AircraftRenderer::drawOffMapClusters(const RenderContext& ctx, Aircraft* se
                                                     2.0f * arrowWidth * cluster.dirX);
       cluster.singleAircraft->y = static_cast<int>(centerY + cluster.edgeY -
                                                     2.0f * arrowWidth * cluster.dirY);
+    }
+  }
+}
+
+void AircraftRenderer::drawOffMapClusterLabels(const RenderContext& ctx, Aircraft* selectedAircraft) {
+  for (const auto& cluster : offMapClusters_) {
+    if (cluster.count == 0) {
+      continue;
+    }
+
+    // Only single planes have aircraft labels
+    if (cluster.count == 1 && cluster.singleAircraft) {
+      uint32_t addr = cluster.singleAircraft->addr;
+      auto animIt = offMapAnimStates_.find(addr);
+      if (animIt != offMapAnimStates_.end() && !animIt->second.isMerging) {
+        // Aircraft is unmerging - don't draw label yet
+        continue;
+      }
+
       drawPlaneText(ctx, cluster.singleAircraft, selectedAircraft);
     }
   }
@@ -616,7 +637,7 @@ void AircraftRenderer::addToOnMapCluster(const RenderContext& /* ctx */, int x, 
   }
 }
 
-void AircraftRenderer::drawOnMapClusters(const RenderContext& ctx, Aircraft* selectedAircraft) {
+void AircraftRenderer::drawOnMapClusterIcons(const RenderContext& ctx) {
   for (const auto& cluster : onMapClusters_) {
     if (cluster.count == 0) {
       continue;
@@ -637,18 +658,17 @@ void AircraftRenderer::drawOnMapClusters(const RenderContext& ctx, Aircraft* sel
         continue;
       }
 
-      // Single plane - draw normal icon and label
+      // Single plane - draw icon only (labels drawn separately)
       drawPlaneIcon(ctx, x, y, cluster.avgHeading, cluster.color);
       cluster.singleAircraft->x = x;
       cluster.singleAircraft->y = y;
-      drawPlaneText(ctx, cluster.singleAircraft, selectedAircraft);
     } else if (cluster.count > 1) {
       // Multiple planes - draw circle instead of directional icon
       int radius = static_cast<int>(8.0f * ctx.uiScale);
       circleRGBA(ctx.renderer, x, y, radius,
                  cluster.color.r, cluster.color.g, cluster.color.b, SDL_ALPHA_OPAQUE);
 
-      // Draw count label centered inside the circle
+      // Draw count label centered inside the circle (this is part of the icon, not aircraft label)
       std::string countText = std::to_string(cluster.count);
       int textWidth = static_cast<int>(countText.length() * ctx.labelFontWidth);
       int textHeight = ctx.labelFontHeight;
@@ -662,6 +682,28 @@ void AircraftRenderer::drawOnMapClusters(const RenderContext& ctx, Aircraft* sel
       countLabel.setText(countText);
       countLabel.draw(ctx.renderer);
     }
+  }
+}
+
+void AircraftRenderer::drawOnMapClusterLabels(const RenderContext& ctx, Aircraft* selectedAircraft) {
+  for (const auto& cluster : onMapClusters_) {
+    if (cluster.count == 0) {
+      continue;
+    }
+
+    if (cluster.count == 1 && cluster.singleAircraft) {
+      // Check if this aircraft is currently in an unmerge animation
+      uint32_t addr = cluster.singleAircraft->addr;
+      auto animIt = onMapAnimStates_.find(addr);
+      if (animIt != onMapAnimStates_.end() && !animIt->second.isMerging) {
+        // Aircraft is unmerging - don't draw label yet
+        continue;
+      }
+
+      // Single plane - draw label
+      drawPlaneText(ctx, cluster.singleAircraft, selectedAircraft);
+    }
+    // Multi-plane clusters don't have aircraft labels (just the count inside the icon)
   }
 }
 
