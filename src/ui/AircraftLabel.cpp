@@ -477,6 +477,27 @@ AircraftLabel::syncToAircraftPosition() {
 }
 
 void
+AircraftLabel::resetToAircraftPosition() {
+  // Snap label directly to nominal position near aircraft
+  // This is used when a label reappears after being hidden (e.g., unmerging from cluster)
+  float targetOffsetX = attachment_dist + w / 2.0f;
+  float targetOffsetY = attachment_dist + h / 2.0f;
+  float targetX = static_cast<float>(p->x) + targetOffsetX;
+  float targetY = static_cast<float>(p->y) + targetOffsetY;
+
+  x = targetX;
+  y = targetY;
+  prev_x = targetX;
+  prev_y = targetY;
+  ddx = 0.0f;
+  ddy = 0.0f;
+
+  // Update last known aircraft position
+  lastAircraftX = static_cast<float>(p->x);
+  lastAircraftY = static_cast<float>(p->y);
+}
+
+void
 AircraftLabel::draw(SDL_Renderer* renderer, bool selected) {
   // Skip drawing if labels are globally disabled (unless this aircraft is selected)
   if (!showLabels_ && !selected) {
@@ -485,6 +506,14 @@ AircraftLabel::draw(SDL_Renderer* renderer, bool selected) {
 
   if (x == 0 || y == 0) {
     return;
+  }
+
+  // Check if label is too far from aircraft - reset if more than 50% of screen dimension
+  float distX = std::fabs(x - static_cast<float>(p->x));
+  float distY = std::fabs(y - static_cast<float>(p->y));
+  float maxDist = static_cast<float>(std::min(screen_width, screen_height)) * 0.5f;
+  if (distX > maxDist || distY > maxDist) {
+    resetToAircraftPosition();
   }
 
   // char buff[100];

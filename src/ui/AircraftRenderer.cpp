@@ -883,9 +883,10 @@ void AircraftRenderer::detectOnMapUnmergeEvents(const RenderContext& /* ctx */,
         animState.isMerging = false;  // Unmerging
         highFramerate = true;
 
-        // Expand the label when unmerging from cluster
+        // Expand the label when unmerging from cluster and reset its position
         Aircraft* aircraft = findAircraftByAddr(aircraftList, addr);
         if (aircraft && aircraft->label) {
+          aircraft->label->resetToAircraftPosition();
           aircraft->label->forceExpand();
         }
 
@@ -960,9 +961,10 @@ void AircraftRenderer::detectOffMapUnmergeEvents(const RenderContext& /* ctx */,
         animState.isMerging = false;  // Unmerging
         highFramerate = true;
 
-        // Expand the label when unmerging from cluster
+        // Expand the label when unmerging from cluster and reset its position
         Aircraft* aircraft = findAircraftByAddr(aircraftList, addr);
         if (aircraft && aircraft->label) {
+          aircraft->label->resetToAircraftPosition();
           aircraft->label->forceExpand();
         }
 

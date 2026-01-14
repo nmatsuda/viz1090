@@ -19,6 +19,7 @@ public:
   void applyForces();
   void move(float dx, float dy);
   void syncToAircraftPosition();  // Reposition label based on aircraft's current screen position
+  void resetToAircraftPosition(); // Snap label directly to nominal position near aircraft
   bool getIsChanging();
 
   void draw(SDL_Renderer* renderer, bool selected);
