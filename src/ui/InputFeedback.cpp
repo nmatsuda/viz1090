@@ -35,14 +35,11 @@
 #include "ui/AircraftRenderer.h"
 #include "ui/MapView.h"
 #include "ui/MathUtils.h"
-#include "viz1090/Profiler.h"
 
 namespace viz1090 {
 
 void InputFeedback::draw(const RenderContext& ctx, Aircraft* selectedAircraft,
                          const AircraftRenderer& aircraftRenderer) {
-  PROFILE_SCOPE("drawClick");
-
   drawClickRipple(ctx);
   drawSelectionBrackets(ctx, selectedAircraft, aircraftRenderer);
   drawMouse(ctx);

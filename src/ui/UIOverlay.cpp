@@ -35,7 +35,6 @@
 #include "SDL2/SDL2_gfxPrimitives.h"
 #include "app/AppData.h"
 #include "ui/Label.h"
-#include "viz1090/Profiler.h"
 
 namespace viz1090 {
 
@@ -144,8 +143,6 @@ void UIOverlay::drawCenteredStatusBox(const RenderContext& ctx,
 
 void UIOverlay::draw(const RenderContext& ctx, const AppData& appData, float lastFrameTime,
                      float centerLat, float centerLon, int mapLoadPercent) {
-  PROFILE_SCOPE("drawStatus");
-
   int left = ctx.padding();
   int top = ctx.screenHeight - ctx.messageFontHeight - ctx.padding();
 

@@ -35,7 +35,6 @@
 #include "SDL2/SDL2_gfxPrimitives.h"
 #include "ui/Label.h"
 #include "ui/MathUtils.h"
-#include "viz1090/Profiler.h"
 
 namespace viz1090 {
 
@@ -234,8 +233,6 @@ void MapView::animateZoomRelative(float factor) {
 }
 
 void MapView::drawGeography(const RenderContext& ctx) {
-  PROFILE_SCOPE("drawGeography");
-
   if ((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME) ||
       elapsed(lastRedraw) > 2000 || (map.loaded < 100 && elapsed(lastRedraw) > 250)) {
 
@@ -315,7 +312,6 @@ void MapView::drawGeography(const RenderContext& ctx) {
 }
 
 void MapView::drawLines(const RenderContext& ctx, int left, int top, int right, int bottom) {
-  PROFILE_SCOPE("drawLines");
   float screen_lat_min, screen_lat_max, screen_lon_min, screen_lon_max;
 
   latLonFromScreenCoords(&screen_lat_min, &screen_lon_min, left, top,
@@ -379,8 +375,6 @@ void MapView::drawLinesRecursive(const RenderContext& ctx, QuadTree* tree,
 }
 
 void MapView::drawPlaceNames(const RenderContext& ctx) {
-  PROFILE_SCOPE("drawPlaceNames");
-
   // Collect all visible labels with their screen positions and bounding boxes
   struct VisibleLabel {
     std::string text;
@@ -498,7 +492,6 @@ void MapView::drawPlaceNames(const RenderContext& ctx) {
 }
 
 void MapView::drawScaleBars(const RenderContext& ctx) {
-  PROFILE_SCOPE("drawScaleBars");
   int scalePower = 0;
   int scaleBarDist = screenDist(static_cast<float>(std::pow(10, scalePower)),
                                 ctx.screenWidth, ctx.screenHeight);
@@ -591,8 +584,6 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
 }
 
 void MapView::drawCenterOriginPoint(const RenderContext& ctx) {
-  PROFILE_SCOPE("drawCenterOriginPoint");
-
   const int length = 8;
   const int radius = 5;
 

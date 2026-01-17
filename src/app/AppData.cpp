@@ -30,7 +30,6 @@
 //
 
 #include "app/AppData.h"
-#include "viz1090/Profiler.h"
 
 #include <cstdio>
 
@@ -90,7 +89,6 @@ AppData::isConnected() const {
 
 void
 AppData::update() {
-  PROFILE_SCOPE("AppData::update");
   // Remove stale aircraft periodically
   auto now = std::chrono::steady_clock::now();
   if (now - mLastCleanup > kCleanupInterval) {
@@ -116,7 +114,6 @@ AppData::removeStaleAircraft() {
 
 void
 AppData::updateStatus() {
-  PROFILE_SCOPE("AppData::updateStatus");
   numVisiblePlanes = 0;
   numPlanes = 0;
   double sigAccumulate = 0.0;

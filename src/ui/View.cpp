@@ -36,7 +36,6 @@
 #include <thread>
 
 #include "ui/MathUtils.h"
-#include "viz1090/Profiler.h"
 
 namespace viz1090 {
 
@@ -301,8 +300,6 @@ View::registerMouseMove(int x, int y) {
 
 void
 View::draw() {
-  PROFILE_BEGIN_FRAME();
-
   drawStartTime = now();
 
   // Frame rate limiting
@@ -375,10 +372,7 @@ View::draw() {
   inputFeedback.draw(renderContext, selectedAircraft, aircraftRenderer);
 
   // Present frame
-  {
-    PROFILE_SCOPE("SDL_RenderPresent");
-    SDL_RenderPresent(renderer);
-  }
+  SDL_RenderPresent(renderer);
 
   // Update timing
   lastFrameTime = elapsed(drawStartTime);
@@ -387,8 +381,6 @@ View::draw() {
   inputFeedback.resetHighFramerate();
   aircraftRenderer.resetHighFramerate();
   highFramerate = false;
-
-  PROFILE_END_FRAME();
 }
 
 //

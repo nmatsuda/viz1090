@@ -31,7 +31,6 @@
 
 #include "ui/Input.h"
 #include "ui/AircraftRenderer.h"
-#include "viz1090/Profiler.h"
 
 #include <cstdio>
 
@@ -84,7 +83,6 @@ sgn(T val) {
 
 void
 Input::getInput() {
-  PROFILE_SCOPE("Input::getInput");
   SDL_Event event;
 
   while (SDL_PollEvent(&event)) {

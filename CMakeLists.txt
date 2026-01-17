@@ -18,13 +18,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Profiling option
-option(ENABLE_PROFILING "Enable performance profiling output" OFF)
-if(ENABLE_PROFILING)
-  add_compile_definitions(PROFILING_ENABLED)
-  message(STATUS "Profiling enabled - performance stats will be output to stderr")
-endif()
-
 # Compiler warnings
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)

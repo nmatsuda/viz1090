@@ -37,7 +37,6 @@
 #include "ui/Label.h"
 #include "ui/MapView.h"
 #include "ui/MathUtils.h"
-#include "viz1090/Profiler.h"
 
 namespace viz1090 {
 
@@ -107,7 +106,6 @@ std::vector<ui::LabelNeighbor> AircraftRenderer::buildNeighborList(const Aircraf
 
 void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList,
                             Aircraft* selectedAircraft, MapView& mapView) {
-  PROFILE_SCOPE("drawPlanes");
   SDL_Color planeColor;
 
   // Update label config with screen dimensions
@@ -738,7 +736,6 @@ void AircraftRenderer::drawPlaneText(const RenderContext& ctx, Aircraft* p,
 
 void AircraftRenderer::drawTrails(const RenderContext& ctx, const AircraftList& aircraftList,
                                   const MapView& mapView, int left, int top, int right, int bottom) {
-  PROFILE_SCOPE("drawTrails");
   int currentX, currentY, prevX, prevY;
   float dx, dy;
 
@@ -786,8 +783,6 @@ void AircraftRenderer::drawTrails(const RenderContext& ctx, const AircraftList& 
 }
 
 void AircraftRenderer::resolveLabelConflicts(AircraftList& aircraftList) {
-  PROFILE_SCOPE("resolveLabelConflicts");
-
   // Build neighbor list
   auto neighbors = buildNeighborList(aircraftList);
 
