@@ -41,6 +41,9 @@
 #include "core/Aircraft.h"
 #include "viz1090/ModesMessage.h"
 
+namespace viz1090 {
+namespace core {
+
 /// Manages a collection of aircraft with efficient lookup and iteration
 class AircraftList {
 public:
@@ -85,5 +88,11 @@ public:
 private:
   Container mAircraft;
 };
+
+}  // namespace core
+}  // namespace viz1090
+
+// Backwards compatibility alias
+using AircraftList = viz1090::core::AircraftList;
 
 #endif

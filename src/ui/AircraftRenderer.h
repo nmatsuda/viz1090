@@ -37,9 +37,10 @@
 #include <vector>
 
 #include "core/AircraftList.h"
+#include "ui/AircraftLabel.h"
+#include "ui/AircraftViewState.h"
+#include "ui/LabelConfig.h"
 #include "ui/RenderContext.h"
-
-class Aircraft;
 
 namespace viz1090 {
 
@@ -50,8 +51,6 @@ using ClusterTimePoint = std::chrono::high_resolution_clock::time_point;
 
 /// Per-aircraft cluster animation state
 struct ClusterMemberState {
-  // For merge: aircraftAddr is the merging plane, clusterAnchorAddr is another plane in the cluster
-  // For unmerge: aircraftAddr is the unmerging plane, clusterAnchorAddr is a plane that stayed in cluster
   uint32_t aircraftAddr{0};       // The aircraft being animated
   uint32_t clusterAnchorAddr{0};  // An aircraft to use as cluster position reference (0 if none)
   float heading{0.0f};            // Heading for icon drawing during animation
@@ -97,6 +96,7 @@ struct OnMapCluster {
 };
 
 /// Renders aircraft icons, trails, and labels
+/// Manages per-aircraft view state (screen coordinates, labels)
 class AircraftRenderer {
 public:
   AircraftRenderer() = default;
@@ -113,30 +113,34 @@ public:
   void resolveLabelConflicts(AircraftList& aircraftList);
 
   /// Move all labels by offset (for viewport panning)
-  void moveLabels(AircraftList& aircraftList, float dx, float dy);
+  void moveLabels(float dx, float dy);
 
   /// Sync all labels to their aircraft's current screen position
-  /// Call this after any view transformation (zoom, recenter) that changes aircraft screen coords
   void syncLabelsToAircraft(AircraftList& aircraftList);
 
   // Configuration
   void setMetric(bool* metric) { this->metric = metric; }
 
-  /// Set the UI overlay bounds for off-map arrow avoidance
-  /// statusBarTopY: top Y coordinate of the highest status bar row
-  /// statusBarRightX: right X coordinate of status elements in bottom row
+  /// Get screen coordinates for an aircraft (returns false if not found)
+  bool getScreenCoords(uint32_t addr, int& outX, int& outY) const;
+
+  /// Set the UI overlay bounds for off-map arrow and label avoidance
   void setUIBounds(int statusBarTopY, int statusBarRightX) {
     uiStatusBarTopY_ = statusBarTopY;
     uiStatusBarRightX_ = statusBarRightX;
+    labelConfig_.uiStatusBarTopY = statusBarTopY;
+    labelConfig_.uiStatusBarRightX = statusBarRightX;
   }
 
   /// Set the scale bar bounds for off-map arrow avoidance
-  /// scaleBarBottomY: bottom Y coordinate of scale bar area
-  /// scaleBarRightX: right X coordinate of scale bar elements
   void setScaleBarBounds(int scaleBarBottomY, int scaleBarRightX) {
     scaleBarBottomY_ = scaleBarBottomY;
     scaleBarRightX_ = scaleBarRightX;
   }
+
+  // Label configuration access
+  ui::LabelConfig& labelConfig() { return labelConfig_; }
+  const ui::LabelConfig& labelConfig() const { return labelConfig_; }
 
   // Check if any animation needs high framerate
   [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
@@ -146,6 +150,10 @@ private:
   void drawPlaneIcon(const RenderContext& ctx, int x, int y, float heading,
                      SDL_Color planeColor);
   void drawPlaneText(const RenderContext& ctx, Aircraft* p, Aircraft* selectedAircraft);
+
+  // View state management
+  ui::AircraftViewState& getOrCreateViewState(const RenderContext& ctx, Aircraft* p);
+  void cleanupStaleViewStates(const AircraftList& aircraftList);
 
   // Off-map clustering helpers (greedy distance-based)
   void clearOffMapClusters(const RenderContext& ctx);
@@ -176,8 +184,17 @@ private:
                          float& outX, float& outY) const;
   bool isInMultiPlaneCluster(uint32_t addr) const;
 
+  // Build neighbor list for label physics
+  std::vector<ui::LabelNeighbor> buildNeighborList(const AircraftList& aircraftList) const;
+
   bool* metric{nullptr};
   bool highFramerate{false};
+
+  // Per-aircraft view state (screen coordinates, labels)
+  ui::AircraftViewStateMap viewStates_;
+
+  // Label configuration (replaces static state)
+  ui::LabelConfig labelConfig_;
 
   // Off-map plane clusters - greedy distance-based
   std::vector<OffMapCluster> offMapClusters_;

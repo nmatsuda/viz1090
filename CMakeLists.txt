@@ -78,6 +78,7 @@ set(UI_SOURCES
   src/ui/Map.cpp
   src/ui/Label.cpp
   src/ui/AircraftLabel.cpp
+  src/ui/AircraftViewState.cpp
   src/ui/MapView.cpp
   src/ui/AircraftRenderer.cpp
   src/ui/UIOverlay.cpp

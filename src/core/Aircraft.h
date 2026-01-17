@@ -36,10 +36,10 @@
 
 #include <chrono>
 #include <ctime>
-#include <memory>
 #include <vector>
 
-class AircraftLabel;
+namespace viz1090 {
+namespace core {
 
 /// Position history record for efficient trail rendering
 struct PositionHistory {
@@ -49,63 +49,69 @@ struct PositionHistory {
   std::chrono::high_resolution_clock::time_point timestamp;
 };
 
+/// Pure domain model representing an aircraft's state
+/// Contains only flight data - no UI/rendering concerns
 class Aircraft {
 public:
-  float getLastLon();
-  float getLastLat();
-  float getLastHeading();
+  explicit Aircraft(uint32_t addr);
+  ~Aircraft();
 
-  uint32_t addr;                 // ICAO address
-  char flight[16];               // Flight number
+  // Non-copyable but movable
+  Aircraft(const Aircraft&) = delete;
+  Aircraft& operator=(const Aircraft&) = delete;
+  Aircraft(Aircraft&&) = default;
+  Aircraft& operator=(Aircraft&&) = default;
+
+  /// Get last recorded position (for trail rendering)
+  [[nodiscard]] float getLastLon() const;
+  [[nodiscard]] float getLastLat() const;
+  [[nodiscard]] float getLastHeading() const;
+
+  // Identity
+  uint32_t addr;         // ICAO address
+  char flight[16];       // Flight number
+
+  // Signal data
   unsigned char signalLevel[8];  // Last 8 Signal Amplitudes
   float messageRate;
-  int altitude;       // Altitude
-  int speed;          // Velocity
-  int track;          // Angle of flight
-  int vert_rate;      // Vertical rate.
+
+  // Flight data
+  int altitude;    // Altitude in feet
+  int speed;       // Velocity in knots
+  int track;       // Angle of flight (heading)
+  int vert_rate;   // Vertical rate
+
+  // Timing
   time_t seen;        // Time at which the last packet was received
-  time_t seenLatLon;  // Time at which the last packet was received
+  time_t seenLatLon;  // Time at which the last lat/lon was received
   time_t prev_seen;
-  float lat, lon;  // Coordinated obtained from CPR encoded data
-
-  // CPR decoding state
-  int evenCprLat = 0;   // Even frame raw latitude
-  int evenCprLon = 0;   // Even frame raw longitude
-  int oddCprLat = 0;    // Odd frame raw latitude
-  int oddCprLon = 0;    // Odd frame raw longitude
-  uint64_t evenCprTime = 0;  // Timestamp of even frame
-  uint64_t oddCprTime = 0;   // Timestamp of odd frame
-  bool cprOddValid = false;
-  bool cprEvenValid = false;
-
-  // Consolidated position history for efficient cache access
-  std::vector<PositionHistory> positionHistory;
-
-  std::unique_ptr<AircraftLabel> label;
-
-  // float           oldLon[TRAIL_LENGTH];
-  // float           oldLat[TRAIL_LENGTH];
-  // float           oldHeading[TRAIL_LENGTH];
-  // time_t          oldSeen[TRAIL_LENGTH];
-  // uint8_t         oldIdx;
   std::chrono::high_resolution_clock::time_point created;
   std::chrono::high_resolution_clock::time_point msSeen;
   std::chrono::high_resolution_clock::time_point msSeenLatLon;
+
+  // Position
+  float lat, lon;  // Coordinates obtained from CPR encoded data
   int live;
 
-  //// label stuff -> should go to aircraft icon  class
+  // CPR decoding state
+  int evenCprLat = 0;
+  int evenCprLon = 0;
+  int oddCprLat = 0;
+  int oddCprLon = 0;
+  uint64_t evenCprTime = 0;
+  uint64_t oddCprTime = 0;
+  bool cprOddValid = false;
+  bool cprEvenValid = false;
 
-  // int             x, y, cx, cy;
-  int x, y;
-  // float w, h, target_w, target_h;
-  // float           ox, oy, dox, doy, ddox, ddoy;
-  // float             labelLevel;
-  // float  opacity, target_opacity;
-
-  /// methods
-
-  Aircraft(uint32_t addr);
-  ~Aircraft();
+  // Position history for trail rendering
+  std::vector<PositionHistory> positionHistory;
 };
+
+}  // namespace core
+}  // namespace viz1090
+
+// Backwards compatibility alias
+using Aircraft = viz1090::core::Aircraft;
+using PositionHistory = viz1090::core::PositionHistory;
 
 #endif  // AIRCRAFT_H

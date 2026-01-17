@@ -32,17 +32,19 @@
 
 #include "SDL2/SDL2_gfxPrimitives.h"
 #include "core/Aircraft.h"
+#include "ui/AircraftRenderer.h"
 #include "ui/MapView.h"
 #include "ui/MathUtils.h"
 #include "viz1090/Profiler.h"
 
 namespace viz1090 {
 
-void InputFeedback::draw(const RenderContext& ctx, Aircraft* selectedAircraft) {
+void InputFeedback::draw(const RenderContext& ctx, Aircraft* selectedAircraft,
+                         const AircraftRenderer& aircraftRenderer) {
   PROFILE_SCOPE("drawClick");
 
   drawClickRipple(ctx);
-  drawSelectionBrackets(ctx, selectedAircraft);
+  drawSelectionBrackets(ctx, selectedAircraft, aircraftRenderer);
   drawMouse(ctx);
 }
 
@@ -65,9 +67,16 @@ void InputFeedback::drawClickRipple(const RenderContext& ctx) {
 }
 
 void InputFeedback::drawSelectionBrackets(const RenderContext& ctx,
-                                          Aircraft* selectedAircraft) {
+                                          Aircraft* selectedAircraft,
+                                          const AircraftRenderer& aircraftRenderer) {
   if (!selectedAircraft) {
     return;
+  }
+
+  // Get screen coordinates from AircraftRenderer
+  int screenX, screenY;
+  if (!aircraftRenderer.getScreenCoords(selectedAircraft->addr, screenX, screenY)) {
+    return;  // Aircraft not found in view state
   }
 
   int boxSize;
@@ -79,42 +88,42 @@ void InputFeedback::drawSelectionBrackets(const RenderContext& ctx,
   }
 
   // Top-left corner
-  lineRGBA(ctx.renderer, selectedAircraft->x - boxSize, selectedAircraft->y - boxSize,
-           selectedAircraft->x - boxSize / 2, selectedAircraft->y - boxSize,
+  lineRGBA(ctx.renderer, screenX - boxSize, screenY - boxSize,
+           screenX - boxSize / 2, screenY - boxSize,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
-  lineRGBA(ctx.renderer, selectedAircraft->x - boxSize, selectedAircraft->y - boxSize,
-           selectedAircraft->x - boxSize, selectedAircraft->y - boxSize / 2,
+  lineRGBA(ctx.renderer, screenX - boxSize, screenY - boxSize,
+           screenX - boxSize, screenY - boxSize / 2,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
 
   // Top-right corner
-  lineRGBA(ctx.renderer, selectedAircraft->x + boxSize, selectedAircraft->y - boxSize,
-           selectedAircraft->x + boxSize / 2, selectedAircraft->y - boxSize,
+  lineRGBA(ctx.renderer, screenX + boxSize, screenY - boxSize,
+           screenX + boxSize / 2, screenY - boxSize,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
-  lineRGBA(ctx.renderer, selectedAircraft->x + boxSize, selectedAircraft->y - boxSize,
-           selectedAircraft->x + boxSize, selectedAircraft->y - boxSize / 2,
+  lineRGBA(ctx.renderer, screenX + boxSize, screenY - boxSize,
+           screenX + boxSize, screenY - boxSize / 2,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
 
   // Bottom-right corner
-  lineRGBA(ctx.renderer, selectedAircraft->x + boxSize, selectedAircraft->y + boxSize,
-           selectedAircraft->x + boxSize / 2, selectedAircraft->y + boxSize,
+  lineRGBA(ctx.renderer, screenX + boxSize, screenY + boxSize,
+           screenX + boxSize / 2, screenY + boxSize,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
-  lineRGBA(ctx.renderer, selectedAircraft->x + boxSize, selectedAircraft->y + boxSize,
-           selectedAircraft->x + boxSize, selectedAircraft->y + boxSize / 2,
+  lineRGBA(ctx.renderer, screenX + boxSize, screenY + boxSize,
+           screenX + boxSize, screenY + boxSize / 2,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
 
   // Bottom-left corner
-  lineRGBA(ctx.renderer, selectedAircraft->x - boxSize, selectedAircraft->y + boxSize,
-           selectedAircraft->x - boxSize / 2, selectedAircraft->y + boxSize,
+  lineRGBA(ctx.renderer, screenX - boxSize, screenY + boxSize,
+           screenX - boxSize / 2, screenY + boxSize,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
-  lineRGBA(ctx.renderer, selectedAircraft->x - boxSize, selectedAircraft->y + boxSize,
-           selectedAircraft->x - boxSize, selectedAircraft->y + boxSize / 2,
+  lineRGBA(ctx.renderer, screenX - boxSize, screenY + boxSize,
+           screenX - boxSize, screenY + boxSize / 2,
            ctx.style->selectedColor.r, ctx.style->selectedColor.g,
            ctx.style->selectedColor.b, 255);
 }
@@ -172,22 +181,28 @@ void InputFeedback::drawMouse(const RenderContext& ctx) {
 
 void InputFeedback::registerClick(int tapcount, int x, int y,
                                   AircraftList& aircraftList,
-                                  Aircraft** selectedAircraft, MapView& mapView) {
+                                  Aircraft** selectedAircraft, MapView& mapView,
+                                  const AircraftRenderer& aircraftRenderer) {
   if (tapcount == 1) {
     Aircraft* selection = nullptr;
+    int selDistSq = 0;
 
     for (const auto& p : aircraftList) {
       if (x && y) {
-        int distSq = (p->x - x) * (p->x - x) + (p->y - y) * (p->y - y);
+        int screenX, screenY;
+        if (!aircraftRenderer.getScreenCoords(p->addr, screenX, screenY)) {
+          continue;  // Aircraft not found in view state
+        }
+        int distSq = (screenX - x) * (screenX - x) + (screenY - y) * (screenY - y);
         if (distSq < 900) {
           if (selection) {
-            int selDistSq = (selection->x - x) * (selection->x - x) +
-                            (selection->y - y) * (selection->y - y);
             if (distSq < selDistSq) {
               selection = p.get();
+              selDistSq = distSq;
             }
           } else {
             selection = p.get();
+            selDistSq = distSq;
           }
         }
       }

@@ -35,7 +35,6 @@
 #include <iostream>
 #include <thread>
 
-#include "ui/AircraftLabel.h"
 #include "ui/MathUtils.h"
 #include "viz1090/Profiler.h"
 
@@ -284,7 +283,8 @@ View::registerClick(int tapcount, int x, int y) {
   {
     // Lock aircraft list for thread-safe iteration during click detection
     auto lock = appData->lockAircraftList();
-    inputFeedback.registerClick(tapcount, x, y, appData->aircraftList, &selectedAircraft, mapView);
+    inputFeedback.registerClick(tapcount, x, y, appData->aircraftList, &selectedAircraft, mapView,
+                                aircraftRenderer);
   }
   highFramerate = true;
 }
@@ -336,7 +336,6 @@ View::draw() {
   // Calculate UI overlay bounds for off-map arrow and label avoidance
   auto uiBounds = uiOverlay.calculateStatusBarBounds(renderContext, *appData, mapView.map.loaded);
   aircraftRenderer.setUIBounds(uiBounds.topY, uiBounds.rightX);
-  AircraftLabel::setUIBounds(uiBounds.topY, uiBounds.rightX);
 
   // Calculate scale bar bounds for off-map arrow avoidance
   auto scaleBarBounds = mapView.calculateScaleBarBounds(renderContext);
@@ -362,7 +361,7 @@ View::draw() {
       aircraftRenderer.resolveLabelConflicts(appData->aircraftList);
     }
     // Clear the density changed flag after all labels have been updated
-    AircraftLabel::clearDensityChanged();
+    aircraftRenderer.labelConfig().clearDensityChanged();
   }
 
   // Draw status overlay (status bar and menu button)
@@ -373,7 +372,7 @@ View::draw() {
   uiOverlay.drawMenuPanel(renderContext);
 
   // Draw input feedback (click ripple, selection brackets, mouse cursor)
-  inputFeedback.draw(renderContext, selectedAircraft);
+  inputFeedback.draw(renderContext, selectedAircraft, aircraftRenderer);
 
   // Present frame
   {

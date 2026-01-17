@@ -1,8 +1,6 @@
 // viz1090, a vizualizer for dump1090 ADSB output
 //
 // Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
-// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
-// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,42 +25,53 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#include "core/Aircraft.h"
+#ifndef LABEL_CONFIG_H
+#define LABEL_CONFIG_H
+
+#include <SDL2/SDL.h>
 
 namespace viz1090 {
-namespace core {
+namespace ui {
 
-float
-Aircraft::getLastLon() const {
-  if (positionHistory.size() > 1) {
-    return positionHistory.end()[-2].lon;
+/// Configuration for aircraft label rendering and physics
+/// Replaces static global state in AircraftLabel
+struct LabelConfig {
+  // Display settings
+  float densityMultiplier{0.15f};  // Controls how aggressively labels are hidden
+  bool showLabels{true};           // Global toggle for showing/hiding all labels
+
+  // UI bounds for label avoidance
+  int uiStatusBarTopY{0};          // Top Y coordinate of status bar area
+  int uiStatusBarRightX{0};        // Right X coordinate of status bar area
+
+  // Screen dimensions (needed for boundary calculations)
+  int screenWidth{0};
+  int screenHeight{0};
+
+  // Flag to force immediate density recalculation
+  bool densityChanged{false};
+
+  /// Adjust density multiplier by delta, clamped to [0, 1]
+  void adjustDensityMult(float delta) {
+    densityMultiplier += delta;
+    if (densityMultiplier < 0.0f) densityMultiplier = 0.0f;
+    if (densityMultiplier > 1.0f) densityMultiplier = 1.0f;
+    densityChanged = true;
   }
-  return 0.0f;
-}
 
-float
-Aircraft::getLastLat() const {
-  if (positionHistory.size() > 1) {
-    return positionHistory.end()[-2].lat;
+  /// Set density multiplier, clamped to [0, 1]
+  void setDensityMult(float value) {
+    if (value < 0.0f) value = 0.0f;
+    if (value > 1.0f) value = 1.0f;
+    densityMultiplier = value;
   }
-  return 0.0f;
-}
 
-float
-Aircraft::getLastHeading() const {
-  if (positionHistory.size() > 1) {
-    return positionHistory.end()[-2].heading;
-  }
-  return 0.0f;
-}
+  /// Clear the density changed flag
+  void clearDensityChanged() { densityChanged = false; }
+};
 
-Aircraft::Aircraft(uint32_t addr) : addr(addr), prev_seen(0), lat(0), lon(0) {
-  flight[0] = '\0';
-}
-
-Aircraft::~Aircraft() = default;
-
-}  // namespace core
+}  // namespace ui
 }  // namespace viz1090
+
+#endif  // LABEL_CONFIG_H

@@ -35,6 +35,9 @@
 
 #include "viz1090/decoder/CprDecoder.h"
 
+namespace viz1090 {
+namespace core {
+
 // Maximum time between even and odd CPR frames for global decode (10 seconds)
 static constexpr uint64_t kCprMaxTimeDiff = 10000000;  // microseconds
 
@@ -207,3 +210,6 @@ AircraftList::removeStale(std::chrono::seconds aTtl) {
                      }),
       mAircraft.end());
 }
+
+}  // namespace core
+}  // namespace viz1090

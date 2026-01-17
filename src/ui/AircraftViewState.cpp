@@ -1,8 +1,6 @@
 // viz1090, a vizualizer for dump1090 ADSB output
 //
 // Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
-// Copyright (C) 2014, Malcolm Robb <Support@ATTAvionics.com>
-// Copyright (C) 2012, Salvatore Sanfilippo <antirez at gmail dot com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,42 +25,47 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#include "core/Aircraft.h"
+#include "ui/AircraftViewState.h"
+#include "ui/AircraftLabel.h"
 
 namespace viz1090 {
-namespace core {
+namespace ui {
 
-float
-Aircraft::getLastLon() const {
-  if (positionHistory.size() > 1) {
-    return positionHistory.end()[-2].lon;
+AircraftViewState::~AircraftViewState() = default;
+
+AircraftViewState&
+AircraftViewStateMap::getOrCreate(uint32_t addr) {
+  return states_[addr];
+}
+
+AircraftViewState*
+AircraftViewStateMap::get(uint32_t addr) {
+  auto it = states_.find(addr);
+  return (it != states_.end()) ? &it->second : nullptr;
+}
+
+const AircraftViewState*
+AircraftViewStateMap::get(uint32_t addr) const {
+  auto it = states_.find(addr);
+  return (it != states_.end()) ? &it->second : nullptr;
+}
+
+void
+AircraftViewStateMap::removeStale(const std::unordered_map<uint32_t, bool>& activeAddrs) {
+  for (auto it = states_.begin(); it != states_.end();) {
+    if (activeAddrs.find(it->first) == activeAddrs.end()) {
+      it = states_.erase(it);
+    } else {
+      ++it;
+    }
   }
-  return 0.0f;
 }
 
-float
-Aircraft::getLastLat() const {
-  if (positionHistory.size() > 1) {
-    return positionHistory.end()[-2].lat;
-  }
-  return 0.0f;
+void
+AircraftViewStateMap::clear() {
+  states_.clear();
 }
 
-float
-Aircraft::getLastHeading() const {
-  if (positionHistory.size() > 1) {
-    return positionHistory.end()[-2].heading;
-  }
-  return 0.0f;
-}
-
-Aircraft::Aircraft(uint32_t addr) : addr(addr), prev_seen(0), lat(0), lon(0) {
-  flight[0] = '\0';
-}
-
-Aircraft::~Aircraft() = default;
-
-}  // namespace core
+}  // namespace ui
 }  // namespace viz1090

@@ -103,6 +103,9 @@ public:
 
   UIOverlay* getUIOverlay() { return &uiOverlay; }
 
+  // Expose aircraft renderer for label config access
+  AircraftRenderer& getAircraftRenderer() { return aircraftRenderer; }
+
 private:
   TTF_Font* loadFont(const char* name, int size);
   void closeFont(TTF_Font* font);

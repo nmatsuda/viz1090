@@ -1,61 +1,130 @@
+// viz1090, a vizualizer for dump1090 ADSB output
+//
+// Copyright (C) 2020, Nathan Matsuda <info@nathanmatsuda.com>
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//  *  Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//
+//  *  Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef AIRCRAFT_LABEL_H
 #define AIRCRAFT_LABEL_H
 
 #include "SDL2/SDL_ttf.h"
 #include <chrono>
 #include <string>
+#include <vector>
 
 #include "ui/Label.h"
+#include "ui/LabelConfig.h"
 #include "style/Style.h"
 
-class Aircraft;
-class AircraftList;
+namespace viz1090 {
+namespace ui {
 
+/// Info about a neighboring label for physics calculations
+/// This breaks the circular dependency - AircraftLabel doesn't need to know about AircraftList
+struct LabelNeighbor {
+  float x;           // Label X position
+  float y;           // Label Y position
+  float w;           // Label width
+  float h;           // Label height
+  int aircraftX;     // Aircraft screen X
+  int aircraftY;     // Aircraft screen Y
+  uint32_t addr;     // Aircraft address (to skip self)
+};
+
+/// Aircraft label with physics-based positioning
 class AircraftLabel {
 public:
-  void update();
+  /// Constructor
+  /// @param aircraftAddr The ICAO address of the aircraft this label belongs to
+  /// @param metric Reference to metric/imperial preference
+  /// @param screenWidth Screen width in pixels
+  /// @param screenHeight Screen height in pixels
+  /// @param font Font for label text
+  /// @param style Theme style reference
+  AircraftLabel(uint32_t aircraftAddr, bool& metric, int screenWidth, int screenHeight,
+                TTF_Font* font, const Style& style);
+
+  /// Update label text from aircraft data
+  void update(const char* flight, int altitude, int speed);
+
+  /// Clear accumulated acceleration (call before force calculation)
   void clearAcceleration();
-  void calculateForces(const AircraftList& aircraftList);
+
+  /// Calculate physics forces from neighboring labels
+  /// @param neighbors List of neighboring labels for collision detection
+  /// @param config Label configuration (density multiplier, bounds, etc.)
+  /// @param aircraftScreenX Aircraft's current screen X
+  /// @param aircraftScreenY Aircraft's current screen Y
+  void calculateForces(const std::vector<LabelNeighbor>& neighbors,
+                       const LabelConfig& config,
+                       int aircraftScreenX, int aircraftScreenY);
+
+  /// Apply accumulated forces using Verlet integration
   void applyForces();
+
+  /// Move label by delta (for viewport panning)
   void move(float dx, float dy);
-  void syncToAircraftPosition();  // Reposition label based on aircraft's current screen position
-  void resetToAircraftPosition(); // Snap label directly to nominal position near aircraft
-  bool getIsChanging();
 
-  void draw(SDL_Renderer* renderer, bool selected);
+  /// Sync label position to aircraft's current screen position
+  void syncToAircraftPosition(int aircraftScreenX, int aircraftScreenY);
 
-  AircraftLabel(Aircraft* p, bool& metric, int screen_width, int screen_height, TTF_Font* font,
-                const Style& style);
+  /// Snap label directly to nominal position near aircraft
+  void resetToAircraftPosition(int aircraftScreenX, int aircraftScreenY);
 
-  // Global label density multiplier (controls how aggressively labels are hidden)
-  static float getDensityMult() { return densityMult_; }
-  static void setDensityMult(float value);
-  static void adjustDensityMult(float delta);
+  /// Check if label is currently animating/changing
+  [[nodiscard]] bool getIsChanging() const { return isChanging; }
 
-  // Flag to force immediate density recalculation (bypasses timing check)
-  static bool densityChanged() { return densityChanged_; }
-  static void clearDensityChanged() { densityChanged_ = false; }
+  /// Draw the label
+  /// @param renderer SDL renderer
+  /// @param selected Whether this aircraft is selected
+  /// @param showLabels Whether labels are globally visible
+  /// @param aircraftScreenX Aircraft's current screen X
+  /// @param aircraftScreenY Aircraft's current screen Y
+  void draw(SDL_Renderer* renderer, bool selected, bool showLabels,
+            int aircraftScreenX, int aircraftScreenY);
 
-  // Global toggle for showing/hiding all labels
-  static bool getShowLabels() { return showLabels_; }
-  static void setShowLabels(bool show) { showLabels_ = show; }
-  static void toggleShowLabels() { showLabels_ = !showLabels_; }
-
-  // Force label to collapse (for cluster merge) or expand (for cluster unmerge)
+  /// Force label to collapse (for cluster merge)
   void forceCollapse();
+
+  /// Force label to expand (for cluster unmerge)
   void forceExpand();
 
-  // UI bounds for label avoidance (status bar at bottom)
-  static void setUIBounds(int statusBarTopY, int statusBarRightX) {
-    uiStatusBarTopY_ = statusBarTopY;
-    uiStatusBarRightX_ = statusBarRightX;
-  }
+  /// Get label bounds for collision detection
+  [[nodiscard]] float getX() const { return x; }
+  [[nodiscard]] float getY() const { return y; }
+  [[nodiscard]] float getWidth() const { return w; }
+  [[nodiscard]] float getHeight() const { return h; }
+
+  /// Get aircraft address this label belongs to
+  [[nodiscard]] uint32_t getAircraftAddr() const { return aircraftAddr_; }
 
 private:
   SDL_Rect getFullRect(int labelLevel);
-  float calculateDensity(const AircraftList& aircraftList, int labelLevel);
+  float calculateDensity(const std::vector<LabelNeighbor>& neighbors, int labelLevel);
 
-  Aircraft* p;
+  uint32_t aircraftAddr_;
 
   Label flightLabel;
   Label altitudeLabel;
@@ -97,8 +166,7 @@ private:
 
   std::chrono::high_resolution_clock::time_point lastLevelChange;
 
-  ///////////
-
+  // Physics constants
   float label_force = 0.01f;
   float label_dist = 2.0f;
   float density_force = 0.01f;
@@ -113,15 +181,12 @@ private:
   float drag_force = 0.00f;
 
   const Style& style;
-
-  // Static density multiplier shared across all labels
-  static float densityMult_;
-  static bool densityChanged_;
-  static bool showLabels_;
-
-  // Static UI bounds for label avoidance
-  static int uiStatusBarTopY_;
-  static int uiStatusBarRightX_;
 };
+
+}  // namespace ui
+}  // namespace viz1090
+
+// Backwards compatibility
+using AircraftLabel = viz1090::ui::AircraftLabel;
 
 #endif  // AIRCRAFT_LABEL_H

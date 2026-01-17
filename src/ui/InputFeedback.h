@@ -34,11 +34,10 @@
 #include "core/AircraftList.h"
 #include "ui/RenderContext.h"
 
-class Aircraft;
-
 namespace viz1090 {
 
 class MapView;
+class AircraftRenderer;
 
 /// Handles visual feedback for user input (clicks, mouse, selection)
 class InputFeedback {
@@ -46,11 +45,13 @@ public:
   InputFeedback() = default;
 
   /// Draw all input feedback (click ripple, selection brackets)
-  void draw(const RenderContext& ctx, Aircraft* selectedAircraft);
+  void draw(const RenderContext& ctx, Aircraft* selectedAircraft,
+            const AircraftRenderer& aircraftRenderer);
 
   /// Register a click event
   void registerClick(int tapcount, int x, int y, AircraftList& aircraftList,
-                     Aircraft** selectedAircraft, MapView& mapView);
+                     Aircraft** selectedAircraft, MapView& mapView,
+                     const AircraftRenderer& aircraftRenderer);
 
   /// Register mouse movement
   void registerMouseMove(int x, int y);
@@ -61,7 +62,8 @@ public:
 
 private:
   void drawClickRipple(const RenderContext& ctx);
-  void drawSelectionBrackets(const RenderContext& ctx, Aircraft* selectedAircraft);
+  void drawSelectionBrackets(const RenderContext& ctx, Aircraft* selectedAircraft,
+                             const AircraftRenderer& aircraftRenderer);
   void drawMouse(const RenderContext& ctx);
 
   // Click state

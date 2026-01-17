@@ -30,7 +30,7 @@
 //
 
 #include "ui/Input.h"
-#include "ui/AircraftLabel.h"
+#include "ui/AircraftRenderer.h"
 #include "viz1090/Profiler.h"
 
 #include <cstdio>
@@ -132,7 +132,8 @@ Input::getInput() {
 
           // toggle aircraft labels
           case SDLK_l:
-            AircraftLabel::toggleShowLabels();
+            view->getAircraftRenderer().labelConfig().showLabels =
+                !view->getAircraftRenderer().labelConfig().showLabels;
             break;
 
           // recenter on startup position (origin)
@@ -147,12 +148,12 @@ Input::getInput() {
 
           // increase label density (show more labels)
           case SDLK_RIGHTBRACKET:
-            AircraftLabel::adjustDensityMult(-0.1f);
+            view->getAircraftRenderer().labelConfig().adjustDensityMult(-0.1f);
             break;
 
           // decrease label density (show fewer labels)
           case SDLK_LEFTBRACKET:
-            AircraftLabel::adjustDensityMult(0.1f);
+            view->getAircraftRenderer().labelConfig().adjustDensityMult(0.1f);
             break;
 
           // arrow keys to pan the map (10% of screen size, animated)
