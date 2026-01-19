@@ -18,6 +18,14 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Profiling option (uses gprof instrumentation)
+option(ENABLE_GPROF "Enable gprof profiling instrumentation" OFF)
+if(ENABLE_GPROF)
+  add_compile_options(-pg)
+  add_link_options(-pg)
+  message(STATUS "gprof profiling enabled - run program then use 'gprof viz1090 gmon.out'")
+endif()
+
 # Compiler warnings
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)

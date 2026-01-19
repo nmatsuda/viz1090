@@ -40,6 +40,7 @@
 #include "ui/AircraftLabel.h"
 #include "ui/AircraftViewState.h"
 #include "ui/LabelConfig.h"
+#include "ui/LabelSpatialGrid.h"
 #include "ui/RenderContext.h"
 
 namespace viz1090 {
@@ -228,6 +229,10 @@ private:
   // Scale bar bounds for off-map arrow avoidance
   int scaleBarBottomY_{0};     // Bottom Y coordinate of scale bar area
   int scaleBarRightX_{0};      // Right X coordinate of scale bar elements
+
+  // Spatial grid for efficient label neighbor queries
+  mutable ui::LabelSpatialGrid labelSpatialGrid_;
+  mutable std::vector<const ui::LabelNeighbor*> nearbyNeighborsTemp_;
 };
 
 }  // namespace viz1090

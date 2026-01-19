@@ -132,6 +132,8 @@ float
 AircraftLabel::calculateDensity(const std::vector<LabelNeighbor>& neighbors, int labelLevelVal) {
   float density_max = 0;
 
+  SDL_Rect currentRect = getFullRect(labelLevelVal);
+
   for (const auto& neighbor : neighbors) {
     if (neighbor.addr == aircraftAddr_) {
       continue;
@@ -153,10 +155,62 @@ AircraftLabel::calculateDensity(const std::vector<LabelNeighbor>& neighbors, int
       continue;
     }
 
-    SDL_Rect currentRect = getFullRect(labelLevelVal);
+    float dx = std::fabs(x - neighbor.x);
+    float dy = std::fabs(y - neighbor.y);
 
-    float width_proportion = (currentRect.w + neighbor.w) / std::fabs(x - neighbor.x);
-    float height_proportion = (currentRect.h + neighbor.h) / std::fabs(y - neighbor.y);
+    // Avoid division by very small numbers
+    if (dx < 1.0f) dx = 1.0f;
+    if (dy < 1.0f) dy = 1.0f;
+
+    float width_proportion = (currentRect.w + neighbor.w) / dx;
+    float height_proportion = (currentRect.h + neighbor.h) / dy;
+
+    float density = width_proportion * height_proportion;
+
+    if (density > density_max) {
+      density_max = density;
+    }
+  }
+
+  return density_max;
+}
+
+float
+AircraftLabel::calculateDensityFromNearby(const std::vector<const LabelNeighbor*>& nearbyNeighbors, int labelLevelVal) {
+  float density_max = 0;
+
+  SDL_Rect currentRect = getFullRect(labelLevelVal);
+
+  for (const auto* neighbor : nearbyNeighbors) {
+    if (neighbor->addr == aircraftAddr_) {
+      continue;
+    }
+
+    if (neighbor->x + neighbor->w < 0) {
+      continue;
+    }
+
+    if (neighbor->y + neighbor->h < 0) {
+      continue;
+    }
+
+    if (neighbor->x > screen_width) {
+      continue;
+    }
+
+    if (neighbor->y > screen_height) {
+      continue;
+    }
+
+    float dx = std::fabs(x - neighbor->x);
+    float dy = std::fabs(y - neighbor->y);
+
+    // Avoid division by very small numbers
+    if (dx < 1.0f) dx = 1.0f;
+    if (dy < 1.0f) dy = 1.0f;
+
+    float width_proportion = (currentRect.w + neighbor->w) / dx;
+    float height_proportion = (currentRect.h + neighbor->h) / dy;
 
     float density = width_proportion * height_proportion;
 
@@ -322,6 +376,193 @@ AircraftLabel::calculateForces(const std::vector<LabelNeighbor>& neighbors,
         lastLevelChange = now();
       }
     } else if (labelLevel > 1.2f + config.densityMultiplier * calculateDensity(neighbors, static_cast<int>(labelLevel) + 1)) {
+      if (labelLevel >= 0) {
+        if (labelLevel - std::floor(labelLevel) <= level_rate) {
+          labelLevel -= 0.5f;
+        }
+
+        labelLevel -= level_rate;
+        isChanging = true;
+        lastLevelChange = now();
+      }
+    }
+  }
+
+  // add drag force (using implicit velocity from Verlet)
+  float vel_x = x - prev_x;
+  float vel_y = y - prev_y;
+  ddx -= drag_force * vel_x * vel_x * sign(vel_x);
+  ddy -= drag_force * vel_y * vel_y * sign(vel_y);
+}
+
+void
+AircraftLabel::calculateForcesFromNearby(const std::vector<const LabelNeighbor*>& nearbyNeighbors,
+                                         const std::vector<LabelNeighbor>& /* allNeighbors */,
+                                         const LabelConfig& config,
+                                         int aircraftScreenX, int aircraftScreenY) {
+  float p_left = x;
+  float p_right = x + w;
+  float p_top = y;
+  float p_bottom = y + h;
+
+  float boxmid_x = (p_left + p_right) / 2.0f;
+  float boxmid_y = (p_top + p_bottom) / 2.0f;
+
+  float offset_x = boxmid_x - static_cast<float>(aircraftScreenX);
+  float offset_y = boxmid_y - static_cast<float>(aircraftScreenY);
+
+  float target_length_x = attachment_dist + w / 2.0f;
+  float target_length_y = attachment_dist + h / 2.0f;
+
+  // stay icon_dist away from own icon
+  ddx -= sign(offset_x) * attachment_force * (std::fabs(offset_x) - target_length_x);
+  ddy -= sign(offset_y) * attachment_force * (std::fabs(offset_y) - target_length_y);
+
+  // screen edge
+  if (p_left < edge_margin) {
+    ddx += boundary_force * (edge_margin - p_left);
+  }
+
+  if (p_right > screen_width - edge_margin) {
+    ddx += boundary_force * (screen_width - edge_margin - p_right);
+  }
+
+  if (p_top < edge_margin) {
+    ddy += boundary_force * (edge_margin - p_top);
+  }
+
+  // Bottom edge boundary - respect UI status bar bounds
+  float effectiveBottomEdge = static_cast<float>(screen_height);
+  if (config.uiStatusBarTopY > 0 && p_left < static_cast<float>(config.uiStatusBarRightX)) {
+    effectiveBottomEdge = static_cast<float>(config.uiStatusBarTopY);
+  }
+
+  if (p_bottom > effectiveBottomEdge - edge_margin) {
+    ddy += boundary_force * (effectiveBottomEdge - edge_margin - p_bottom);
+  }
+
+  float all_x = 0;
+  float all_y = 0;
+  int count = 0;
+
+  // Maximum interaction distance squared for early rejection
+  // Labels more than 150 pixels apart in both X and Y cannot interact meaningfully
+  constexpr float maxInteractionDist = 150.0f;
+  constexpr float maxInteractionDistSq = maxInteractionDist * maxInteractionDist;
+
+  // check against nearby labels only (from spatial grid)
+  for (const auto* neighbor : nearbyNeighbors) {
+    if (neighbor->addr == aircraftAddr_) {
+      continue;
+    }
+
+    float check_left = neighbor->x;
+    float check_right = neighbor->x + neighbor->w;
+    float check_top = neighbor->y;
+    float check_bottom = neighbor->y + neighbor->h;
+
+    float checkboxmid_x = (check_left + check_right) / 2.0f;
+    float checkboxmid_y = (check_top + check_bottom) / 2.0f;
+
+    // Early distance rejection - skip if centers are too far apart
+    float dx = boxmid_x - checkboxmid_x;
+    float dy = boxmid_y - checkboxmid_y;
+    float distSq = dx * dx + dy * dy;
+    if (distSq > maxInteractionDistSq) {
+      continue;
+    }
+
+    bool overlap = true;
+
+    if (p_left >= check_right + 10 || check_left >= p_right + 10)
+      overlap = false;
+
+    if (p_top >= check_bottom + 10 || check_top >= p_bottom + 10)
+      overlap = false;
+
+    if (overlap) {
+      float td = std::fabs(p_top - check_bottom);
+      float bd = std::fabs(p_bottom - check_top);
+      float ld = std::fabs(p_left - check_right);
+      float rd = std::fabs(p_right - check_left);
+
+      float x_mag, y_mag;
+
+      if (boxmid_y > checkboxmid_y) {
+        y_mag = check_bottom - p_top + 10;
+      } else {
+        y_mag = check_top - p_bottom - 10;
+        td = bd;
+      }
+
+      if (boxmid_x > checkboxmid_x) {
+        x_mag = check_right - p_left + 10;
+      } else {
+        x_mag = check_left - p_right - 10;
+        ld = rd;
+      }
+
+      if (td < ld) {
+        x_mag = 0;
+      } else {
+        y_mag = 0;
+      }
+
+      ddx += label_force * x_mag;
+      ddy += label_force * y_mag;
+    }
+
+    // stay at least label_dist away from other icons
+    float check_x = static_cast<float>(neighbor->aircraftX);
+    float check_y = static_cast<float>(neighbor->aircraftY);
+
+    if (p_right >= check_x && check_x >= p_left && p_bottom >= check_y && check_y >= p_top) {
+      float x_mag, y_mag;
+
+      if (boxmid_x - check_x > 0) {
+        x_mag = check_x - p_left + 10;
+      } else {
+        x_mag = check_x - p_right - 10;
+      }
+
+      if (boxmid_y - check_y > 0) {
+        y_mag = check_y - p_top + 10;
+      } else {
+        y_mag = check_y - p_bottom - 10;
+      }
+
+      ddx += icon_force * x_mag;
+      ddy += icon_force * y_mag;
+    }
+
+    all_x += sign(boxmid_x - checkboxmid_x);
+    all_y += sign(boxmid_y - checkboxmid_y);
+
+    count++;
+  }
+
+  // move away from others
+  if (count > 0) {
+    ddx += density_force * all_x / static_cast<float>(count);
+    ddy += density_force * all_y / static_cast<float>(count);
+  }
+
+  float level_rate = 0.25f;
+
+  float randtime = 5000.0f + 5000.0f * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+  if (config.densityChanged || elapsed(lastLevelChange) > randtime) {
+    // Use nearby neighbors for density calculation (cheaper than full list)
+    if (labelLevel < -1.2f + config.densityMultiplier * calculateDensityFromNearby(nearbyNeighbors, static_cast<int>(labelLevel) - 1)) {
+      if (labelLevel <= 2) {
+        if (std::ceil(labelLevel) - labelLevel <= level_rate) {
+          labelLevel += 0.5f;
+        }
+
+        labelLevel += level_rate;
+        isChanging = true;
+        lastLevelChange = now();
+      }
+    } else if (labelLevel > 1.2f + config.densityMultiplier * calculateDensityFromNearby(nearbyNeighbors, static_cast<int>(labelLevel) + 1)) {
       if (labelLevel >= 0) {
         if (labelLevel - std::floor(labelLevel) <= level_rate) {
           labelLevel -= 0.5f;

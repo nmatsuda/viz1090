@@ -72,7 +72,7 @@ public:
   /// Clear accumulated acceleration (call before force calculation)
   void clearAcceleration();
 
-  /// Calculate physics forces from neighboring labels
+  /// Calculate physics forces from neighboring labels (full list - O(n) per call)
   /// @param neighbors List of neighboring labels for collision detection
   /// @param config Label configuration (density multiplier, bounds, etc.)
   /// @param aircraftScreenX Aircraft's current screen X
@@ -80,6 +80,17 @@ public:
   void calculateForces(const std::vector<LabelNeighbor>& neighbors,
                        const LabelConfig& config,
                        int aircraftScreenX, int aircraftScreenY);
+
+  /// Calculate physics forces from pre-filtered nearby neighbors (optimized path)
+  /// @param nearbyNeighbors Pointers to only the nearby neighbors (from spatial grid)
+  /// @param allNeighbors Full list for density calculation
+  /// @param config Label configuration (density multiplier, bounds, etc.)
+  /// @param aircraftScreenX Aircraft's current screen X
+  /// @param aircraftScreenY Aircraft's current screen Y
+  void calculateForcesFromNearby(const std::vector<const LabelNeighbor*>& nearbyNeighbors,
+                                 const std::vector<LabelNeighbor>& allNeighbors,
+                                 const LabelConfig& config,
+                                 int aircraftScreenX, int aircraftScreenY);
 
   /// Apply accumulated forces using Verlet integration
   void applyForces();
@@ -123,6 +134,7 @@ public:
 private:
   SDL_Rect getFullRect(int labelLevel);
   float calculateDensity(const std::vector<LabelNeighbor>& neighbors, int labelLevel);
+  float calculateDensityFromNearby(const std::vector<const LabelNeighbor*>& nearbyNeighbors, int labelLevel);
 
   uint32_t aircraftAddr_;
 

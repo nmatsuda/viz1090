@@ -786,6 +786,10 @@ void AircraftRenderer::resolveLabelConflicts(AircraftList& aircraftList) {
   // Build neighbor list
   auto neighbors = buildNeighborList(aircraftList);
 
+  // Build spatial grid for efficient neighbor lookups
+  // Cell size of 100px is larger than typical label interaction distance
+  labelSpatialGrid_.build(neighbors, labelConfig_.screenWidth, labelConfig_.screenHeight, 100.0f);
+
   // Clear acceleration
   for (const auto& aircraft : aircraftList) {
     auto* viewState = viewStates_.get(aircraft->addr);
@@ -794,12 +798,19 @@ void AircraftRenderer::resolveLabelConflicts(AircraftList& aircraftList) {
     }
   }
 
-  // Calculate forces
+  // Calculate forces using spatial grid for efficient neighbor queries
   for (const auto& aircraft : aircraftList) {
     auto* viewState = viewStates_.get(aircraft->addr);
     if (viewState && viewState->label) {
-      viewState->label->calculateForces(neighbors, labelConfig_,
-                                        viewState->screenX, viewState->screenY);
+      // Query spatial grid for nearby neighbors only
+      labelSpatialGrid_.getNearbyNeighbors(
+          viewState->label->getX(), viewState->label->getY(),
+          viewState->label->getWidth(), viewState->label->getHeight(),
+          neighbors, nearbyNeighborsTemp_);
+
+      // Use optimized path with pre-filtered neighbors
+      viewState->label->calculateForcesFromNearby(nearbyNeighborsTemp_, neighbors, labelConfig_,
+                                                  viewState->screenX, viewState->screenY);
     }
   }
 
