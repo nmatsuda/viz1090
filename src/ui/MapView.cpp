@@ -319,11 +319,35 @@ void MapView::drawLines(const RenderContext& ctx, int left, int top, int right, 
   latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom,
                          ctx.screenWidth, ctx.screenHeight);
 
-  drawLinesRecursive(ctx, &(map.root), screen_lat_min, screen_lat_max, screen_lon_min,
-                     screen_lon_max, ctx.style->geoColor);
+  // Draw map lines - collect into buffer then batch draw each segment
+  lineBuffer_.clear();
+  collectLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, ctx.screenWidth, ctx.screenHeight);
+  if (!lineBuffer_.empty()) {
+    SDL_SetRenderDrawColor(ctx.renderer, ctx.style->geoColor.r, ctx.style->geoColor.g,
+                           ctx.style->geoColor.b, 255);
+    // Draw each line segment (pairs of points)
+    for (size_t i = 0; i + 1 < lineBuffer_.size(); i += 2) {
+      SDL_RenderDrawLine(ctx.renderer,
+                         lineBuffer_[i].x, lineBuffer_[i].y,
+                         lineBuffer_[i + 1].x, lineBuffer_[i + 1].y);
+    }
+  }
 
-  drawLinesRecursive(ctx, &(map.airport_root), screen_lat_min, screen_lat_max, screen_lon_min,
-                     screen_lon_max, ctx.style->airportColor);
+  // Draw airport lines - collect into buffer then batch draw each segment
+  lineBuffer_.clear();
+  collectLinesRecursive(&(map.airport_root), screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, ctx.screenWidth, ctx.screenHeight);
+  if (!lineBuffer_.empty()) {
+    SDL_SetRenderDrawColor(ctx.renderer, ctx.style->airportColor.r, ctx.style->airportColor.g,
+                           ctx.style->airportColor.b, 255);
+    // Draw each line segment (pairs of points)
+    for (size_t i = 0; i + 1 < lineBuffer_.size(); i += 2) {
+      SDL_RenderDrawLine(ctx.renderer,
+                         lineBuffer_[i].x, lineBuffer_[i].y,
+                         lineBuffer_[i + 1].x, lineBuffer_[i + 1].y);
+    }
+  }
 }
 
 void MapView::drawLinesRecursive(const RenderContext& ctx, QuadTree* tree,
@@ -371,6 +395,62 @@ void MapView::drawLinesRecursive(const RenderContext& ctx, QuadTree* tree,
     }
 
     lineRGBA(ctx.renderer, x1, y1, x2, y2, color.r, color.g, color.b, 255);
+  }
+}
+
+void MapView::collectLinesRecursive(QuadTree* tree,
+                                    float screen_lat_min, float screen_lat_max,
+                                    float screen_lon_min, float screen_lon_max,
+                                    int screenWidth, int screenHeight) {
+  if (tree == NULL) {
+    return;
+  }
+
+  // Quadtree bounding box culling
+  if (tree->lat_min > screen_lat_max || screen_lat_min > tree->lat_max) {
+    return;
+  }
+
+  if (tree->lon_min > screen_lon_max || screen_lon_min > tree->lon_max) {
+    return;
+  }
+
+  // Recurse into children
+  collectLinesRecursive(tree->nw, screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, screenWidth, screenHeight);
+  collectLinesRecursive(tree->sw, screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, screenWidth, screenHeight);
+  collectLinesRecursive(tree->ne, screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, screenWidth, screenHeight);
+  collectLinesRecursive(tree->se, screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, screenWidth, screenHeight);
+
+  // Collect lines from this node
+  for (const auto& line : tree->lines) {
+    int x1, y1, x2, y2;
+    float dx, dy;
+
+    pxFromLonLat(&dx, &dy, line->start.lon, line->start.lat);
+    screenCoords(&x1, &y1, dx, dy, screenWidth, screenHeight);
+
+    pxFromLonLat(&dx, &dy, line->end.lon, line->end.lat);
+    screenCoords(&x2, &y2, dx, dy, screenWidth, screenHeight);
+
+    // Skip if both endpoints are out of bounds
+    bool p1OutOfBounds = (x1 < 0 || x1 >= screenWidth || y1 < 0 || y1 >= screenHeight);
+    bool p2OutOfBounds = (x2 < 0 || x2 >= screenWidth || y2 < 0 || y2 >= screenHeight);
+    if (p1OutOfBounds && p2OutOfBounds) {
+      continue;
+    }
+
+    // Skip sub-pixel lines (both points map to same pixel)
+    if (x1 == x2 && y1 == y2) {
+      continue;
+    }
+
+    // Add line segment to buffer (two points per line)
+    lineBuffer_.push_back({x1, y1});
+    lineBuffer_.push_back({x2, y2});
   }
 }
 

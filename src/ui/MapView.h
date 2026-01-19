@@ -113,6 +113,10 @@ private:
   void drawLinesRecursive(const RenderContext& ctx, QuadTree* tree,
                           float screen_lat_min, float screen_lat_max,
                           float screen_lon_min, float screen_lon_max, SDL_Color color);
+  void collectLinesRecursive(QuadTree* tree,
+                             float screen_lat_min, float screen_lat_max,
+                             float screen_lon_min, float screen_lon_max,
+                             int screenWidth, int screenHeight);
   void drawPlaceNames(const RenderContext& ctx);
   void moveMapToTarget();
   void zoomMapToTarget();
@@ -138,6 +142,9 @@ private:
   std::chrono::high_resolution_clock::time_point lastRedraw;
 
   static constexpr int FRAMETIME = 33;
+
+  // Line buffer for batched rendering
+  mutable std::vector<SDL_Point> lineBuffer_;
 };
 
 }  // namespace viz1090
