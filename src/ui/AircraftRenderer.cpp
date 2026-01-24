@@ -404,25 +404,32 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
     if (!wasInCluster && nearest->count >= 1) {
       if (offMapAnimStates_.find(addr) == offMapAnimStates_.end()) {
         auto memberIt = offMapMembership_.find(addr);
-        bool withinHysteresis = (memberIt != offMapMembership_.end() &&
-                                 !memberIt->second.inCluster &&
-                                 elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
-        if (!withinHysteresis) {
-          ClusterMemberState& animState = offMapAnimStates_[addr];
-          animState.aircraftAddr = addr;
-          animState.clusterAnchorAddr = *nearest->memberAddrs.begin();
-          animState.heading = 0.0f;
-          animState.color = planeColor;
-          animState.animStartTime = now();
-          animState.isMerging = true;
-          highFramerate = true;
 
-          auto* viewState = viewStates_.get(addr);
-          if (viewState && viewState->label) {
-            viewState->label->forceCollapse();
+        // New aircraft with no membership history - initialize and wait for hysteresis
+        if (memberIt == offMapMembership_.end()) {
+          offMapMembership_[addr] = {now(), false};
+          // Skip merge this frame - will be eligible after hysteresis period
+        } else {
+          // Existing aircraft - check if recently unmerged (within hysteresis)
+          bool withinHysteresis = (!memberIt->second.inCluster &&
+                                   elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
+          if (!withinHysteresis) {
+            ClusterMemberState& animState = offMapAnimStates_[addr];
+            animState.aircraftAddr = addr;
+            animState.clusterAnchorAddr = *nearest->memberAddrs.begin();
+            animState.heading = 0.0f;
+            animState.color = planeColor;
+            animState.animStartTime = now();
+            animState.isMerging = true;
+            highFramerate = true;
+
+            auto* viewState = viewStates_.get(addr);
+            if (viewState && viewState->label) {
+              viewState->label->forceCollapse();
+            }
+
+            offMapMembership_[addr] = {now(), true};
           }
-
-          offMapMembership_[addr] = {now(), true};
         }
       }
     }
@@ -615,25 +622,32 @@ void AircraftRenderer::addToOnMapCluster(const RenderContext& /* ctx */, int x, 
     if (!wasInCluster && nearest->count >= 1) {
       if (onMapAnimStates_.find(addr) == onMapAnimStates_.end()) {
         auto memberIt = onMapMembership_.find(addr);
-        bool withinHysteresis = (memberIt != onMapMembership_.end() &&
-                                 !memberIt->second.inCluster &&
-                                 elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
-        if (!withinHysteresis) {
-          ClusterMemberState& animState = onMapAnimStates_[addr];
-          animState.aircraftAddr = addr;
-          animState.clusterAnchorAddr = *nearest->memberAddrs.begin();
-          animState.heading = heading;
-          animState.color = planeColor;
-          animState.animStartTime = now();
-          animState.isMerging = true;
-          highFramerate = true;
 
-          auto* viewState = viewStates_.get(addr);
-          if (viewState && viewState->label) {
-            viewState->label->forceCollapse();
+        // New aircraft with no membership history - initialize and wait for hysteresis
+        if (memberIt == onMapMembership_.end()) {
+          onMapMembership_[addr] = {now(), false};
+          // Skip merge this frame - will be eligible after hysteresis period
+        } else {
+          // Existing aircraft - check if recently unmerged (within hysteresis)
+          bool withinHysteresis = (!memberIt->second.inCluster &&
+                                   elapsed(memberIt->second.lastStateChange) < CLUSTER_HYSTERESIS_MS);
+          if (!withinHysteresis) {
+            ClusterMemberState& animState = onMapAnimStates_[addr];
+            animState.aircraftAddr = addr;
+            animState.clusterAnchorAddr = *nearest->memberAddrs.begin();
+            animState.heading = heading;
+            animState.color = planeColor;
+            animState.animStartTime = now();
+            animState.isMerging = true;
+            highFramerate = true;
+
+            auto* viewState = viewStates_.get(addr);
+            if (viewState && viewState->label) {
+              viewState->label->forceCollapse();
+            }
+
+            onMapMembership_[addr] = {now(), true};
           }
-
-          onMapMembership_[addr] = {now(), true};
         }
       }
     }
