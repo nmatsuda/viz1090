@@ -175,7 +175,8 @@ void AircraftRenderer::draw(const RenderContext& ctx, AircraftList& aircraftList
         viewState.heading = useHeading;
         viewState.color = planeColor;
 
-        bool outOfBounds = (x < 0 || x >= ctx.screenWidth || y < 0 || y >= ctx.screenHeight);
+        // Check if plane is off-map (outside screen bounds or in UI overlay region)
+        bool outOfBounds = isOffMap(x, y, ctx.screenWidth, ctx.screenHeight);
         viewState.isOffMap = outOfBounds;
 
         if (outOfBounds) {
@@ -1028,6 +1029,25 @@ bool AircraftRenderer::isInMultiPlaneCluster(uint32_t addr) const {
       return true;
     }
   }
+  return false;
+}
+
+bool AircraftRenderer::isOffMap(int x, int y, int screenWidth, int screenHeight) const {
+  // Basic screen bounds check
+  if (x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
+    return true;
+  }
+
+  // Status bar region (bottom-left area)
+  if (uiStatusBarTopY_ > 0 && y > uiStatusBarTopY_ && x < uiStatusBarRightX_) {
+    return true;
+  }
+
+  // Scale bar region (top-left area)
+  if (scaleBarBottomY_ > 0 && y < scaleBarBottomY_ && x < scaleBarRightX_) {
+    return true;
+  }
+
   return false;
 }
 

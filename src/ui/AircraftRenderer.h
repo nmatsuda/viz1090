@@ -156,6 +156,9 @@ private:
                                   float& outDirX, float& outDirY) const;
   bool isInMultiPlaneCluster(uint32_t addr) const;
 
+  // Check if a screen position is off-map (outside screen bounds or in UI overlay region)
+  bool isOffMap(int x, int y, int screenWidth, int screenHeight) const;
+
   // Build neighbor list for label physics
   std::vector<ui::LabelNeighbor> buildNeighborList(const AircraftList& aircraftList) const;
 

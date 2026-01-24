@@ -802,13 +802,18 @@ AircraftLabel::draw(SDL_Renderer* renderer, bool selected, bool showLabels,
   int ix = static_cast<int>(x);
   int iy = static_cast<int>(y);
 
+  // Only draw text if label dimensions are established (prevents flicker on first frame after expand)
+  bool dimensionsValid = (w != 0 && h != 0);
+
   if (labelLevel < 2 || selected) {
     SDL_Color drawColor = style.labelColor;
     drawColor.a = static_cast<int>(255.0f * opacity);
 
     flightLabel.setColor(drawColor);
     flightLabel.setPosition(ix, iy);
-    flightLabel.draw(renderer);
+    if (dimensionsValid) {
+      flightLabel.draw(renderer);
+    }
     outRect = flightLabel.getRect();
 
     totalWidth = std::max(totalWidth, outRect.w);
@@ -821,7 +826,9 @@ AircraftLabel::draw(SDL_Renderer* renderer, bool selected, bool showLabels,
 
     altitudeLabel.setColor(drawColor);
     altitudeLabel.setPosition(ix, iy + totalHeight);
-    altitudeLabel.draw(renderer);
+    if (dimensionsValid) {
+      altitudeLabel.draw(renderer);
+    }
     outRect = altitudeLabel.getRect();
 
     totalWidth = std::max(totalWidth, outRect.w);
@@ -829,7 +836,9 @@ AircraftLabel::draw(SDL_Renderer* renderer, bool selected, bool showLabels,
 
     speedLabel.setColor(drawColor);
     speedLabel.setPosition(ix, iy + totalHeight);
-    speedLabel.draw(renderer);
+    if (dimensionsValid) {
+      speedLabel.draw(renderer);
+    }
     outRect = speedLabel.getRect();
 
     totalWidth = std::max(totalWidth, outRect.w);
