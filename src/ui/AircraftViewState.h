@@ -33,12 +33,26 @@
 #include <memory>
 #include <unordered_map>
 
+#include <SDL2/SDL.h>
+
 namespace viz1090 {
 namespace ui {
 
 class AircraftLabel;
 
-/// Per-aircraft rendering state (screen coordinates, label, etc.)
+/// Cluster membership state machine
+/// SOLO: Aircraft is not part of any multi-aircraft cluster
+/// MERGE_PENDING: Aircraft should join cluster, waiting for hysteresis
+/// CLUSTERED: Aircraft is part of a multi-aircraft cluster
+/// UNMERGE_PENDING: Aircraft should leave cluster, waiting for hysteresis
+enum class ClusterState {
+  SOLO,
+  MERGE_PENDING,
+  CLUSTERED,
+  UNMERGE_PENDING
+};
+
+/// Per-aircraft rendering state (screen coordinates, label, clustering, etc.)
 /// This separates UI concerns from the domain Aircraft model
 struct AircraftViewState {
   // Screen coordinates (computed from lat/lon each frame)
@@ -47,6 +61,15 @@ struct AircraftViewState {
 
   // Label (created on first render)
   std::unique_ptr<AircraftLabel> label;
+
+  // Cluster state machine
+  ClusterState clusterState{ClusterState::SOLO};
+  uint32_t clusterAnchorAddr{0};  // Address of a cluster-mate (for cluster identity)
+  int stateFrameCount{0};         // Frames in current state (for hysteresis)
+  float animProgress{0.0f};       // 0.0-1.0 for merge/unmerge animations
+  float heading{0.0f};            // Cached heading for animation
+  SDL_Color color{255, 255, 255, 255};  // Cached color for animation
+  bool isOffMap{false};           // Whether this aircraft is off-screen
 
   AircraftViewState() = default;
   ~AircraftViewState();
