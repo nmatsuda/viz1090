@@ -102,16 +102,22 @@ public:
 
   /// Set the UI overlay bounds for off-map arrow and label avoidance
   void setUIBounds(int statusBarTopY, int statusBarRightX) {
-    uiStatusBarTopY_ = statusBarTopY;
-    uiStatusBarRightX_ = statusBarRightX;
+    uiBounds_.statusBarTopY = statusBarTopY;
+    uiBounds_.statusBarRightX = statusBarRightX;
     labelConfig_.uiStatusBarTopY = statusBarTopY;
     labelConfig_.uiStatusBarRightX = statusBarRightX;
   }
 
   /// Set the scale bar bounds for off-map arrow avoidance
   void setScaleBarBounds(int scaleBarBottomY, int scaleBarRightX) {
-    scaleBarBottomY_ = scaleBarBottomY;
-    scaleBarRightX_ = scaleBarRightX;
+    uiBounds_.scaleBarBottomY = scaleBarBottomY;
+    uiBounds_.scaleBarRightX = scaleBarRightX;
+  }
+
+  /// Update screen dimensions in UI bounds
+  void setScreenSize(int width, int height) {
+    uiBounds_.screenWidth = width;
+    uiBounds_.screenHeight = height;
   }
 
   // Label configuration access
@@ -188,13 +194,8 @@ private:
   static constexpr int ANIMATION_FRAMES = 8;          // Frames for merge/unmerge animation
   static constexpr float DISPLAY_ACTIVE = 30.0f;
 
-  // UI overlay bounds for off-map arrow avoidance
-  int uiStatusBarTopY_{0};     // Top Y coordinate of status bar (0 = use screen edge)
-  int uiStatusBarRightX_{0};   // Right X coordinate of bottom row elements
-
-  // Scale bar bounds for off-map arrow avoidance
-  int scaleBarBottomY_{0};     // Bottom Y coordinate of scale bar area
-  int scaleBarRightX_{0};      // Right X coordinate of scale bar elements
+  // UI overlay bounds for off-map arrow and isOffMap checks
+  UIBounds uiBounds_;
 
   // Spatial grid for efficient label neighbor queries
   mutable ui::LabelSpatialGrid labelSpatialGrid_;

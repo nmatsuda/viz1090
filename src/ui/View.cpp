@@ -68,18 +68,25 @@ View::closeFont(TTF_Font* font) {
 
 void
 View::font_init() {
-  mapFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * screen_uiscale);
-  mapBoldFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
-  listFont = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * screen_uiscale);
-  messageFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
-  labelFont = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
+  fonts_.map.font = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * screen_uiscale);
+  fonts_.map.width = 5 * screen_uiscale;
+  fonts_.map.height = 12 * screen_uiscale;
 
-  mapFontWidth = 5 * screen_uiscale;
-  mapFontHeight = 12 * screen_uiscale;
-  messageFontWidth = 6 * screen_uiscale;
-  messageFontHeight = 12 * screen_uiscale;
-  labelFontWidth = 6 * screen_uiscale;
-  labelFontHeight = 12 * screen_uiscale;
+  fonts_.mapBold.font = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
+  fonts_.mapBold.width = 6 * screen_uiscale;
+  fonts_.mapBold.height = 12 * screen_uiscale;
+
+  fonts_.list.font = loadFont("font/TerminusTTF-4.46.0.ttf", 12 * screen_uiscale);
+  fonts_.list.width = 5 * screen_uiscale;
+  fonts_.list.height = 12 * screen_uiscale;
+
+  fonts_.message.font = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
+  fonts_.message.width = 6 * screen_uiscale;
+  fonts_.message.height = 12 * screen_uiscale;
+
+  fonts_.label.font = loadFont("font/TerminusTTF-Bold-4.46.0.ttf", 12 * screen_uiscale);
+  fonts_.label.width = 6 * screen_uiscale;
+  fonts_.label.height = 12 * screen_uiscale;
 }
 
 //
@@ -137,17 +144,7 @@ View::updateRenderContext() {
   renderContext.screenHeight = screen_height;
   renderContext.uiScale = screen_uiscale;
   renderContext.style = &styleManager_.currentTheme();
-  renderContext.mapFont = mapFont;
-  renderContext.mapBoldFont = mapBoldFont;
-  renderContext.labelFont = labelFont;
-  renderContext.messageFont = messageFont;
-  renderContext.listFont = listFont;
-  renderContext.mapFontWidth = mapFontWidth;
-  renderContext.mapFontHeight = mapFontHeight;
-  renderContext.labelFontWidth = labelFontWidth;
-  renderContext.labelFontHeight = labelFontHeight;
-  renderContext.messageFontWidth = messageFontWidth;
-  renderContext.messageFontHeight = messageFontHeight;
+  renderContext.fonts = &fonts_;
 }
 
 //
@@ -416,11 +413,11 @@ View::View(AppData* appData)
 }
 
 View::~View() {
-  closeFont(mapFont);
-  closeFont(mapBoldFont);
-  closeFont(messageFont);
-  closeFont(labelFont);
-  closeFont(listFont);
+  closeFont(fonts_.map.font);
+  closeFont(fonts_.mapBold.font);
+  closeFont(fonts_.message.font);
+  closeFont(fonts_.label.font);
+  closeFont(fonts_.list.font);
 
   TTF_Quit();
   SDL_Quit();

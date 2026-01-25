@@ -68,19 +68,19 @@ void UIOverlay::drawStatusBox(const RenderContext& ctx, int* left, int* top,
                               const std::string& label, const std::string& message,
                               SDL_Color color) {
   int labelWidth = static_cast<int>((label.length() + ((label.length() > 0) ? 1 : 0)) *
-                                    ctx.labelFontWidth);
+                                    ctx.labelFontWidth());
   int messageWidth = static_cast<int>((message.length() + ((message.length() > 0) ? 1 : 0)) *
-                                      ctx.messageFontWidth);
+                                      ctx.messageFontWidth());
 
   if (*left + labelWidth + messageWidth + ctx.padding() > ctx.screenWidth) {
     *left = ctx.padding();
-    *top = *top - ctx.messageFontHeight - ctx.padding();
+    *top = *top - ctx.messageFontHeight() - ctx.padding();
   }
 
   // filled black background
   if (messageWidth) {
     roundedBoxRGBA(ctx.renderer, *left, *top, *left + labelWidth + messageWidth,
-                   *top + ctx.messageFontHeight, ctx.cornerRadius(),
+                   *top + ctx.messageFontHeight(), ctx.cornerRadius(),
                    ctx.style->buttonBackground.r, ctx.style->buttonBackground.g,
                    ctx.style->buttonBackground.b, SDL_ALPHA_OPAQUE);
   }
@@ -88,27 +88,27 @@ void UIOverlay::drawStatusBox(const RenderContext& ctx, int* left, int* top,
   // filled label box
   if (labelWidth) {
     roundedBoxRGBA(ctx.renderer, *left, *top, *left + labelWidth,
-                   *top + ctx.messageFontHeight, ctx.cornerRadius(),
+                   *top + ctx.messageFontHeight(), ctx.cornerRadius(),
                    color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
   }
 
   // outline message box
   if (messageWidth) {
     roundedRectangleRGBA(ctx.renderer, *left, *top, *left + labelWidth + messageWidth,
-                         *top + ctx.messageFontHeight, ctx.cornerRadius(),
+                         *top + ctx.messageFontHeight(), ctx.cornerRadius(),
                          color.r, color.g, color.b, SDL_ALPHA_OPAQUE);
   }
 
   Label currentLabel;
-  currentLabel.setFont(ctx.labelFont);
+  currentLabel.setFont(ctx.labelFont());
   currentLabel.setColor(ctx.style->buttonBackground);
-  currentLabel.setPosition(*left + ctx.labelFontWidth / 2, *top);
+  currentLabel.setPosition(*left + ctx.labelFontWidth() / 2, *top);
   currentLabel.setText(label);
   currentLabel.draw(ctx.renderer);
 
-  currentLabel.setFont(ctx.messageFont);
+  currentLabel.setFont(ctx.messageFont());
   currentLabel.setColor(color);
-  currentLabel.setPosition(*left + labelWidth + ctx.messageFontWidth / 2, *top);
+  currentLabel.setPosition(*left + labelWidth + ctx.messageFontWidth() / 2, *top);
   currentLabel.setText(message);
   currentLabel.draw(ctx.renderer);
 
@@ -116,11 +116,11 @@ void UIOverlay::drawStatusBox(const RenderContext& ctx, int* left, int* top,
 }
 
 void UIOverlay::drawButton(const RenderContext& ctx, int* left, int* top, Button& button) {
-  int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+  int buttonWidth = ctx.labelTextWidth(button.label());
 
   if (*left + buttonWidth + ctx.padding() > ctx.screenWidth) {
     *left = ctx.padding();
-    *top = *top - ctx.messageFontHeight - ctx.padding();
+    *top = *top - ctx.messageFontHeight() - ctx.padding();
   }
 
   button.draw(ctx, *left, *top);
@@ -131,12 +131,12 @@ void UIOverlay::drawCenteredStatusBox(const RenderContext& ctx,
                                       const std::string& label, const std::string& message,
                                       SDL_Color color) {
   int labelWidth = static_cast<int>((label.length() + ((label.length() > 0) ? 1 : 0)) *
-                                    ctx.labelFontWidth);
+                                    ctx.labelFontWidth());
   int messageWidth = static_cast<int>((message.length() + ((message.length() > 0) ? 1 : 0)) *
-                                      ctx.messageFontWidth);
+                                      ctx.messageFontWidth());
 
   int left = (ctx.screenWidth - (labelWidth + messageWidth)) / 2;
-  int top = (ctx.screenHeight - ctx.labelFontHeight) / 2;
+  int top = (ctx.screenHeight - ctx.labelFontHeight()) / 2;
 
   drawStatusBox(ctx, &left, &top, label, message, color);
 }
@@ -144,7 +144,7 @@ void UIOverlay::drawCenteredStatusBox(const RenderContext& ctx,
 void UIOverlay::draw(const RenderContext& ctx, const AppData& appData, float lastFrameTime,
                      float centerLat, float centerLon, int mapLoadPercent) {
   int left = ctx.padding();
-  int top = ctx.screenHeight - ctx.messageFontHeight - ctx.padding();
+  int top = ctx.screenHeight - ctx.messageFontHeight() - ctx.padding();
 
   if (showFps) {
     char fps[60] = " ";
@@ -207,7 +207,7 @@ UIOverlay::StatusBarBounds UIOverlay::calculateStatusBarBounds(const RenderConte
                                                                 int mapLoadPercent) const {
   StatusBarBounds bounds;
   bounds.bottomY = ctx.screenHeight;
-  bounds.topY = ctx.screenHeight - ctx.messageFontHeight - ctx.padding();
+  bounds.topY = ctx.screenHeight - ctx.messageFontHeight() - ctx.padding();
 
   int left = ctx.padding();
   int top = bounds.topY;
@@ -216,13 +216,13 @@ UIOverlay::StatusBarBounds UIOverlay::calculateStatusBarBounds(const RenderConte
   // Width = (label.length() + 1) * labelFontWidth + (message.length() + 1) * messageFontWidth
   auto simulateStatusBox = [&](const char* label, size_t messageLen) {
     size_t labelLen = std::strlen(label);
-    int labelWidth = static_cast<int>((labelLen + 1) * ctx.labelFontWidth);
-    int messageWidth = static_cast<int>((messageLen + 1) * ctx.messageFontWidth);
+    int labelWidth = static_cast<int>((labelLen + 1) * ctx.labelFontWidth());
+    int messageWidth = static_cast<int>((messageLen + 1) * ctx.messageFontWidth());
     int totalWidth = labelWidth + messageWidth;
 
     if (left + totalWidth + ctx.padding() > ctx.screenWidth) {
       left = ctx.padding();
-      top = top - ctx.messageFontHeight - ctx.padding();
+      top = top - ctx.messageFontHeight() - ctx.padding();
     }
     left = left + totalWidth + ctx.padding();
     if (top < bounds.topY) {
@@ -231,10 +231,10 @@ UIOverlay::StatusBarBounds UIOverlay::calculateStatusBarBounds(const RenderConte
   };
 
   auto simulateButton = [&](size_t labelLen) {
-    int buttonWidth = static_cast<int>((labelLen + 1) * ctx.labelFontWidth);
+    int buttonWidth = static_cast<int>((labelLen + 1) * ctx.labelFontWidth());
     if (left + buttonWidth + ctx.padding() > ctx.screenWidth) {
       left = ctx.padding();
-      top = top - ctx.messageFontHeight - ctx.padding();
+      top = top - ctx.messageFontHeight() - ctx.padding();
     }
     left = left + buttonWidth + ctx.padding();
     if (top < bounds.topY) {
@@ -281,7 +281,7 @@ UIOverlay::StatusBarBounds UIOverlay::calculateStatusBarBounds(const RenderConte
   simulateButton(menuButton_.label().length());
 
   // Track the rightmost extent of the bottom row
-  int bottomRowTop = ctx.screenHeight - ctx.messageFontHeight - ctx.padding();
+  int bottomRowTop = ctx.screenHeight - ctx.messageFontHeight() - ctx.padding();
   if (top == bottomRowTop) {
     // All elements fit on one row
     bounds.rightX = left;

@@ -54,7 +54,7 @@ ui::AircraftViewState& AircraftRenderer::getOrCreateViewState(const RenderContex
   if (!state.label) {
     state.label = std::make_unique<ui::AircraftLabel>(
         p->addr, *metric, ctx.screenWidth, ctx.screenHeight,
-        ctx.mapFont, *ctx.style);
+        ctx.mapFont(), *ctx.style);
   }
 
   return state;
@@ -327,12 +327,13 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
   }
 
   // Avoid status bar
-  if (uiStatusBarTopY_ > 0 && iny > 0) {
+  if (uiBounds_.statusBarTopY > 0 && iny > 0) {
     float absX = static_cast<float>(centerX) + outx;
     float absY = static_cast<float>(centerY) + outy;
 
-    if (absY > static_cast<float>(uiStatusBarTopY_) && absX < static_cast<float>(uiStatusBarRightX_)) {
-      outy = static_cast<float>(uiStatusBarTopY_ - centerY);
+    if (absY > static_cast<float>(uiBounds_.statusBarTopY) &&
+        absX < static_cast<float>(uiBounds_.statusBarRightX)) {
+      outy = static_cast<float>(uiBounds_.statusBarTopY - centerY);
       if (std::abs(iny) > 0.001f) {
         outx = outy * inx / iny;
       }
@@ -340,12 +341,13 @@ void AircraftRenderer::addToOffMapCluster(const RenderContext& ctx, int x, int y
   }
 
   // Avoid scale bar
-  if (scaleBarBottomY_ > 0 && iny < 0) {
+  if (uiBounds_.scaleBarBottomY > 0 && iny < 0) {
     float absX = static_cast<float>(centerX) + outx;
     float absY = static_cast<float>(centerY) + outy;
 
-    if (absY < static_cast<float>(scaleBarBottomY_) && absX < static_cast<float>(scaleBarRightX_)) {
-      outy = static_cast<float>(scaleBarBottomY_ - centerY);
+    if (absY < static_cast<float>(uiBounds_.scaleBarBottomY) &&
+        absX < static_cast<float>(uiBounds_.scaleBarRightX)) {
+      outy = static_cast<float>(uiBounds_.scaleBarBottomY - centerY);
       if (std::abs(iny) > 0.001f) {
         outx = outy * inx / iny;
       }
@@ -545,9 +547,9 @@ void AircraftRenderer::drawOffMapArrow(const RenderContext& ctx, float edgeX, fl
     int labelY = static_cast<int>(centerY + edgeY - 5.0f * arrowWidth * vec[1]);
 
     Label countLabel;
-    countLabel.setFont(ctx.labelFont);
+    countLabel.setFont(ctx.labelFont());
     countLabel.setColor(planeColor);
-    countLabel.setPosition(labelX - ctx.labelFontWidth, labelY - ctx.labelFontHeight / 2);
+    countLabel.setPosition(labelX - ctx.labelFontWidth(), labelY - ctx.labelFontHeight() / 2);
     countLabel.setText(std::to_string(count));
     countLabel.draw(ctx.renderer);
   }
@@ -670,13 +672,13 @@ void AircraftRenderer::drawOnMapClusterIcons(const RenderContext& ctx) {
                  cluster.color.r, cluster.color.g, cluster.color.b, SDL_ALPHA_OPAQUE);
 
       std::string countText = std::to_string(cluster.count);
-      int textWidth = static_cast<int>(countText.length() * ctx.labelFontWidth);
-      int textHeight = ctx.labelFontHeight;
+      int textWidth = static_cast<int>(countText.length() * ctx.labelFontWidth());
+      int textHeight = ctx.labelFontHeight();
       int labelX = x - textWidth / 2;
       int labelY = y - textHeight / 2;
 
       Label countLabel;
-      countLabel.setFont(ctx.labelFont);
+      countLabel.setFont(ctx.labelFont());
       countLabel.setColor(cluster.color);
       countLabel.setPosition(labelX, labelY);
       countLabel.setText(countText);
@@ -1033,22 +1035,11 @@ bool AircraftRenderer::isInMultiPlaneCluster(uint32_t addr) const {
 }
 
 bool AircraftRenderer::isOffMap(int x, int y, int screenWidth, int screenHeight) const {
-  // Basic screen bounds check
-  if (x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
-    return true;
-  }
-
-  // Status bar region (bottom-left area)
-  if (uiStatusBarTopY_ > 0 && y > uiStatusBarTopY_ && x < uiStatusBarRightX_) {
-    return true;
-  }
-
-  // Scale bar region (top-left area)
-  if (scaleBarBottomY_ > 0 && y < scaleBarBottomY_ && x < scaleBarRightX_) {
-    return true;
-  }
-
-  return false;
+  // Update temporary bounds with current screen size for the check
+  UIBounds bounds = uiBounds_;
+  bounds.screenWidth = screenWidth;
+  bounds.screenHeight = screenHeight;
+  return bounds.isOffMap(x, y);
 }
 
 }  // namespace viz1090

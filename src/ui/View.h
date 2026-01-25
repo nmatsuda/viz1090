@@ -128,18 +128,7 @@ private:
   RenderContext renderContext;
 
   // Fonts (owned by View, shared via RenderContext)
-  TTF_Font* mapFont{nullptr};
-  TTF_Font* mapBoldFont{nullptr};
-  TTF_Font* listFont{nullptr};
-  TTF_Font* messageFont{nullptr};
-  TTF_Font* labelFont{nullptr};
-
-  int mapFontWidth{5};
-  int mapFontHeight{12};
-  int labelFontWidth{6};
-  int labelFontHeight{12};
-  int messageFontWidth{6};
-  int messageFontHeight{12};
+  FontSet fonts_;
 
   // Timing
   float lastFrameTime{0.0f};

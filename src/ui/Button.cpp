@@ -38,9 +38,8 @@ Button::Button(const std::string& label, ClickCallback callback)
 
 int Button::draw(const RenderContext& ctx, int left, int top) {
   // Calculate button dimensions based on label
-  // Add padding on each side (half a character width)
-  int labelWidth = static_cast<int>((label_.length() + 1) * ctx.labelFontWidth);
-  height_ = ctx.labelFontHeight;
+  int labelWidth = ctx.labelTextWidth(label_);
+  height_ = ctx.labelFontHeight();
   width_ = labelWidth;
 
   // Update bounds for hit testing
@@ -63,9 +62,9 @@ int Button::draw(const RenderContext& ctx, int left, int top) {
 
   // Draw the label text (light text on dark background)
   Label buttonLabel;
-  buttonLabel.setFont(ctx.labelFont);
+  buttonLabel.setFont(ctx.labelFont());
   buttonLabel.setColor(ctx.style->buttonTextColor);
-  buttonLabel.setPosition(left + ctx.labelFontWidth / 2, top);
+  buttonLabel.setPosition(left + ctx.labelFontWidth() / 2, top);
   buttonLabel.setText(label_);
   buttonLabel.draw(ctx.renderer);
 

@@ -40,6 +40,16 @@ namespace viz1090 {
 // Lat/lon to distance multiplier (km per degree)
 constexpr float LATLONMULT = 111.195f;  // 6371.0 * M_PI / 180.0
 
+/// Map render state machine
+/// CLEAN: Texture matches viewport, just blit to screen
+/// VIEWPORT_DIRTY: Viewport changed, need partial update then full redraw
+/// TEXTURE_DIRTY: Need full texture redraw
+enum class MapRenderState {
+  CLEAN,
+  VIEWPORT_DIRTY,
+  TEXTURE_DIRTY,
+};
+
 /// Handles map viewport, coordinate transformations, and geography rendering
 class MapView {
 public:
@@ -86,10 +96,16 @@ public:
   void setTargetZoom(float zoom);
 
   // State queries
-  [[nodiscard]] bool isAnimating() const { return mapAnimating; }
-  [[nodiscard]] bool needsRedraw() const { return mapRedraw; }
-  [[nodiscard]] bool hasMoved() const { return mapMoved; }
-  void setMoved() { mapMoved = 1; }
+  [[nodiscard]] bool isAnimating() const {
+    return mapTargetLon != 0 || mapTargetLat != 0 || mapTargetMaxDist != 0;
+  }
+  [[nodiscard]] bool needsRedraw() const {
+    return renderState_ == MapRenderState::TEXTURE_DIRTY;
+  }
+  [[nodiscard]] bool hasMoved() const {
+    return renderState_ == MapRenderState::VIEWPORT_DIRTY;
+  }
+  void setMoved() { renderState_ = MapRenderState::VIEWPORT_DIRTY; }
 
   // Viewport state
   float centerLon{0.0f};
@@ -134,9 +150,7 @@ private:
 
   // State flags
   bool drawCenterOrigin{true};
-  int mapMoved{1};
-  int mapRedraw{1};
-  int mapAnimating{0};
+  MapRenderState renderState_{MapRenderState::TEXTURE_DIRTY};
   bool highFramerate{false};
 
   std::chrono::high_resolution_clock::time_point lastRedraw;

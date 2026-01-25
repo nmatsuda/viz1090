@@ -94,8 +94,7 @@ void MapView::moveMapToTarget() {
       centerLon += 0.1f * (mapTargetLon - centerLon);
       centerLat += 0.1f * (mapTargetLat - centerLat);
 
-      mapAnimating = 1;
-      mapMoved = 1;
+      renderState_ = MapRenderState::VIEWPORT_DIRTY;
       highFramerate = true;
     } else {
       mapTargetLon = 0;
@@ -108,8 +107,7 @@ void MapView::zoomMapToTarget() {
   if (mapTargetMaxDist) {
     if (std::fabs(mapTargetMaxDist - maxDist) > 0.0001f) {
       maxDist += 0.1f * (mapTargetMaxDist - maxDist);
-      mapAnimating = 1;
-      mapMoved = 1;
+      renderState_ = MapRenderState::VIEWPORT_DIRTY;
       highFramerate = true;
     } else {
       mapTargetMaxDist = 0;
@@ -133,7 +131,7 @@ void MapView::moveCenterRelative(float dx, float dy, int screenWidth, int screen
   mapTargetLon = 0;
   mapTargetLat = 0;
 
-  mapMoved = 1;
+  renderState_ = MapRenderState::VIEWPORT_DIRTY;
   highFramerate = true;
 }
 
@@ -154,7 +152,7 @@ void MapView::moveCenterAbsolute(float x, float y, int screenWidth, int screenHe
   mapTargetLon = 0;
   mapTargetLat = 0;
 
-  mapMoved = 1;
+  renderState_ = MapRenderState::VIEWPORT_DIRTY;
   highFramerate = true;
 }
 
@@ -174,7 +172,7 @@ void MapView::animateCenterAbsolute(float x, float y, int screenWidth, int scree
 
   mapTargetMaxDist = 0.25f * maxDist;
 
-  mapMoved = 1;
+  renderState_ = MapRenderState::VIEWPORT_DIRTY;
   highFramerate = true;
 }
 
@@ -207,7 +205,7 @@ void MapView::animateCenterRelative(float dx, float dy, int screenWidth, int scr
     mapTargetLat = centerLat + deltaLat;
   }
 
-  mapMoved = 1;
+  renderState_ = MapRenderState::VIEWPORT_DIRTY;
   highFramerate = true;
 }
 
@@ -228,14 +226,19 @@ void MapView::animateZoomRelative(float factor) {
     mapTargetMaxDist = newMaxDist;
   }
 
-  mapMoved = 1;
+  renderState_ = MapRenderState::VIEWPORT_DIRTY;
   highFramerate = true;
 }
 
 void MapView::drawGeography(const RenderContext& ctx) {
-  if ((mapRedraw && !mapMoved) || (mapAnimating && elapsed(lastRedraw) > 8 * FRAMETIME) ||
-      elapsed(lastRedraw) > 2000 || (map.loaded < 100 && elapsed(lastRedraw) > 250)) {
+  // Determine if we need a full texture redraw
+  bool needsTextureRedraw =
+      (renderState_ == MapRenderState::TEXTURE_DIRTY) ||
+      (isAnimating() && elapsed(lastRedraw) > 8 * FRAMETIME) ||
+      (elapsed(lastRedraw) > 2000) ||
+      (map.loaded < 100 && elapsed(lastRedraw) > 250);
 
+  if (needsTextureRedraw) {
     SDL_SetRenderTarget(ctx.renderer, mapTexture);
 
     SDL_SetRenderDrawColor(ctx.renderer, ctx.style->backgroundColor.r,
@@ -248,10 +251,7 @@ void MapView::drawGeography(const RenderContext& ctx) {
 
     SDL_SetRenderTarget(ctx.renderer, NULL);
 
-    mapMoved = 0;
-    mapRedraw = 0;
-    mapAnimating = 0;
-
+    renderState_ = MapRenderState::CLEAN;
     lastRedraw = now();
 
     currentLon = centerLon;
@@ -264,7 +264,7 @@ void MapView::drawGeography(const RenderContext& ctx) {
 
   SDL_RenderClear(ctx.renderer);
 
-  if (mapMoved) {
+  if (renderState_ == MapRenderState::VIEWPORT_DIRTY) {
     float dx, dy;
     int x1, y1, x2, y2;
     pxFromLonLat(&dx, &dy, currentLon, currentLat);
@@ -304,8 +304,7 @@ void MapView::drawGeography(const RenderContext& ctx) {
 
     SDL_RenderCopy(ctx.renderer, mapTexture, NULL, &dest);
 
-    mapRedraw = 1;
-    mapMoved = 0;
+    renderState_ = MapRenderState::TEXTURE_DIRTY;
   } else {
     SDL_RenderCopy(ctx.renderer, mapTexture, NULL, NULL);
   }
@@ -467,8 +466,8 @@ void MapView::drawPlaceNames(const RenderContext& ctx) {
   visibleLabels.reserve(map.mapnames.size() + map.airportnames.size());
 
   // Estimate text dimensions based on font metrics
-  int charWidth = ctx.mapFontWidth;
-  int charHeight = ctx.mapFontHeight;
+  int charWidth = ctx.mapFontWidth();
+  int charHeight = ctx.mapFontHeight();
 
   // Collect map place names
   for (const auto& label : map.mapnames) {
@@ -557,7 +556,7 @@ void MapView::drawPlaceNames(const RenderContext& ctx) {
 
   // Draw all labels with their computed alpha
   Label currentLabel;
-  currentLabel.setFont(ctx.mapFont);
+  currentLabel.setFont(ctx.mapFont());
   currentLabel.setColor(ctx.style->geoColor);
 
   for (const auto& vl : visibleLabels) {
@@ -599,7 +598,7 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
     } else {
       snprintf(scaleLabel, 13, "%d Mm", static_cast<int>(std::pow(10, scalePower)));
     }
-    tick.labelWidth = static_cast<int>(std::strlen(scaleLabel)) * ctx.mapFontWidth;
+    tick.labelWidth = ctx.mapTextWidth(scaleLabel);
 
     ticks.push_back(tick);
 
@@ -641,7 +640,7 @@ void MapView::drawScaleBars(const RenderContext& ctx) {
     }
 
     Label currentLabel;
-    currentLabel.setFont(ctx.mapFont);
+    currentLabel.setFont(ctx.mapFont());
     currentLabel.setColor(ctx.style->scaleBarColor);
     currentLabel.setPosition(tick.xPos, 15 * ctx.uiScale);
     currentLabel.setText(scaleLabel);
@@ -707,10 +706,10 @@ MapView::ScaleBarBounds MapView::calculateScaleBarBounds(const RenderContext& ct
   // Add some padding for the label text that appears after the last tick
   // Label format is "X km" or "X Mm" - estimate width
   int labelChars = scalePower + 4;  // digits + " km" or " Mm"
-  bounds.rightX += labelChars * ctx.mapFontWidth;
+  bounds.rightX += labelChars * ctx.mapFontWidth();
 
   // Bottom Y is the lowest element - the label at 15 * uiScale plus font height
-  bounds.bottomY = static_cast<int>(15 * ctx.uiScale) + ctx.mapFontHeight;
+  bounds.bottomY = static_cast<int>(15 * ctx.uiScale) + ctx.mapFontHeight();
 
   return bounds;
 }

@@ -99,11 +99,11 @@ void MenuPanel::drawMainMenu(const RenderContext& ctx) {
   // Panel width is based on widest button + padding
   int maxButtonWidth = 0;
   for (const auto& button : buttons_) {
-    int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+    int buttonWidth = ctx.labelTextWidth(button.label());
     maxButtonWidth = std::max(maxButtonWidth, buttonWidth);
   }
   // Include close button
-  int closeWidth = static_cast<int>((closeButton_.label().length() + 1) * ctx.labelFontWidth);
+  int closeWidth = ctx.labelTextWidth(closeButton_.label());
   maxButtonWidth = std::max(maxButtonWidth, closeWidth);
 
   int panelPadding = ctx.padding() * 2;
@@ -111,7 +111,7 @@ void MenuPanel::drawMainMenu(const RenderContext& ctx) {
   int numButtons = static_cast<int>(buttons_.size()) + 1;  // +1 for close button
 
   int panelWidth = maxButtonWidth + panelPadding * 2;
-  int panelHeight = numButtons * ctx.labelFontHeight +
+  int panelHeight = numButtons * ctx.labelFontHeight() +
                     (numButtons - 1) * buttonSpacing + panelPadding * 2;
 
   // Center the panel on screen
@@ -143,10 +143,10 @@ void MenuPanel::drawMainMenu(const RenderContext& ctx) {
 
   for (auto& button : buttons_) {
     // Center button horizontally within panel
-    int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+    int buttonWidth = ctx.labelTextWidth(button.label());
     int centeredLeft = panelLeft + (panelWidth - buttonWidth) / 2;
     button.draw(ctx, centeredLeft, buttonTop);
-    buttonTop += ctx.labelFontHeight + buttonSpacing;
+    buttonTop += ctx.labelFontHeight() + buttonSpacing;
   }
 
   // Draw close button last
@@ -158,11 +158,11 @@ void MenuPanel::drawThemeList(const RenderContext& ctx) {
   // Calculate panel dimensions based on theme buttons
   int maxButtonWidth = 0;
   for (const auto& button : themeButtons_) {
-    int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+    int buttonWidth = ctx.labelTextWidth(button.label());
     maxButtonWidth = std::max(maxButtonWidth, buttonWidth);
   }
   // Include back button
-  int backWidth = static_cast<int>((backButton_.label().length() + 1) * ctx.labelFontWidth);
+  int backWidth = ctx.labelTextWidth(backButton_.label());
   maxButtonWidth = std::max(maxButtonWidth, backWidth);
 
   int panelPadding = ctx.padding() * 2;
@@ -170,7 +170,7 @@ void MenuPanel::drawThemeList(const RenderContext& ctx) {
   int numButtons = static_cast<int>(themeButtons_.size()) + 1;  // +1 for back button
 
   int panelWidth = maxButtonWidth + panelPadding * 2;
-  int panelHeight = numButtons * ctx.labelFontHeight +
+  int panelHeight = numButtons * ctx.labelFontHeight() +
                     (numButtons - 1) * buttonSpacing + panelPadding * 2;
 
   // Center the panel on screen
@@ -201,10 +201,10 @@ void MenuPanel::drawThemeList(const RenderContext& ctx) {
   int buttonTop = panelTop + panelPadding;
 
   for (auto& button : themeButtons_) {
-    int buttonWidth = static_cast<int>((button.label().length() + 1) * ctx.labelFontWidth);
+    int buttonWidth = ctx.labelTextWidth(button.label());
     int centeredLeft = panelLeft + (panelWidth - buttonWidth) / 2;
     button.draw(ctx, centeredLeft, buttonTop);
-    buttonTop += ctx.labelFontHeight + buttonSpacing;
+    buttonTop += ctx.labelFontHeight() + buttonSpacing;
   }
 
   // Draw back button last
