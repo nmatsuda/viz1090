@@ -60,7 +60,8 @@ showHelp() {
       "--screensize <width> <height>    Set frame buffer resolution (default: screen "
       "resolution)\n"
       "--screenindex <i>                Set the index of the display to use (default: 0)\n"
-      "--uiscale <factor>               UI global scaling (default: 1)\n");
+      "--uiscale <factor>               UI global scaling (default: 1)\n"
+      "--zoom <km>                      Initial map radius in km (default: 25)\n");
 }
 
 //
@@ -103,6 +104,8 @@ main(int argc, char** argv) {
       view.screen_index = std::atoi(argv[++j]);
     } else if (!std::strcmp(argv[j], "--uiscale") && more) {
       view.screen_uiscale = std::atoi(argv[++j]);
+    } else if (!std::strcmp(argv[j], "--zoom") && more) {
+      view.getMapView().maxDist = static_cast<float>(std::atof(argv[++j]));
     } else if (!std::strcmp(argv[j], "--screensize") && more) {
       view.screen_width = std::atoi(argv[++j]);
       view.screen_height = std::atoi(argv[++j]);
