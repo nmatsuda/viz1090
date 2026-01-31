@@ -22,9 +22,33 @@ set -e
 # Edit these URLs to change data sources
 #=============================================================================
 
+# Land polygons (for filling land masses)
+# Source: Natural Earth 10m Land
+URL_LAND="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_physical/ne_10m_land"
+
 # Map geometry (state/province boundaries)
 # Source: Natural Earth 10m Admin 1 States Provinces
 URL_MAP="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_admin_1_states_provinces"
+
+# Country boundaries (national borders)
+# Source: Natural Earth 10m Admin 0 Boundary Lines Land
+URL_COUNTRIES="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_admin_0_boundary_lines_land"
+
+# Disputed country boundaries
+# Source: Natural Earth 10m Admin 0 Boundary Lines Disputed Areas
+URL_DISPUTED="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_admin_0_boundary_lines_disputed_areas"
+
+# Coastlines (land-sea boundaries)
+# Source: Natural Earth 10m Coastline
+URL_COASTLINE="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_physical/ne_10m_coastline"
+
+# Rivers and lake centerlines
+# Source: Natural Earth 10m Rivers + Lake Centerlines
+URL_RIVERS="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_physical/ne_10m_rivers_lake_centerlines"
+
+# Lakes (polygon boundaries)
+# Source: Natural Earth 10m Lakes
+URL_LAKES="https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_physical/ne_10m_lakes"
 
 # Place names (cities, towns)
 # Source: Natural Earth 10m Populated Places
@@ -138,7 +162,25 @@ echo "Downloading map data..."
 echo ""
 
 # Download shapefiles from Natural Earth (GitHub)
+download_shapefile "${URL_LAND}" "ne_10m_land" "${MAPDATA_DIR}" || true
+echo ""
+
 download_shapefile "${URL_MAP}" "ne_10m_admin_1_states_provinces" "${MAPDATA_DIR}" || true
+echo ""
+
+download_shapefile "${URL_COUNTRIES}" "ne_10m_admin_0_boundary_lines_land" "${MAPDATA_DIR}" || true
+echo ""
+
+download_shapefile "${URL_DISPUTED}" "ne_10m_admin_0_boundary_lines_disputed_areas" "${MAPDATA_DIR}" || true
+echo ""
+
+download_shapefile "${URL_COASTLINE}" "ne_10m_coastline" "${MAPDATA_DIR}" || true
+echo ""
+
+download_shapefile "${URL_RIVERS}" "ne_10m_rivers_lake_centerlines" "${MAPDATA_DIR}" || true
+echo ""
+
+download_shapefile "${URL_LAKES}" "ne_10m_lakes" "${MAPDATA_DIR}" || true
 echo ""
 
 download_shapefile "${URL_PLACES}" "ne_10m_populated_places" "${MAPDATA_DIR}" || true
@@ -156,8 +198,32 @@ echo "Converting to viz1090 format..."
 # Build arguments based on what files exist
 CONVERTER_ARGS="--output-dir ${OUTPUT_DIR}"
 
+if [[ -f "${MAPDATA_DIR}/ne_10m_land.shp" ]]; then
+    CONVERTER_ARGS="${CONVERTER_ARGS} --landfile ${MAPDATA_DIR}/ne_10m_land.shp"
+fi
+
 if [[ -f "${MAPDATA_DIR}/ne_10m_admin_1_states_provinces.shp" ]]; then
     CONVERTER_ARGS="${CONVERTER_ARGS} --mapfile ${MAPDATA_DIR}/ne_10m_admin_1_states_provinces.shp"
+fi
+
+if [[ -f "${MAPDATA_DIR}/ne_10m_admin_0_boundary_lines_land.shp" ]]; then
+    CONVERTER_ARGS="${CONVERTER_ARGS} --countryfile ${MAPDATA_DIR}/ne_10m_admin_0_boundary_lines_land.shp"
+fi
+
+if [[ -f "${MAPDATA_DIR}/ne_10m_admin_0_boundary_lines_disputed_areas.shp" ]]; then
+    CONVERTER_ARGS="${CONVERTER_ARGS} --disputedfile ${MAPDATA_DIR}/ne_10m_admin_0_boundary_lines_disputed_areas.shp"
+fi
+
+if [[ -f "${MAPDATA_DIR}/ne_10m_coastline.shp" ]]; then
+    CONVERTER_ARGS="${CONVERTER_ARGS} --coastlinefile ${MAPDATA_DIR}/ne_10m_coastline.shp"
+fi
+
+if [[ -f "${MAPDATA_DIR}/ne_10m_rivers_lake_centerlines.shp" ]]; then
+    CONVERTER_ARGS="${CONVERTER_ARGS} --riverfile ${MAPDATA_DIR}/ne_10m_rivers_lake_centerlines.shp"
+fi
+
+if [[ -f "${MAPDATA_DIR}/ne_10m_lakes.shp" ]]; then
+    CONVERTER_ARGS="${CONVERTER_ARGS} --lakefile ${MAPDATA_DIR}/ne_10m_lakes.shp"
 fi
 
 if [[ -f "${MAPDATA_DIR}/ne_10m_populated_places.shp" ]]; then

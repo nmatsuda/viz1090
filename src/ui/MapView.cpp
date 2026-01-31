@@ -318,13 +318,42 @@ void MapView::drawLines(const RenderContext& ctx, int left, int top, int right, 
   latLonFromScreenCoords(&screen_lat_max, &screen_lon_max, right, bottom,
                          ctx.screenWidth, ctx.screenHeight);
 
-  // Draw map lines - collect into buffer then batch draw each segment
+  // Draw map lines (state/province boundaries) - collect into buffer then batch draw each segment
   lineBuffer_.clear();
   collectLinesRecursive(&(map.root), screen_lat_min, screen_lat_max, screen_lon_min,
                         screen_lon_max, ctx.screenWidth, ctx.screenHeight);
   if (!lineBuffer_.empty()) {
     SDL_SetRenderDrawColor(ctx.renderer, ctx.style->geoColor.r, ctx.style->geoColor.g,
                            ctx.style->geoColor.b, 255);
+    // Draw each line segment (pairs of points)
+    for (size_t i = 0; i + 1 < lineBuffer_.size(); i += 2) {
+      SDL_RenderDrawLine(ctx.renderer,
+                         lineBuffer_[i].x, lineBuffer_[i].y,
+                         lineBuffer_[i + 1].x, lineBuffer_[i + 1].y);
+    }
+  }
+
+  // Draw coastlines (land-sea boundaries)
+  lineBuffer_.clear();
+  collectLinesRecursive(&(map.coastline_root), screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, ctx.screenWidth, ctx.screenHeight);
+  if (!lineBuffer_.empty()) {
+    SDL_SetRenderDrawColor(ctx.renderer, ctx.style->coastlineColor.r, ctx.style->coastlineColor.g,
+                           ctx.style->coastlineColor.b, 255);
+    for (size_t i = 0; i + 1 < lineBuffer_.size(); i += 2) {
+      SDL_RenderDrawLine(ctx.renderer,
+                         lineBuffer_[i].x, lineBuffer_[i].y,
+                         lineBuffer_[i + 1].x, lineBuffer_[i + 1].y);
+    }
+  }
+
+  // Draw country boundary lines (national borders) - on top of other features
+  lineBuffer_.clear();
+  collectLinesRecursive(&(map.country_root), screen_lat_min, screen_lat_max, screen_lon_min,
+                        screen_lon_max, ctx.screenWidth, ctx.screenHeight);
+  if (!lineBuffer_.empty()) {
+    SDL_SetRenderDrawColor(ctx.renderer, ctx.style->countryBorderColor.r,
+                           ctx.style->countryBorderColor.g, ctx.style->countryBorderColor.b, 255);
     // Draw each line segment (pairs of points)
     for (size_t i = 0; i + 1 < lineBuffer_.size(); i += 2) {
       SDL_RenderDrawLine(ctx.renderer,

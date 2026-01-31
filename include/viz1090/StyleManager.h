@@ -61,11 +61,17 @@ struct Theme {
 
   // UI element colors
   SDL_Color backgroundColor{0, 0, 0, 255};
+  SDL_Color oceanColor{0, 0, 20, 255};             // Ocean/water background
+  SDL_Color landColor{0, 0, 0, 255};               // Land fill color
   SDL_Color selectedColor{249, 38, 114, 255};
   SDL_Color planeColor{0, 255, 174, 255};
   SDL_Color planeGoneColor{127, 127, 127, 255};
   SDL_Color trailColor{0, 255, 174, 255};
   SDL_Color geoColor{33, 0, 122, 255};
+  SDL_Color countryBorderColor{80, 80, 180, 255};  // National boundaries (brighter than state)
+  SDL_Color coastlineColor{50, 50, 120, 255};      // Land-sea boundaries
+  SDL_Color riverColor{30, 30, 100, 255};          // Rivers and lake centerlines
+  SDL_Color lakeColor{30, 30, 100, 255};           // Lake boundaries
   SDL_Color airportColor{85, 0, 255, 255};
   SDL_Color labelColor{255, 255, 255, 255};
   SDL_Color labelLineColor{64, 64, 64, 255};

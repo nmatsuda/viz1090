@@ -330,6 +330,8 @@ bool StyleManager::loadTheme(std::string_view aPath) {
       if (colors.count("planeGone")) theme.planeGoneColor = parseColor(colors["planeGone"]);
       if (colors.count("trail")) theme.trailColor = parseColor(colors["trail"]);
       if (colors.count("geo")) theme.geoColor = parseColor(colors["geo"]);
+      if (colors.count("countryBorder")) theme.countryBorderColor = parseColor(colors["countryBorder"]);
+      if (colors.count("coastline")) theme.coastlineColor = parseColor(colors["coastline"]);
       if (colors.count("airport")) theme.airportColor = parseColor(colors["airport"]);
       if (colors.count("label")) theme.labelColor = parseColor(colors["label"]);
       if (colors.count("labelLine")) theme.labelLineColor = parseColor(colors["labelLine"]);

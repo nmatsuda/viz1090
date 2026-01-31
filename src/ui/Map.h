@@ -71,6 +71,27 @@ typedef struct Line {
   }
 } Line;
 
+// A polygon defined by a list of vertices (for filling)
+typedef struct Polygon {
+  std::vector<Point> vertices;
+  float lat_min;
+  float lat_max;
+  float lon_min;
+  float lon_max;
+
+  void computeBounds() {
+    if (vertices.empty()) return;
+    lat_min = lat_max = vertices[0].lat;
+    lon_min = lon_max = vertices[0].lon;
+    for (const auto& v : vertices) {
+      if (v.lat < lat_min) lat_min = v.lat;
+      if (v.lat > lat_max) lat_max = v.lat;
+      if (v.lon < lon_min) lon_min = v.lon;
+      if (v.lon > lon_max) lon_max = v.lon;
+    }
+  }
+} Polygon;
+
 typedef struct QuadTree {
   float lat_min;
   float lat_max;
@@ -118,24 +139,48 @@ typedef struct QuadTree {
 class Map {
 
 public:
-  QuadTree root;
-  QuadTree airport_root;
+  QuadTree root;           // State/province boundaries
+  QuadTree country_root;   // National boundaries
+  QuadTree coastline_root; // Coastlines (land-sea boundaries)
+  QuadTree river_root;     // Rivers and lake centerlines
+  QuadTree lake_root;      // Lake boundaries
+  QuadTree airport_root;   // Airport runways
 
   bool QTInsert(QuadTree* tree, Line* line, int depth);
   std::vector<Line*> getLinesRecursive(QuadTree* tree, float screen_lat_min, float screen_lat_max,
                                        float screen_lon_min, float screen_lon_max);
   std::vector<Line*> getLines(float screen_lat_min, float screen_lat_max, float screen_lon_min,
                               float screen_lon_max);
+  std::vector<Line*> getCountryLines(float screen_lat_min, float screen_lat_max,
+                                     float screen_lon_min, float screen_lon_max);
 
   std::vector<MapLabel*> mapnames;
   std::vector<MapLabel*> airportnames;
+
+  // Land polygons for filling
+  std::vector<Polygon> landPolygons;
 
   void load();
   int loaded;
   Map();
 
+  int landPoints_count;
+  float* landPoints;
+
   int mapPoints_count;
   float* mapPoints;
+
+  int countryPoints_count;
+  float* countryPoints;
+
+  int coastlinePoints_count;
+  float* coastlinePoints;
+
+  int riverPoints_count;
+  float* riverPoints;
+
+  int lakePoints_count;
+  float* lakePoints;
 
   int airportPoints_count;
   float* airportPoints;
