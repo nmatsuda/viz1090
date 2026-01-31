@@ -1,0 +1,69 @@
+# viz1090 Raspberry Pi CM4 Configuration
+# Display: Waveshare CM4-DISP-BASE-2.8A (480x640 DPI)
+
+# Boot settings
+arm_64bit=1
+kernel=Image
+boot_delay=0
+disable_splash=1
+
+# GPU memory (needed for DRM/KMS)
+gpu_mem=128
+
+# Enable DRM VC4 V3D driver
+dtoverlay=vc4-kms-v3d
+
+# ========================================
+# Waveshare 2.8" DPI Display Configuration
+# ========================================
+
+# DPI display overlay
+dtoverlay=vc4-kms-dpi-generic
+dtparam=hactive=480,hfp=26,hsync=16,hbp=10
+dtparam=vactive=640,vfp=25,vsync=10,vbp=15
+dtparam=clock-frequency=32000000,rgb666-padhi
+
+# GPIO configuration for DPI
+gpio=0-9=a2
+gpio=12-17=a2
+gpio=20-25=a2
+
+# DPI output settings
+dpi_group=2
+dpi_mode=87
+dpi_output_format=0x7F216
+hdmi_timings=480 0 26 16 10 640 0 25 10 15 0 0 0 60 0 32000000 1
+
+# Display default to DPI LCD
+display_default_lcd=1
+
+# Extra buffer for rotation
+extra_transpose_buffer=2
+
+# ========================================
+# Touch screen (Goodix)
+# ========================================
+dtoverlay=i2c1,pins_44_45
+dtoverlay=goodix
+
+# ========================================
+# Fast boot optimizations
+# ========================================
+
+# Disable Bluetooth (not needed)
+dtoverlay=disable-bt
+
+# Disable audio (not needed)
+dtparam=audio=off
+
+# Disable camera
+start_x=0
+
+# Reduce boot delay
+initial_turbo=30
+
+# Disable rainbow splash
+disable_splash=1
+
+# Console on serial (for debugging, can be disabled)
+enable_uart=1

@@ -1,0 +1,12 @@
+# Buildroot build artifacts
+buildroot-*/
+output/
+external/
+
+# Downloaded files
+*.tar.gz
+
+# Temporary files
+*.tmp
+*.swp
+*~

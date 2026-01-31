@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# Start viz1090 ADS-B visualization
+#
+
+DAEMON=/opt/viz1090/viz1090
+CONFFILE=/opt/viz1090/viz1090.conf
+PIDFILE=/var/run/viz1090.pid
+LOGFILE=/var/log/viz1090.log
+
+# Wait for display to be ready
+wait_for_display() {
+    local count=0
+    while [ $count -lt 30 ]; do
+        if [ -e /dev/dri/card0 ] || [ -e /dev/fb0 ]; then
+            return 0
+        fi
+        sleep 0.5
+        count=$((count + 1))
+    done
+    return 1
+}
+
+# Build command line from config file
+build_opts() {
+    local opts=""
+
+    if [ -f "$CONFFILE" ]; then
+        . "$CONFFILE"
+        [ -n "$SERVER" ] && opts="$opts --server $SERVER"
+        [ -n "$PORT" ] && opts="$opts --port $PORT"
+        [ "$FULLSCREEN" = "1" ] && opts="$opts --fullscreen"
+        [ -n "$LAT" ] && opts="$opts --lat $LAT"
+        [ -n "$LON" ] && opts="$opts --lon $LON"
+        [ "$METRIC" = "1" ] && opts="$opts --metric"
+    else
+        # Defaults
+        opts="--server 127.0.0.1 --port 30005 --fullscreen"
+    fi
+
+    echo "$opts"
+}
+
+case "$1" in
+    start)
+        printf "Starting viz1090: "
+
+        # Wait for display
+        if ! wait_for_display; then
+            echo "FAIL (no display)"
+            exit 1
+        fi
+
+        # Wait for dump1090 to be ready
+        sleep 2
+
+        if [ -f $PIDFILE ]; then
+            echo "already running"
+            exit 1
+        fi
+
+        OPTS=$(build_opts)
+
+        # Set up environment for SDL2 with KMS/DRM
+        export SDL_VIDEODRIVER=kmsdrm
+        export SDL_RENDER_DRIVER=opengles2
+
+        # Change to viz1090 directory for font/theme access
+        cd /opt/viz1090
+
+        start-stop-daemon -S -b -m -p $PIDFILE \
+            --exec /bin/sh -- -c "exec $DAEMON $OPTS >> $LOGFILE 2>&1"
+        [ $? = 0 ] && echo "OK" || echo "FAIL"
+        ;;
+    stop)
+        printf "Stopping viz1090: "
+        start-stop-daemon -K -p $PIDFILE -s TERM
+        rm -f $PIDFILE
+        [ $? = 0 ] && echo "OK" || echo "FAIL"
+        ;;
+    restart|reload)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+    status)
+        if [ -f $PIDFILE ]; then
+            if kill -0 $(cat $PIDFILE) 2>/dev/null; then
+                echo "viz1090 is running (PID $(cat $PIDFILE))"
+            else
+                echo "viz1090 is not running (stale PID file)"
+            fi
+        else
+            echo "viz1090 is not running"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac

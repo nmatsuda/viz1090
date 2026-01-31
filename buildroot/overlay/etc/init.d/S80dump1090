@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Start dump1090 ADS-B decoder
+#
+
+DAEMON=/usr/bin/dump1090
+PIDFILE=/var/run/dump1090.pid
+LOGFILE=/var/log/dump1090.log
+
+# dump1090 options
+# --net enables network output
+# --net-bo-port 30005 is Beast output (what viz1090 connects to)
+# --quiet reduces console output
+# --fix enables error correction
+OPTS="--net --net-bo-port 30005 --quiet --fix"
+
+case "$1" in
+    start)
+        printf "Starting dump1090: "
+        if [ -f $PIDFILE ]; then
+            echo "already running"
+            exit 1
+        fi
+        start-stop-daemon -S -b -m -p $PIDFILE \
+            --exec /bin/sh -- -c "exec $DAEMON $OPTS >> $LOGFILE 2>&1"
+        [ $? = 0 ] && echo "OK" || echo "FAIL"
+        ;;
+    stop)
+        printf "Stopping dump1090: "
+        start-stop-daemon -K -p $PIDFILE -s TERM
+        rm -f $PIDFILE
+        [ $? = 0 ] && echo "OK" || echo "FAIL"
+        ;;
+    restart|reload)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+    status)
+        if [ -f $PIDFILE ]; then
+            if kill -0 $(cat $PIDFILE) 2>/dev/null; then
+                echo "dump1090 is running (PID $(cat $PIDFILE))"
+            else
+                echo "dump1090 is not running (stale PID file)"
+            fi
+        else
+            echo "dump1090 is not running"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac

@@ -1,0 +1,29 @@
+// Goodix touchscreen overlay for Waveshare CM4-DISP-BASE-2.8A
+// Compile with: dtc -@ -I dts -O dtb -o goodix.dtbo goodix.dtbo.dts
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2711";
+
+    fragment@0 {
+        target = <&i2c1>;
+        __overlay__ {
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            goodix: goodix@5d {
+                compatible = "goodix,gt911";
+                reg = <0x5d>;
+                interrupt-parent = <&gpio>;
+                interrupts = <25 2>; // GPIO25, falling edge
+                irq-gpios = <&gpio 25 0>;
+                reset-gpios = <&gpio 26 0>;
+                touchscreen-inverted-x;
+                touchscreen-inverted-y;
+            };
+        };
+    };
+};

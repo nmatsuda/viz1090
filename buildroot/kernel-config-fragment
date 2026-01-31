@@ -1,0 +1,68 @@
+# Kernel config fragment for viz1090
+# Enable required features, disable unnecessary ones for fast boot
+
+# DRM/KMS for display
+CONFIG_DRM=y
+CONFIG_DRM_V3D=y
+CONFIG_DRM_VC4=y
+CONFIG_DRM_PANEL=y
+CONFIG_DRM_PANEL_SIMPLE=y
+
+# DPI display support
+CONFIG_DRM_DW_HDMI=n
+CONFIG_DRM_VC4_HDMI_CEC=n
+
+# Framebuffer console (for boot messages)
+CONFIG_FRAMEBUFFER_CONSOLE=y
+CONFIG_LOGO=n
+
+# Input devices
+CONFIG_INPUT_EVDEV=y
+CONFIG_INPUT_TOUCHSCREEN=y
+CONFIG_TOUCHSCREEN_GOODIX=y
+
+# USB
+CONFIG_USB=y
+CONFIG_USB_XHCI_HCD=y
+CONFIG_USB_XHCI_PLATFORM=y
+CONFIG_USB_DWC2=y
+
+# Networking (Ethernet only)
+CONFIG_NET=y
+CONFIG_INET=y
+CONFIG_NETDEVICES=y
+CONFIG_ETHERNET=y
+CONFIG_BCMGENET=y
+
+# WiFi (optional, can be disabled)
+CONFIG_WLAN=n
+CONFIG_CFG80211=n
+
+# Bluetooth (disabled)
+CONFIG_BT=n
+
+# Sound (disabled)
+CONFIG_SOUND=n
+
+# Camera (disabled)
+CONFIG_VIDEO_BCM2835_UNICAM=n
+CONFIG_VIDEO_V4L2=n
+
+# Disable unused filesystems
+CONFIG_NTFS_FS=n
+CONFIG_NTFS3_FS=n
+CONFIG_CIFS=n
+CONFIG_NFS_FS=n
+
+# Disable unused hardware
+CONFIG_I2C_BCM2835=y
+CONFIG_SPI_BCM2835=n
+CONFIG_PWM_BCM2835=n
+
+# Fast boot options
+CONFIG_PRINTK_TIME=n
+CONFIG_BOOT_PRINTK_DELAY=n
+CONFIG_LOGO=n
+
+# Minimal logging
+CONFIG_LOG_BUF_SHIFT=14

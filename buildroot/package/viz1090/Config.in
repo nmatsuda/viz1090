@@ -1,0 +1,13 @@
+config BR2_PACKAGE_VIZ1090
+	bool "viz1090"
+	select BR2_PACKAGE_SDL2
+	select BR2_PACKAGE_SDL2_GFX
+	select BR2_PACKAGE_SDL2_TTF
+	select BR2_PACKAGE_FREETYPE
+	help
+	  viz1090 - ADS-B aircraft visualization application.
+
+	  Displays real-time aircraft positions on an interactive map
+	  using data from dump1090.
+
+	  https://github.com/yourusername/viz1090

@@ -1,0 +1,13 @@
+config BR2_PACKAGE_DUMP1090
+	bool "dump1090"
+	select BR2_PACKAGE_RTL_SDR
+	select BR2_PACKAGE_LIBUSB
+	help
+	  dump1090 - ADS-B Mode S decoder for RTL-SDR devices.
+
+	  Decodes ADS-B messages from aircraft and provides data
+	  via Beast protocol on TCP port 30005.
+
+	  Using dump1090-fa (FlightAware fork) for best compatibility.
+
+	  https://github.com/flightaware/dump1090
