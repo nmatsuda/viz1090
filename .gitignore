@@ -22,6 +22,7 @@ airportnames
 mapnames
 
 build
+buildroot
 
 # Ignore the executable, but not the include directory
 /viz1090

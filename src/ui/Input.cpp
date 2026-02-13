@@ -55,6 +55,7 @@ printKeyboardShortcuts() {
       "  O           Toggle origin marker\n"
       "  F           Toggle FPS display\n"
       "  L           Toggle aircraft labels\n"
+      "  D           Toggle label physics debug overlay\n"
       "  [           Show fewer labels (decrease density)\n"
       "  ]           Show more labels (increase density)\n"
       "\n");
@@ -126,6 +127,11 @@ Input::getInput() {
           // toggle FPS box
           case SDLK_f:
             view->getUIOverlay()->setShowFps(!view->getUIOverlay()->getShowFps());
+            break;
+
+          // toggle label physics debug overlay
+          case SDLK_d:
+            view->getAircraftRenderer().toggleDebugLabels();
             break;
 
           // toggle aircraft labels

@@ -350,12 +350,14 @@ View::draw() {
     // Sync labels to updated aircraft positions (handles zoom/recenter view changes)
     aircraftRenderer.syncLabelsToAircraft(appData->aircraftList);
 
-    // Resolve label conflicts (physics simulation)
-    for (int i = 0; i < 8; i++) {
-      aircraftRenderer.resolveLabelConflicts(appData->aircraftList);
-    }
+    // Resolve label conflicts (physics simulation + constraint projection)
+    aircraftRenderer.resolveLabelConflicts(appData->aircraftList);
+
     // Clear the density changed flag after all labels have been updated
     aircraftRenderer.labelConfig().clearDensityChanged();
+
+    // Debug overlay (toggled with 'D' key)
+    aircraftRenderer.drawDebugOverlay(renderContext, appData->aircraftList);
   }
 
   // Draw status overlay (status bar and menu button)

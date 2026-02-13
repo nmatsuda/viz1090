@@ -71,6 +71,16 @@ struct OnMapCluster {
   std::unordered_set<uint32_t> memberAddrs;  // Aircraft addresses in this cluster
 };
 
+/// Quantitative metrics for label physics debug overlay
+struct LabelPhysicsMetrics {
+  int overlappingPairs{0};
+  int iconOverlaps{0};
+  float avgVelocity{0.0f};
+  float maxVelocity{0.0f};
+  int totalLabels{0};
+  int oscillatingLabels{0};  // direction changes > 10/16 frames
+};
+
 /// Renders aircraft icons, trails, and labels
 /// Manages per-aircraft view state (screen coordinates, labels)
 class AircraftRenderer {
@@ -124,6 +134,12 @@ public:
   ui::LabelConfig& labelConfig() { return labelConfig_; }
   const ui::LabelConfig& labelConfig() const { return labelConfig_; }
 
+  /// Toggle debug label overlay (bound to 'D' key)
+  void toggleDebugLabels() { debugLabels_ = !debugLabels_; }
+
+  /// Draw debug overlay showing label physics metrics
+  void drawDebugOverlay(const RenderContext& ctx, const AircraftList& aircraftList);
+
   // Check if any animation needs high framerate
   [[nodiscard]] bool needsHighFramerate() const { return highFramerate; }
   void resetHighFramerate() { highFramerate = false; }
@@ -168,8 +184,13 @@ private:
   // Build neighbor list for label physics
   std::vector<ui::LabelNeighbor> buildNeighborList(const AircraftList& aircraftList) const;
 
+  // Update neighbor positions in-place from current label state (no reallocation)
+  void updateNeighborPositions(std::vector<ui::LabelNeighbor>& neighbors);
+
   bool* metric{nullptr};
   bool highFramerate{false};
+  bool debugLabels_{false};
+  LabelPhysicsMetrics metrics_;
 
   // Per-aircraft view state (screen coordinates, labels)
   ui::AircraftViewStateMap viewStates_;

@@ -86,10 +86,10 @@ std::vector<ui::LabelNeighbor> AircraftRenderer::buildNeighborList(const Aircraf
     const auto* state = viewStates_.get(aircraft->addr);
     if (state && state->label) {
       ui::LabelNeighbor neighbor;
-      neighbor.x = state->label->getX();
-      neighbor.y = state->label->getY();
-      neighbor.w = state->label->getWidth();
-      neighbor.h = state->label->getHeight();
+      neighbor.x = state->label->getCollisionX();
+      neighbor.y = state->label->getCollisionY();
+      neighbor.w = state->label->getCollisionW();
+      neighbor.h = state->label->getCollisionH();
       neighbor.aircraftX = state->screenX;
       neighbor.aircraftY = state->screenY;
       neighbor.addr = aircraft->addr;
@@ -769,14 +769,11 @@ void AircraftRenderer::drawTrails(const RenderContext& ctx, const AircraftList& 
 }
 
 void AircraftRenderer::resolveLabelConflicts(AircraftList& aircraftList) {
-  // Build neighbor list
+  // 1. Build neighbor list + spatial grid (once)
   auto neighbors = buildNeighborList(aircraftList);
-
-  // Build spatial grid for efficient neighbor lookups
-  // Cell size of 100px is larger than typical label interaction distance
   labelSpatialGrid_.build(neighbors, labelConfig_.screenWidth, labelConfig_.screenHeight, 100.0f);
 
-  // Clear acceleration
+  // 2. Clear acceleration for all labels
   for (const auto& aircraft : aircraftList) {
     auto* viewState = viewStates_.get(aircraft->addr);
     if (viewState && viewState->label) {
@@ -784,27 +781,72 @@ void AircraftRenderer::resolveLabelConflicts(AircraftList& aircraftList) {
     }
   }
 
-  // Calculate forces using spatial grid for efficient neighbor queries
+  // 3. Calculate soft forces (attachment spring, boundary, density pressure)
   for (const auto& aircraft : aircraftList) {
     auto* viewState = viewStates_.get(aircraft->addr);
     if (viewState && viewState->label) {
-      // Query spatial grid for nearby neighbors only
       labelSpatialGrid_.getNearbyNeighbors(
           viewState->label->getX(), viewState->label->getY(),
           viewState->label->getWidth(), viewState->label->getHeight(),
           neighbors, nearbyNeighborsTemp_);
 
-      // Use optimized path with pre-filtered neighbors
-      viewState->label->calculateForcesFromNearby(nearbyNeighborsTemp_, neighbors, labelConfig_,
-                                                  viewState->screenX, viewState->screenY);
+      viewState->label->calculateSoftForces(nearbyNeighborsTemp_, labelConfig_,
+                                            viewState->screenX, viewState->screenY);
     }
   }
 
-  // Apply forces
+  // 4. Integrate (semi-implicit Euler)
   for (const auto& aircraft : aircraftList) {
     auto* viewState = viewStates_.get(aircraft->addr);
     if (viewState && viewState->label) {
-      viewState->label->applyForces();
+      viewState->label->integrateSemiImplicitEuler();
+    }
+  }
+
+  // 5. Constraint projection iterations
+  for (int iter = 0; iter < 8; ++iter) {
+    // Update neighbor positions in-place
+    updateNeighborPositions(neighbors);
+
+    // Rebuild spatial grid every 3rd iteration for efficiency
+    if (iter % 3 == 0) {
+      labelSpatialGrid_.build(neighbors, labelConfig_.screenWidth, labelConfig_.screenHeight, 100.0f);
+    }
+
+    // Project each label away from overlapping neighbors and icons
+    for (const auto& aircraft : aircraftList) {
+      auto* viewState = viewStates_.get(aircraft->addr);
+      if (!viewState || !viewState->label) continue;
+
+      labelSpatialGrid_.getNearbyNeighbors(
+          viewState->label->getX(), viewState->label->getY(),
+          viewState->label->getWidth(), viewState->label->getHeight(),
+          neighbors, nearbyNeighborsTemp_);
+
+      for (const auto* neighbor : nearbyNeighborsTemp_) {
+        if (neighbor->addr == aircraft->addr) continue;
+
+        viewState->label->projectAwayFromLabel(
+            neighbor->x, neighbor->y, neighbor->w, neighbor->h,
+            0.0f, 0.45f);
+
+        viewState->label->projectAwayFromIcon(
+            static_cast<float>(neighbor->aircraftX),
+            static_cast<float>(neighbor->aircraftY),
+            12.0f);
+      }
+    }
+  }
+}
+
+void AircraftRenderer::updateNeighborPositions(std::vector<ui::LabelNeighbor>& neighbors) {
+  for (auto& neighbor : neighbors) {
+    const auto* state = viewStates_.get(neighbor.addr);
+    if (state && state->label) {
+      neighbor.x = state->label->getCollisionX();
+      neighbor.y = state->label->getCollisionY();
+      neighbor.w = state->label->getCollisionW();
+      neighbor.h = state->label->getCollisionH();
     }
   }
 }
@@ -1040,6 +1082,165 @@ bool AircraftRenderer::isOffMap(int x, int y, int screenWidth, int screenHeight)
   bounds.screenWidth = screenWidth;
   bounds.screenHeight = screenHeight;
   return bounds.isOffMap(x, y);
+}
+
+void AircraftRenderer::drawDebugOverlay(const RenderContext& ctx, const AircraftList& aircraftList) {
+  if (!debugLabels_) return;
+
+  // Reset metrics
+  metrics_ = LabelPhysicsMetrics{};
+
+  // Collect label info for overlap detection and drawing
+  struct LabelInfo {
+    float x, y, w, h;
+    float velMag;
+    float oscScore;
+    float velX, velY;
+    uint32_t addr;
+    bool overlapping{false};
+  };
+  std::vector<LabelInfo> labels;
+
+  for (const auto& aircraft : aircraftList) {
+    const auto* viewState = viewStates_.get(aircraft->addr);
+    if (!viewState || !viewState->label) continue;
+
+    auto* label = viewState->label.get();
+    if (label->getWidth() < 1.0f) continue;
+
+    LabelInfo info;
+    info.x = label->getCollisionX();
+    info.y = label->getCollisionY();
+    info.w = label->getCollisionW();
+    info.h = label->getCollisionH();
+    info.velMag = label->getVelocityMagnitude();
+    info.oscScore = label->getOscillationScore();
+    info.velX = label->getVelX();
+    info.velY = label->getVelY();
+    info.addr = aircraft->addr;
+    labels.push_back(info);
+
+    metrics_.totalLabels++;
+    metrics_.avgVelocity += info.velMag;
+    if (info.velMag > metrics_.maxVelocity) metrics_.maxVelocity = info.velMag;
+    if (info.oscScore > 0.625f) metrics_.oscillatingLabels++;
+  }
+
+  if (metrics_.totalLabels > 0) {
+    metrics_.avgVelocity /= static_cast<float>(metrics_.totalLabels);
+  }
+
+  // Count overlapping pairs (O(n^2) — debug mode only)
+  for (size_t i = 0; i < labels.size(); ++i) {
+    for (size_t j = i + 1; j < labels.size(); ++j) {
+      auto& a = labels[i];
+      auto& b = labels[j];
+
+      if (a.x < b.x + b.w && a.x + a.w > b.x &&
+          a.y < b.y + b.h && a.y + a.h > b.y) {
+        metrics_.overlappingPairs++;
+        a.overlapping = true;
+        b.overlapping = true;
+      }
+    }
+  }
+
+  // Check icon overlaps
+  for (auto& info : labels) {
+    for (const auto& aircraft : aircraftList) {
+      if (aircraft->addr == info.addr) continue;
+      const auto* viewState = viewStates_.get(aircraft->addr);
+      if (!viewState) continue;
+
+      float iconX = static_cast<float>(viewState->screenX);
+      float iconY = static_cast<float>(viewState->screenY);
+
+      if (iconX >= info.x && iconX <= info.x + info.w &&
+          iconY >= info.y && iconY <= info.y + info.h) {
+        metrics_.iconOverlaps++;
+      }
+    }
+  }
+
+  // Draw colored bounding boxes and velocity vectors
+  for (const auto& info : labels) {
+    int ix = static_cast<int>(std::round(info.x));
+    int iy = static_cast<int>(std::round(info.y));
+    int iw = static_cast<int>(std::round(info.w));
+    int ih = static_cast<int>(std::round(info.h));
+
+    Uint8 r, g, b;
+    if (info.overlapping) {
+      r = 255; g = 0; b = 0;
+    } else if (info.oscScore > 0.625f) {
+      r = 255; g = 255; b = 0;
+    } else {
+      r = 0; g = 255; b = 0;
+    }
+
+    rectangleRGBA(ctx.renderer, ix, iy, ix + iw, iy + ih, r, g, b, 180);
+
+    // Velocity vector as line from label center
+    float cx = info.x + info.w / 2.0f;
+    float cy = info.y + info.h / 2.0f;
+    float scale = 10.0f;
+    lineRGBA(ctx.renderer,
+             static_cast<int>(cx), static_cast<int>(cy),
+             static_cast<int>(cx + info.velX * scale), static_cast<int>(cy + info.velY * scale),
+             255, 255, 255, 200);
+  }
+
+  // Draw metrics text overlay in top-right corner
+  int textX = ctx.screenWidth - 180;
+  int textY = 10;
+  int lineHeight = ctx.mapFontHeight() + 2;
+
+  char buf[64];
+  Label metricsLabel;
+  metricsLabel.setFont(ctx.mapFont());
+  SDL_Color white = {255, 255, 255, 255};
+  SDL_Color red = {255, 100, 100, 255};
+  SDL_Color yellow = {255, 255, 0, 255};
+
+  std::snprintf(buf, sizeof(buf), "Labels: %d", metrics_.totalLabels);
+  metricsLabel.setColor(white);
+  metricsLabel.setPosition(textX, textY);
+  metricsLabel.setText(buf);
+  metricsLabel.draw(ctx.renderer);
+  textY += lineHeight;
+
+  std::snprintf(buf, sizeof(buf), "Overlaps: %d", metrics_.overlappingPairs);
+  metricsLabel.setColor(metrics_.overlappingPairs > 0 ? red : white);
+  metricsLabel.setPosition(textX, textY);
+  metricsLabel.setText(buf);
+  metricsLabel.draw(ctx.renderer);
+  textY += lineHeight;
+
+  std::snprintf(buf, sizeof(buf), "Icon olaps: %d", metrics_.iconOverlaps);
+  metricsLabel.setColor(metrics_.iconOverlaps > 0 ? red : white);
+  metricsLabel.setPosition(textX, textY);
+  metricsLabel.setText(buf);
+  metricsLabel.draw(ctx.renderer);
+  textY += lineHeight;
+
+  std::snprintf(buf, sizeof(buf), "Oscillating: %d", metrics_.oscillatingLabels);
+  metricsLabel.setColor(metrics_.oscillatingLabels > 0 ? yellow : white);
+  metricsLabel.setPosition(textX, textY);
+  metricsLabel.setText(buf);
+  metricsLabel.draw(ctx.renderer);
+  textY += lineHeight;
+
+  std::snprintf(buf, sizeof(buf), "Avg vel: %.2f", metrics_.avgVelocity);
+  metricsLabel.setColor(white);
+  metricsLabel.setPosition(textX, textY);
+  metricsLabel.setText(buf);
+  metricsLabel.draw(ctx.renderer);
+  textY += lineHeight;
+
+  std::snprintf(buf, sizeof(buf), "Max vel: %.2f", metrics_.maxVelocity);
+  metricsLabel.setPosition(textX, textY);
+  metricsLabel.setText(buf);
+  metricsLabel.draw(ctx.renderer);
 }
 
 }  // namespace viz1090

@@ -32,6 +32,7 @@
 #include "SDL2/SDL_ttf.h"
 #include <chrono>
 #include <string>
+#include <cmath>
 #include <vector>
 
 #include "ui/Label.h"
@@ -131,6 +132,42 @@ public:
   /// Get aircraft address this label belongs to
   [[nodiscard]] uint32_t getAircraftAddr() const { return aircraftAddr_; }
 
+  /// Render snap methods — eliminates sub-pixel jitter from float-to-int truncation
+  [[nodiscard]] int getRenderX() const { return static_cast<int>(std::round(x)); }
+  [[nodiscard]] int getRenderY() const { return static_cast<int>(std::round(y)); }
+
+  /// Collision bounds — includes reticle brackets (4px above/below text) + padding for gap
+  static constexpr float reticle_margin = 4.0f;
+  static constexpr float collision_padding = 3.0f;
+  [[nodiscard]] float getCollisionX() const { return x - collision_padding; }
+  [[nodiscard]] float getCollisionY() const { return y - reticle_margin - collision_padding; }
+  [[nodiscard]] float getCollisionW() const { return w + 2.0f * collision_padding; }
+  [[nodiscard]] float getCollisionH() const { return h + 2.0f * reticle_margin + 2.0f * collision_padding; }
+
+  /// Debug accessors for instrumentation
+  [[nodiscard]] float getVelocityMagnitude() const;
+  [[nodiscard]] float getAccelMagnitude() const;
+  [[nodiscard]] float getOscillationScore() const;
+  [[nodiscard]] float getVelX() const { return vel_x; }
+  [[nodiscard]] float getVelY() const { return vel_y; }
+
+  /// Calculate soft forces only (attachment spring, boundary, density pressure)
+  void calculateSoftForces(const std::vector<const LabelNeighbor*>& nearbyNeighbors,
+                           const LabelConfig& config,
+                           int aircraftScreenX, int aircraftScreenY);
+
+  /// Semi-implicit Euler integration with oscillation tracking
+  void integrateSemiImplicitEuler();
+
+  /// Constraint projection: push this label away from another label's AABB
+  /// @return true if overlap was found and resolved
+  bool projectAwayFromLabel(float otherX, float otherY, float otherW, float otherH,
+                            float margin, float strength);
+
+  /// Constraint projection: push this label away from an aircraft icon
+  /// @return true if overlap was found and resolved
+  bool projectAwayFromIcon(float iconX, float iconY, float iconRadius);
+
 private:
   SDL_Rect getFullRect(int labelLevel);
   float calculateDensity(const std::vector<LabelNeighbor>& neighbors, int labelLevel);
@@ -155,9 +192,9 @@ private:
   float target_w;
   float target_h;
 
-  // Verlet integration: previous position (replaces velocity dx/dy)
-  float prev_x;
-  float prev_y;
+  // Explicit velocity (replaces Verlet prev_x/prev_y)
+  float vel_x;
+  float vel_y;
 
   float ddx;  // acceleration
   float ddy;
@@ -178,19 +215,23 @@ private:
 
   std::chrono::high_resolution_clock::time_point lastLevelChange;
 
+  // Oscillation tracking (for debug instrumentation)
+  int dirChangeCountX{0};
+  int dirChangeCountY{0};
+  float lastSignX{0.0f};
+  float lastSignY{0.0f};
+  bool dirHistoryX[16]{};
+  bool dirHistoryY[16]{};
+  int dirHistoryIndex{0};
+
   // Physics constants
-  float label_force = 0.01f;
-  float label_dist = 2.0f;
-  float density_force = 0.01f;
-  float attachment_force = 0.01f;
+  float attachment_k = 0.02f;       // spring stiffness (critical damping = 2*sqrt(k))
+  float boundary_k = 0.05f;         // stronger for screen edges
+  float density_force = 0.005f;     // gentle aggregate push
+  float damping = 0.85f;            // velocity retention per step
+  float velocity_limit = 2.0f;      // max velocity per axis
   float attachment_dist = 10.0f;
-  float icon_force = 0.01f;
-  float icon_dist = 15.0f;
-  float boundary_force = 0.01f;
-  float damping_force = 0.65f;
-  float velocity_limit = 1.0f;
   float edge_margin = 15.0f;
-  float drag_force = 0.00f;
 
   const Style& style;
 };

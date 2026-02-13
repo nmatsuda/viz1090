@@ -226,173 +226,13 @@ void
 AircraftLabel::calculateForces(const std::vector<LabelNeighbor>& neighbors,
                                const LabelConfig& config,
                                int aircraftScreenX, int aircraftScreenY) {
-  float p_left = x;
-  float p_right = x + w;
-  float p_top = y;
-  float p_bottom = y + h;
-
-  float boxmid_x = (p_left + p_right) / 2.0f;
-  float boxmid_y = (p_top + p_bottom) / 2.0f;
-
-  float offset_x = boxmid_x - static_cast<float>(aircraftScreenX);
-  float offset_y = boxmid_y - static_cast<float>(aircraftScreenY);
-
-  float target_length_x = attachment_dist + w / 2.0f;
-  float target_length_y = attachment_dist + h / 2.0f;
-
-  // stay icon_dist away from own icon
-  ddx -= sign(offset_x) * attachment_force * (std::fabs(offset_x) - target_length_x);
-  ddy -= sign(offset_y) * attachment_force * (std::fabs(offset_y) - target_length_y);
-
-  // screen edge
-  if (p_left < edge_margin) {
-    ddx += boundary_force * (edge_margin - p_left);
+  // Wrapper: convert value vector to pointer vector and delegate
+  std::vector<const LabelNeighbor*> ptrs;
+  ptrs.reserve(neighbors.size());
+  for (const auto& n : neighbors) {
+    ptrs.push_back(&n);
   }
-
-  if (p_right > screen_width - edge_margin) {
-    ddx += boundary_force * (screen_width - edge_margin - p_right);
-  }
-
-  if (p_top < edge_margin) {
-    ddy += boundary_force * (edge_margin - p_top);
-  }
-
-  // Bottom edge boundary - respect UI status bar bounds
-  float effectiveBottomEdge = static_cast<float>(screen_height);
-  if (config.uiStatusBarTopY > 0 && p_left < static_cast<float>(config.uiStatusBarRightX)) {
-    // Label is in the region where status bar exists - use status bar top as boundary
-    effectiveBottomEdge = static_cast<float>(config.uiStatusBarTopY);
-  }
-
-  if (p_bottom > effectiveBottomEdge - edge_margin) {
-    ddy += boundary_force * (effectiveBottomEdge - edge_margin - p_bottom);
-  }
-
-  float all_x = 0;
-  float all_y = 0;
-  int count = 0;
-
-  // check against other labels
-  for (const auto& neighbor : neighbors) {
-    if (neighbor.addr == aircraftAddr_) {
-      continue;
-    }
-
-    float check_left = neighbor.x;
-    float check_right = neighbor.x + neighbor.w;
-    float check_top = neighbor.y;
-    float check_bottom = neighbor.y + neighbor.h;
-
-    float checkboxmid_x = (check_left + check_right) / 2.0f;
-    float checkboxmid_y = (check_top + check_bottom) / 2.0f;
-
-    bool overlap = true;
-
-    if (p_left >= check_right + 10 || check_left >= p_right + 10)
-      overlap = false;
-
-    if (p_top >= check_bottom + 10 || check_top >= p_bottom + 10)
-      overlap = false;
-
-    if (overlap) {
-      float td = std::fabs(p_top - check_bottom);
-      float bd = std::fabs(p_bottom - check_top);
-      float ld = std::fabs(p_left - check_right);
-      float rd = std::fabs(p_right - check_left);
-
-      float x_mag, y_mag;
-
-      if (boxmid_y > checkboxmid_y) {
-        y_mag = check_bottom - p_top + 10;
-      } else {
-        y_mag = check_top - p_bottom - 10;
-        td = bd;
-      }
-
-      if (boxmid_x > checkboxmid_x) {
-        x_mag = check_right - p_left + 10;
-      } else {
-        x_mag = check_left - p_right - 10;
-        ld = rd;
-      }
-
-      if (td < ld) {
-        x_mag = 0;
-      } else {
-        y_mag = 0;
-      }
-
-      ddx += label_force * x_mag;
-      ddy += label_force * y_mag;
-    }
-
-    // stay at least label_dist away from other icons
-    float check_x = static_cast<float>(neighbor.aircraftX);
-    float check_y = static_cast<float>(neighbor.aircraftY);
-
-    if (p_right >= check_x && check_x >= p_left && p_bottom >= check_y && check_y >= p_top) {
-      float x_mag, y_mag;
-
-      if (boxmid_x - check_x > 0) {
-        x_mag = check_x - p_left + 10;
-      } else {
-        x_mag = check_x - p_right - 10;
-      }
-
-      if (boxmid_y - check_y > 0) {
-        y_mag = check_y - p_top + 10;
-      } else {
-        y_mag = check_y - p_bottom - 10;
-      }
-
-      ddx += icon_force * x_mag;
-      ddy += icon_force * y_mag;
-    }
-
-    all_x += sign(boxmid_x - checkboxmid_x);
-    all_y += sign(boxmid_y - checkboxmid_y);
-
-    count++;
-  }
-
-  // move away from others
-  if (count > 0) {
-    ddx += density_force * all_x / static_cast<float>(count);
-    ddy += density_force * all_y / static_cast<float>(count);
-  }
-
-  float level_rate = 0.25f;
-
-  float randtime = 5000.0f + 5000.0f * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-  if (config.densityChanged || elapsed(lastLevelChange) > randtime) {
-    if (labelLevel < -1.2f + config.densityMultiplier * calculateDensity(neighbors, static_cast<int>(labelLevel) - 1)) {
-      if (labelLevel <= 2) {
-        if (std::ceil(labelLevel) - labelLevel <= level_rate) {
-          labelLevel += 0.5f;
-        }
-
-        labelLevel += level_rate;
-        isChanging = true;
-        lastLevelChange = now();
-      }
-    } else if (labelLevel > 1.2f + config.densityMultiplier * calculateDensity(neighbors, static_cast<int>(labelLevel) + 1)) {
-      if (labelLevel >= 0) {
-        if (labelLevel - std::floor(labelLevel) <= level_rate) {
-          labelLevel -= 0.5f;
-        }
-
-        labelLevel -= level_rate;
-        isChanging = true;
-        lastLevelChange = now();
-      }
-    }
-  }
-
-  // add drag force (using implicit velocity from Verlet)
-  float vel_x = x - prev_x;
-  float vel_y = y - prev_y;
-  ddx -= drag_force * vel_x * vel_x * sign(vel_x);
-  ddy -= drag_force * vel_y * vel_y * sign(vel_y);
+  calculateSoftForces(ptrs, config, aircraftScreenX, aircraftScreenY);
 }
 
 void
@@ -400,6 +240,14 @@ AircraftLabel::calculateForcesFromNearby(const std::vector<const LabelNeighbor*>
                                          const std::vector<LabelNeighbor>& /* allNeighbors */,
                                          const LabelConfig& config,
                                          int aircraftScreenX, int aircraftScreenY) {
+  // Wrapper: delegate to new soft forces method
+  calculateSoftForces(nearbyNeighbors, config, aircraftScreenX, aircraftScreenY);
+}
+
+void
+AircraftLabel::calculateSoftForces(const std::vector<const LabelNeighbor*>& nearbyNeighbors,
+                                   const LabelConfig& config,
+                                   int aircraftScreenX, int aircraftScreenY) {
   float p_left = x;
   float p_right = x + w;
   float p_top = y;
@@ -408,27 +256,37 @@ AircraftLabel::calculateForcesFromNearby(const std::vector<const LabelNeighbor*>
   float boxmid_x = (p_left + p_right) / 2.0f;
   float boxmid_y = (p_top + p_bottom) / 2.0f;
 
+  // 1. Critically-damped attachment spring
+  // Target position: offset from aircraft in the quadrant the label is already in
   float offset_x = boxmid_x - static_cast<float>(aircraftScreenX);
   float offset_y = boxmid_y - static_cast<float>(aircraftScreenY);
 
   float target_length_x = attachment_dist + w / 2.0f;
   float target_length_y = attachment_dist + h / 2.0f;
 
-  // stay icon_dist away from own icon
-  ddx -= sign(offset_x) * attachment_force * (std::fabs(offset_x) - target_length_x);
-  ddy -= sign(offset_y) * attachment_force * (std::fabs(offset_y) - target_length_y);
+  // Default to positive quadrant if label is exactly on aircraft
+  float sx = (offset_x >= 0) ? 1.0f : -1.0f;
+  float sy = (offset_y >= 0) ? 1.0f : -1.0f;
 
-  // screen edge
+  float target_x = static_cast<float>(aircraftScreenX) + sx * target_length_x;
+  float target_y = static_cast<float>(aircraftScreenY) + sy * target_length_y;
+
+  // F = k * (target - pos) - 2*sqrt(k) * vel
+  float critical_damp = 2.0f * std::sqrt(attachment_k);
+  ddx += attachment_k * (target_x - boxmid_x) - critical_damp * vel_x;
+  ddy += attachment_k * (target_y - boxmid_y) - critical_damp * vel_y;
+
+  // 2. Boundary springs
   if (p_left < edge_margin) {
-    ddx += boundary_force * (edge_margin - p_left);
+    ddx += boundary_k * (edge_margin - p_left);
   }
 
   if (p_right > screen_width - edge_margin) {
-    ddx += boundary_force * (screen_width - edge_margin - p_right);
+    ddx += boundary_k * (screen_width - edge_margin - p_right);
   }
 
   if (p_top < edge_margin) {
-    ddy += boundary_force * (edge_margin - p_top);
+    ddy += boundary_k * (edge_margin - p_top);
   }
 
   // Bottom edge boundary - respect UI status bar bounds
@@ -438,120 +296,43 @@ AircraftLabel::calculateForcesFromNearby(const std::vector<const LabelNeighbor*>
   }
 
   if (p_bottom > effectiveBottomEdge - edge_margin) {
-    ddy += boundary_force * (effectiveBottomEdge - edge_margin - p_bottom);
+    ddy += boundary_k * (effectiveBottomEdge - edge_margin - p_bottom);
   }
 
+  // 3. Soft density pressure — direction away from neighbors, weighted by inverse distance
   float all_x = 0;
   float all_y = 0;
   int count = 0;
 
-  // Maximum interaction distance squared for early rejection
-  // Labels more than 150 pixels apart in both X and Y cannot interact meaningfully
-  constexpr float maxInteractionDist = 150.0f;
-  constexpr float maxInteractionDistSq = maxInteractionDist * maxInteractionDist;
-
-  // check against nearby labels only (from spatial grid)
   for (const auto* neighbor : nearbyNeighbors) {
     if (neighbor->addr == aircraftAddr_) {
       continue;
     }
 
-    float check_left = neighbor->x;
-    float check_right = neighbor->x + neighbor->w;
-    float check_top = neighbor->y;
-    float check_bottom = neighbor->y + neighbor->h;
+    float checkboxmid_x = neighbor->x + neighbor->w / 2.0f;
+    float checkboxmid_y = neighbor->y + neighbor->h / 2.0f;
 
-    float checkboxmid_x = (check_left + check_right) / 2.0f;
-    float checkboxmid_y = (check_top + check_bottom) / 2.0f;
-
-    // Early distance rejection - skip if centers are too far apart
     float dx = boxmid_x - checkboxmid_x;
     float dy = boxmid_y - checkboxmid_y;
-    float distSq = dx * dx + dy * dy;
-    if (distSq > maxInteractionDistSq) {
-      continue;
-    }
+    float dist = std::sqrt(dx * dx + dy * dy);
+    if (dist < 1.0f) dist = 1.0f;
 
-    bool overlap = true;
-
-    if (p_left >= check_right + 10 || check_left >= p_right + 10)
-      overlap = false;
-
-    if (p_top >= check_bottom + 10 || check_top >= p_bottom + 10)
-      overlap = false;
-
-    if (overlap) {
-      float td = std::fabs(p_top - check_bottom);
-      float bd = std::fabs(p_bottom - check_top);
-      float ld = std::fabs(p_left - check_right);
-      float rd = std::fabs(p_right - check_left);
-
-      float x_mag, y_mag;
-
-      if (boxmid_y > checkboxmid_y) {
-        y_mag = check_bottom - p_top + 10;
-      } else {
-        y_mag = check_top - p_bottom - 10;
-        td = bd;
-      }
-
-      if (boxmid_x > checkboxmid_x) {
-        x_mag = check_right - p_left + 10;
-      } else {
-        x_mag = check_left - p_right - 10;
-        ld = rd;
-      }
-
-      if (td < ld) {
-        x_mag = 0;
-      } else {
-        y_mag = 0;
-      }
-
-      ddx += label_force * x_mag;
-      ddy += label_force * y_mag;
-    }
-
-    // stay at least label_dist away from other icons
-    float check_x = static_cast<float>(neighbor->aircraftX);
-    float check_y = static_cast<float>(neighbor->aircraftY);
-
-    if (p_right >= check_x && check_x >= p_left && p_bottom >= check_y && check_y >= p_top) {
-      float x_mag, y_mag;
-
-      if (boxmid_x - check_x > 0) {
-        x_mag = check_x - p_left + 10;
-      } else {
-        x_mag = check_x - p_right - 10;
-      }
-
-      if (boxmid_y - check_y > 0) {
-        y_mag = check_y - p_top + 10;
-      } else {
-        y_mag = check_y - p_bottom - 10;
-      }
-
-      ddx += icon_force * x_mag;
-      ddy += icon_force * y_mag;
-    }
-
-    all_x += sign(boxmid_x - checkboxmid_x);
-    all_y += sign(boxmid_y - checkboxmid_y);
-
+    float invDist = 1.0f / dist;
+    all_x += sign(dx) * invDist;
+    all_y += sign(dy) * invDist;
     count++;
   }
 
-  // move away from others
   if (count > 0) {
     ddx += density_force * all_x / static_cast<float>(count);
     ddy += density_force * all_y / static_cast<float>(count);
   }
 
+  // 4. Label level/collapsing logic (preserved)
   float level_rate = 0.25f;
 
   float randtime = 5000.0f + 5000.0f * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
   if (config.densityChanged || elapsed(lastLevelChange) > randtime) {
-    // Use nearby neighbors for density calculation (cheaper than full list)
     if (labelLevel < -1.2f + config.densityMultiplier * calculateDensityFromNearby(nearbyNeighbors, static_cast<int>(labelLevel) - 1)) {
       if (labelLevel <= 2) {
         if (std::ceil(labelLevel) - labelLevel <= level_rate) {
@@ -574,43 +355,21 @@ AircraftLabel::calculateForcesFromNearby(const std::vector<const LabelNeighbor*>
       }
     }
   }
-
-  // add drag force (using implicit velocity from Verlet)
-  float vel_x = x - prev_x;
-  float vel_y = y - prev_y;
-  ddx -= drag_force * vel_x * vel_x * sign(vel_x);
-  ddy -= drag_force * vel_y * vel_y * sign(vel_y);
 }
 
 void
 AircraftLabel::applyForces() {
-  // Verlet integration with oscillation detection
-  float vel_x = x - prev_x;
-  float vel_y = y - prev_y;
+  // Wrapper: delegate to new integration method
+  integrateSemiImplicitEuler();
+}
 
-  // Base damping - fairly gentle to allow smooth movement
-  float base_damp = 0.8f;
+void
+AircraftLabel::integrateSemiImplicitEuler() {
+  // Semi-implicit Euler: update velocity first, then position
+  vel_x = vel_x * damping + ddx;
+  vel_y = vel_y * damping + ddy;
 
-  // Detect small-amplitude oscillation conditions
-  constexpr float oscillation_threshold = 1.5f;  // pixels
-
-  // X-axis oscillation check
-  if (std::fabs(vel_x) < oscillation_threshold && vel_x * ddx < 0) {
-    vel_x = 0;
-    ddx *= 0.5f;
-  } else {
-    vel_x *= base_damp;
-  }
-
-  // Y-axis oscillation check
-  if (std::fabs(vel_y) < oscillation_threshold && vel_y * ddy < 0) {
-    vel_y = 0;
-    ddy *= 0.5f;
-  } else {
-    vel_y *= base_damp;
-  }
-
-  // Apply velocity limit
+  // Clamp velocity
   if (std::fabs(vel_x) > velocity_limit) {
     vel_x = sign(vel_x) * velocity_limit;
   }
@@ -618,17 +377,30 @@ AircraftLabel::applyForces() {
     vel_y = sign(vel_y) * velocity_limit;
   }
 
-  // Calculate new position
-  float new_x = x + vel_x + ddx;
-  float new_y = y + vel_y + ddy;
+  // Update position
+  x += vel_x;
+  y += vel_y;
 
-  // Update previous position to current before moving
-  prev_x = x;
-  prev_y = y;
+  // Track oscillation (direction changes for instrumentation)
+  float signX = sign(vel_x);
+  float signY = sign(vel_y);
 
-  // Update current position
-  x = new_x;
-  y = new_y;
+  bool dirChangedX = (signX != 0 && lastSignX != 0 && signX != lastSignX);
+  bool dirChangedY = (signY != 0 && lastSignY != 0 && signY != lastSignY);
+
+  // Update circular buffer and running count
+  bool oldX = dirHistoryX[dirHistoryIndex];
+  bool oldY = dirHistoryY[dirHistoryIndex];
+  dirHistoryX[dirHistoryIndex] = dirChangedX;
+  dirHistoryY[dirHistoryIndex] = dirChangedY;
+
+  dirChangeCountX += (dirChangedX ? 1 : 0) - (oldX ? 1 : 0);
+  dirChangeCountY += (dirChangedY ? 1 : 0) - (oldY ? 1 : 0);
+
+  dirHistoryIndex = (dirHistoryIndex + 1) & 15;  // % 16
+
+  if (signX != 0) lastSignX = signX;
+  if (signY != 0) lastSignY = signY;
 
   // Check if still changing
   if (std::fabs(vel_x) > 0.01f || std::fabs(vel_y) > 0.01f ||
@@ -637,23 +409,15 @@ AircraftLabel::applyForces() {
   }
 
   // Handle NaN
-  if (std::isnan(x)) {
-    x = 0;
-    prev_x = 0;
-  }
-  if (std::isnan(y)) {
-    y = 0;
-    prev_y = 0;
-  }
+  if (std::isnan(x)) { x = 0; vel_x = 0; }
+  if (std::isnan(y)) { y = 0; vel_y = 0; }
 }
 
 void
 AircraftLabel::move(float dx, float dy) {
-  // Move both current and previous position to preserve implicit velocity
+  // Shift position only — velocity unchanged (panning is frame-of-reference shift)
   x += dx;
   y += dy;
-  prev_x += dx;
-  prev_y += dy;
 }
 
 void
@@ -682,8 +446,8 @@ AircraftLabel::resetToAircraftPosition(int aircraftScreenX, int aircraftScreenY)
 
   x = targetX;
   y = targetY;
-  prev_x = targetX;
-  prev_y = targetY;
+  vel_x = 0.0f;
+  vel_y = 0.0f;
   ddx = 0.0f;
   ddy = 0.0f;
 
@@ -772,10 +536,10 @@ AircraftLabel::draw(SDL_Renderer* renderer, bool selected, bool showLabels,
     Sint16 vy[3] = {static_cast<Sint16>(aircraftScreenY), static_cast<Sint16>(exit_y),
                     static_cast<Sint16>(anchor_y)};
 
-    int ix = static_cast<int>(x);
-    int iy = static_cast<int>(y);
-    int iw = static_cast<int>(w);
-    int ih = static_cast<int>(h);
+    int ix = getRenderX();
+    int iy = getRenderY();
+    int iw = static_cast<int>(std::round(w));
+    int ih = static_cast<int>(std::round(h));
 
     boxRGBA(renderer, ix, iy, ix + iw, iy + ih, style.labelBackground.r, style.labelBackground.g,
             style.labelBackground.b, drawColor.a);
@@ -799,8 +563,8 @@ AircraftLabel::draw(SDL_Renderer* renderer, bool selected, bool showLabels,
              drawColor.g, drawColor.b, drawColor.a);
   }
 
-  int ix = static_cast<int>(x);
-  int iy = static_cast<int>(y);
+  int ix = getRenderX();
+  int iy = getRenderY();
 
   // Only draw text if label dimensions are established (prevents flicker on first frame after expand)
   bool dimensionsValid = (w != 0 && h != 0);
@@ -876,8 +640,8 @@ AircraftLabel::AircraftLabel(uint32_t aircraftAddr, bool& metric, int screenWidt
       h(0),
       target_w(0),
       target_h(0),
-      prev_x(0),
-      prev_y(20.0f),
+      vel_x(0.0f),
+      vel_y(0.0f),
       ddx(0),
       ddy(0),
       opacity(0.0f),
@@ -895,6 +659,103 @@ AircraftLabel::AircraftLabel(uint32_t aircraftAddr, bool& metric, int screenWidt
   debugLabel.setFont(font);
 
   lastLevelChange = now();
+}
+
+bool
+AircraftLabel::projectAwayFromLabel(float otherX, float otherY, float otherW, float otherH,
+                                    float margin, float strength) {
+  // Use collision bounds (includes reticle extent) for this label
+  float myX = getCollisionX();
+  float myY = getCollisionY();
+  float myW = getCollisionW();
+  float myH = getCollisionH();
+
+  float myRight = myX + myW;
+  float myBottom = myY + myH;
+  // otherX/Y/W/H are already collision bounds (from neighbor list)
+  float otherRight = otherX + otherW;
+  float otherBottom = otherY + otherH;
+
+  // No overlap if separated by at least margin
+  if (myX >= otherRight + margin || otherX >= myRight + margin ||
+      myY >= otherBottom + margin || otherY >= myBottom + margin) {
+    return false;
+  }
+
+  // Compute penetration depth on each side (including margin)
+  float penRight = myRight + margin - otherX;      // push left
+  float penLeft = otherRight + margin - myX;        // push right
+  float penBottom = myBottom + margin - otherY;     // push up
+  float penTop = otherBottom + margin - myY;         // push down
+
+  // Find minimum translation vector
+  float minPen = penRight;
+  float pushX = -penRight;
+  float pushY = 0;
+
+  if (penLeft < minPen) { minPen = penLeft; pushX = penLeft; pushY = 0; }
+  if (penBottom < minPen) { minPen = penBottom; pushX = 0; pushY = -penBottom; }
+  if (penTop < minPen) { minPen = penTop; pushX = 0; pushY = penTop; }
+
+  x += pushX * strength;
+  y += pushY * strength;
+
+  return true;
+}
+
+bool
+AircraftLabel::projectAwayFromIcon(float iconX, float iconY, float iconRadius) {
+  // Use collision bounds (includes reticle extent)
+  float myX = getCollisionX();
+  float myY = getCollisionY();
+  float myW = getCollisionW();
+  float myH = getCollisionH();
+
+  // Test if icon center point is inside expanded collision bounds
+  float left = myX - iconRadius;
+  float right = myX + myW + iconRadius;
+  float top = myY - iconRadius;
+  float bottom = myY + myH + iconRadius;
+
+  if (iconX < left || iconX > right || iconY < top || iconY > bottom) {
+    return false;
+  }
+
+  // Penetration from each side
+  float penLeft = iconX - left;
+  float penRight = right - iconX;
+  float penTop = iconY - top;
+  float penBottom = bottom - iconY;
+
+  // Find minimum penetration and push along that direction
+  float minPen = penLeft;
+  float pushX = penLeft;   // push label right
+  float pushY = 0;
+
+  if (penRight < minPen) { minPen = penRight; pushX = -penRight; pushY = 0; }
+  if (penTop < minPen) { minPen = penTop; pushX = 0; pushY = penTop; }
+  if (penBottom < minPen) { minPen = penBottom; pushX = 0; pushY = -penBottom; }
+
+  x += pushX * 0.45f;
+  y += pushY * 0.45f;
+
+  return true;
+}
+
+float
+AircraftLabel::getVelocityMagnitude() const {
+  return std::sqrt(vel_x * vel_x + vel_y * vel_y);
+}
+
+float
+AircraftLabel::getAccelMagnitude() const {
+  return std::sqrt(ddx * ddx + ddy * ddy);
+}
+
+float
+AircraftLabel::getOscillationScore() const {
+  // Return fraction of recent frames with direction changes (max of X and Y)
+  return static_cast<float>(std::max(dirChangeCountX, dirChangeCountY)) / 16.0f;
 }
 
 }  // namespace ui
